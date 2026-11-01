@@ -1,0 +1,95 @@
+name: publish
+
+# npm's trusted publisher for @slipway-systems/sdk names this file, so it must keep this name. There is no npm token:
+# the publish authenticates with this workflow's GitHub OIDC identity, and npm attaches provenance.
+on:
+  push:
+    tags: ["v*.*.*"]
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # Trusted publishing needs npm 11.5.1 or later, and Node 22.14 or later.
+  NPM_VERSION: 12.2.1
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    name: publish to npm
+    needs: [ci]
+    runs-on: ubuntu-latest # npm's trusted publishing does not support self-hosted runners
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write # npm exchanges this for a short-lived publish credential
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      # No registry-url: it would write an .npmrc that expects a token.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - name: Install npm
+        run: |
+          npm install --global "npm@$NPM_VERSION"
+          test "$(npm --version)" = "$NPM_VERSION"
+      - name: Check the tag matches the package
+        working-directory: ts
+        run: |
+          test "$(node -p 'require("./package.json").version')" = "${TAG#v}"
+          test "$(cat ../VERSION)" = "${TAG#v}"
+      # A failed read stops here, so it cannot look like a version that is not yet published.
+      - name: Choose the dist-tag
+        id: dist-tag
+        working-directory: ts
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          name="$(node -p 'require("./package.json").name')"
+          npm view "$name" --json > "$RUNNER_TEMP/package.json"
+          published="$(jq -r --arg v "$version" '(.versions // []) | index($v) != null' "$RUNNER_TEMP/package.json")"
+          if [ "$published" = true ]; then
+            echo "::notice::$name@$version is already on npm."
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          latest="$(jq -r '."dist-tags".latest // ""' "$RUNNER_TEMP/package.json")"
+          tag="$(../scripts/npm-dist-tag.sh "$version" "$latest")"
+          echo "$name@$version goes to dist-tag $tag (latest is $latest)"
+          { echo "published=false"; echo "tag=$tag"; } >> "$GITHUB_OUTPUT"
+      - name: Build
+        if: ${{ steps.dist-tag.outputs.published == 'false' }}
+        working-directory: ts
+        run: |
+          npm ci --ignore-scripts
+          npm run build
+      - name: Publish
+        if: ${{ steps.dist-tag.outputs.published == 'false' }}
+        working-directory: ts
+        env:
+          DIST_TAG: ${{ steps.dist-tag.outputs.tag }}
+        run: npm publish --tag "$DIST_TAG" --access public --provenance
+      - name: Check the provenance
+        working-directory: ts
+        shell: bash
+        run: |
+          set -euo pipefail
+          spec="$(node -p 'const p = require("./package.json"); p.name + "@" + p.version')"
+          for _ in 1 2 3 4 5 6; do
+            url="$(npm view "$spec" dist.attestations.url 2>/dev/null || true)"
+            if [ -n "$url" ]; then echo "$spec has attestations at $url"; exit 0; fi
+            sleep 10
+          done
+          echo "::error::$spec shows no provenance"
+          exit 1

@@ -1,0 +1,89 @@
+name: ci
+
+# Called by publish.yml too, so nothing reaches npm that does not pass this.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: go build, vet, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: go
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go/go.mod
+          cache-dependency-path: go/go.sum
+      - run: go build ./...
+      - run: go vet ./...
+      - run: go test ./...
+
+  ts:
+    name: package build, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: ts
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm test
+
+  examples:
+    name: Go and Node examples against a server
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: slipway
+          POSTGRES_PASSWORD: slipway
+          POSTGRES_DB: slipway
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U slipway" --health-interval 2s --health-timeout 3s --health-retries 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go/go.mod
+          cache-dependency-path: go/go.sum
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      # The server of the same version. Its release is public before this repo is tagged.
+      - name: Download the server
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(cat VERSION)"
+          asset="slipway_${version}_linux_amd64.tar.gz"
+          download="https://github.com/slipway-systems/slipway-releases/releases/download/v$version"
+          mkdir -p "$RUNNER_TEMP/server"
+          cd "$RUNNER_TEMP/server"
+          fetch() { curl -fsSL --retry 5 --retry-all-errors --retry-delay 10 "$@"; }
+          fetch "$download/$asset" -o "$asset"
+          fetch "$download/checksums.txt" -o checksums.txt
+          grep -F "  $asset" checksums.txt | sha256sum --check
+          tar -xzf "$asset" slipway
+      - name: Run the examples
+        env:
+          SLIPWAY_BIN: ${{ runner.temp }}/server/slipway
+          SLIPWAY_DATABASE_URL: postgres://slipway:slipway@localhost:5432/slipway?sslmode=disable
+        run: scripts/run-examples.sh

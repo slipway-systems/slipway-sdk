@@ -1,0 +1,1233 @@
+syntax = "proto3";
+
+package slipway.v1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "slipway/v1/common.proto";
+
+// Deploy domain contract: environments, releases, deployments, approvals and runbooks. String enums are documented inline
+// (values are stable snake_case identifiers) so the UI can switch on them without generated enum plumbing.
+//
+// Permissions (checked by the handlers): deployments.read, deployments.create, environments.deploy:<env>,
+// deployments.approve, deployments.cancel, deployments.force, deployments.override_freeze, releases.read,
+// releases.create, releases.manage, environments.read, environments.manage, variables.read, variables.manage,
+// runbooks.read, runbooks.manage, runbooks.run:<env>, services.read, services.manage.
+
+// ----------------------------------------------------------------------------------------------------------
+// Shared building blocks
+// ----------------------------------------------------------------------------------------------------------
+
+// Approver names who may approve: kind is user | team | role.
+message Approver {
+  string kind = 1;
+  string id = 2;
+  int32 min_count = 3; // per-group quorum: at least this many approvals must come from this entry (0 = none)
+  string display_name = 4;
+}
+
+// DeployWindow is a recurring or absolute time window (deployment windows and freeze periods).
+// Exactly one of: (days+start+end), (cron+duration), (from+to).
+message DeployWindow {
+  string name = 1;
+  repeated string days = 2; // mon..sun; empty = every day
+  string start = 3;         // HH:MM wall clock in timezone
+  string end = 4;           // HH:MM; end < start crosses midnight
+  string timezone = 5;      // IANA, default UTC
+  google.protobuf.Timestamp from = 6;
+  google.protobuf.Timestamp to = 7;
+  string cron = 8;          // 5-field cron: start instants
+  google.protobuf.Duration duration = 9;
+  string reason = 10;
+}
+
+// DeployPolicy decides whether a deployment may proceed: a CEL expression that must evaluate to true, or a decision from
+// an external OPA server. Exactly one of expression and opa is set.
+// Context: release, environment, service, actor, time, provenance, deployment.
+message DeployPolicy {
+  string name = 1;
+  string expression = 2;
+  string message = 3;
+  string severity = 4; // deny (default) | warn
+  OpaPolicy opa = 5;
+}
+
+// OpaPolicy asks an OPA integration for a decision: POST <base>/v1/data/<path> with the policy context as input.
+message OpaPolicy {
+  string integration = 1; // an OPA integration of the org, by id, provider or name
+  string path = 2;        // e.g. deploy/production/allow
+}
+
+message ProtectionRules {
+  int32 required_approvals = 1;
+  repeated Approver approvers = 2;
+  bool allow_self_approval = 3;
+  repeated string allowed_branches = 4; // globs, matched against the release provenance branch
+  repeated DeployWindow deployment_windows = 5;
+  repeated DeployWindow freeze_periods = 6;
+  repeated DeployPolicy policies = 7;
+  bool change_ticket_required = 8;
+  google.protobuf.Duration approval_timeout = 9;
+  bool apply_to_runbooks = 10;
+  bool require_verified_provenance = 11;
+}
+
+message VariableScope {
+  string service_id = 1;
+  string environment_id = 2;
+  string infrastructure_id = 3;
+  string tenant = 4;
+  string channel = 5;
+}
+
+// ----------------------------------------------------------------------------------------------------------
+// Services, environments, infrastructure, variables
+// ----------------------------------------------------------------------------------------------------------
+
+message DeployableService {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  string slug = 4;
+  string description = 5;
+  string kind = 6; // container | helm | kustomize | serverless | vm | terraform | custom
+  google.protobuf.Struct artifact_spec = 7;
+  google.protobuf.Struct health_check = 8;
+  string repository = 9;
+  string default_strategy = 10;
+  map<string, string> labels = 11;
+  string created_by = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+}
+
+message Environment {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  string slug = 4;
+  string description = 5;
+  int32 order = 6;
+  string kind = 7; // dev | test | staging | prod | custom
+  string url = 8;
+  ProtectionRules protection_rules = 9;
+  string default_strategy = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+message Infrastructure {
+  string id = 1;
+  string project_id = 2;
+  string environment_id = 3;
+  string name = 4;
+  // kubernetes | helm | kustomize | ecs | lambda | cloudrun | azure_app_service | azure_container_apps | vm_pool | terraform | script
+  string kind = 5;
+  google.protobuf.Struct config = 6;
+  string connection_id = 7;
+  string runner_pool_id = 8;
+  repeated string service_ids = 9;
+  string region = 10;
+  map<string, string> labels = 11;
+  google.protobuf.Struct health = 12;
+  google.protobuf.Timestamp last_checked_at = 13;
+  google.protobuf.Duration drift_interval = 14;
+  google.protobuf.Timestamp created_at = 15;
+  google.protobuf.Timestamp updated_at = 16;
+}
+
+message DeployVariable {
+  string id = 1;
+  string project_id = 2; // empty = org-wide
+  string name = 3;
+  string value = 4;      // empty and never returned when sensitive
+  string secret_ref = 5; // secret name / external ref resolved at deploy time
+  bool sensitive = 6;
+  string description = 7;
+  VariableScope scope = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+message ResolvedVariable {
+  string name = 1;
+  string value = 2; // "********" when sensitive
+  bool sensitive = 3;
+  string variable_id = 4;
+  VariableScope scope = 5;
+  int32 overridden = 6; // number of lower-precedence definitions this one shadows
+  string secret_ref = 7;
+  string error = 8; // template problem, if any
+}
+
+message Freeze {
+  string id = 1;
+  string project_id = 2; // empty = org-wide
+  string environment_id = 3; // empty = all environments in scope
+  string name = 4;
+  string reason = 5;
+  DeployWindow window = 6;
+  bool allow_override = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+message FreezeInterval {
+  string source = 1; // freeze | environment
+  string freeze_id = 2;
+  string environment_id = 3; // empty = all
+  string name = 4;
+  string reason = 5;
+  google.protobuf.Timestamp start = 6;
+  google.protobuf.Timestamp end = 7;
+  bool allow_override = 8;
+}
+
+// ----------------------------------------------------------------------------------------------------------
+// Releases, lifecycles, channels
+// ----------------------------------------------------------------------------------------------------------
+
+message ReleaseArtifact {
+  string kind = 1; // image | chart | manifest | package | file | archive | function
+  string ref = 2;  // registry/repo, chart ref, blob key, URL
+  string version = 3;
+  string digest = 4;
+  map<string, string> metadata = 5;
+}
+
+message ReleaseAttestation {
+  string type = 1; // slsa-provenance | sbom | cosign-signature | vuln-scan
+  string uri = 2;
+  string digest = 3;
+  bool verified = 4;
+  string signer = 5;
+}
+
+message ReleaseProvenance {
+  string run_id = 1;
+  string pipeline_id = 2;
+  string job_id = 3;
+  GitRef git = 4;
+  google.protobuf.Timestamp commit_at = 5;
+  string builder = 6;
+  repeated ReleaseAttestation attestations = 7;
+  string repository = 8;
+}
+
+// SnapshotVariable is one variable definition captured in a release (with its scope), so deployments resolve
+// precedence against what existed when the release was cut. Sensitive values are never captured, only references.
+message SnapshotVariable {
+  string name = 1;
+  string value = 2;
+  string secret_ref = 3;
+  bool sensitive = 4;
+  VariableScope scope = 5;
+  bool org_wide = 6;
+}
+
+message Release {
+  string id = 1;
+  string project_id = 2;
+  string service_id = 3;
+  string version = 4;
+  string channel_id = 5;
+  string channel_name = 6;
+  string lifecycle_id = 7;
+  map<string, ReleaseArtifact> artifacts = 8;
+  repeated SnapshotVariable variables_snapshot = 9;
+  ReleaseProvenance provenance = 10;
+  string commit_sha = 11;
+  google.protobuf.Timestamp commit_at = 12;
+  string run_id = 13;
+  string release_notes = 14;
+  string created_by = 15;
+  google.protobuf.Timestamp created_at = 16;
+}
+
+message LifecyclePhase {
+  string name = 1;
+  repeated string environment_ids = 2;
+  bool auto_promote = 3;
+  google.protobuf.Duration min_soak = 4;
+  int32 min_environments = 5; // environments that must succeed to complete the phase (0 = all)
+  bool optional = 6;          // later phases may start without completing this one
+}
+
+message Lifecycle {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  string description = 4;
+  repeated LifecyclePhase phases = 5;
+  bool is_default = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message VersionRule {
+  string kind = 1;    // semver | glob | regex
+  string pattern = 2; // ">=1.0.0 <2.0.0", "*-beta*", "^v\\d+$"
+}
+
+message ReleaseChannel {
+  string id = 1;
+  string project_id = 2;
+  string service_id = 3; // empty = every service
+  string name = 4;
+  string description = 5;
+  VersionRule version_rule = 6;
+  string lifecycle_id = 7;
+  bool is_default = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+message ReleaseDiff {
+  message ArtifactChange {
+    string name = 1;
+    string change = 2; // added | removed | changed
+    ReleaseArtifact from = 3;
+    ReleaseArtifact to = 4;
+  }
+  message VariableChange {
+    string name = 1;
+    string change = 2;
+    string from = 3; // masked when sensitive
+    string to = 4;
+    bool sensitive = 5;
+  }
+  message Commit {
+    string sha = 1;
+    string message = 2;
+    string author = 3;
+    google.protobuf.Timestamp at = 4;
+    string url = 5;
+  }
+  Release from = 1;
+  Release to = 2;
+  repeated ArtifactChange artifacts = 3;
+  repeated VariableChange variables = 4;
+  repeated Commit commits = 5;
+  repeated string tickets = 6;     // issue keys found in commit messages (PROJ-123)
+  bool commits_unavailable = 7;    // no SCM compare available for this pair
+  string compare_url = 8;
+}
+
+// ReleaseProgress shows where a release is on its lifecycle.
+message ReleaseProgress {
+  message EnvironmentState {
+    string environment_id = 1;
+    string environment_name = 2;
+    string state = 3; // not_started | eligible | blocked | in_progress | succeeded | failed | skipped
+    string reason = 4;
+    string deployment_id = 5;
+    string deployment_status = 6;
+    google.protobuf.Timestamp finished_at = 7;
+    google.protobuf.Timestamp auto_promote_at = 8; // soak time ends here
+  }
+  message Phase {
+    string name = 1;
+    bool complete = 2;
+    bool auto_promote = 3;
+    repeated EnvironmentState environments = 4;
+  }
+  Release release = 1;
+  Lifecycle lifecycle = 2;
+  repeated Phase phases = 3;
+}
+
+// ----------------------------------------------------------------------------------------------------------
+// Deployments
+// ----------------------------------------------------------------------------------------------------------
+
+message DeploymentStep {
+  string id = 1;
+  int32 index = 2;
+  string name = 3;
+  string op = 4;    // deploy | stage | set_traffic | wait_ready | verify | wait | approval | promote | cleanup | rollback …
+  string phase = 5;
+  string runner = 6; // server | job
+  bool is_rollback = 7;
+  string status = 8; // pending | running | waiting | succeeded | failed | skipped | cancelled
+  google.protobuf.Struct params = 9;
+  google.protobuf.Struct result = 10;
+  string error = 11;
+  int32 attempts = 12;
+  string job_ref = 13;
+  string infrastructure_id = 14;
+  google.protobuf.Timestamp started_at = 15;
+  google.protobuf.Timestamp finished_at = 16;
+}
+
+message DeploymentGate {
+  string id = 1;
+  string kind = 2;   // manual | policy | window | freeze | branch | change_ticket | metric
+  string name = 3;
+  string status = 4; // pending | waiting | passed | failed | skipped
+  string message = 5;
+  google.protobuf.Struct detail = 6;
+  google.protobuf.Timestamp next_check_at = 7;
+  google.protobuf.Timestamp evaluated_at = 8;
+}
+
+message ApprovalDecision {
+  string id = 1;
+  string user_id = 2;
+  string user_name = 3;
+  string decision = 4; // approve | reject
+  string comment = 5;
+  string channel = 6;  // web | slack | teams | api | cli
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message Approval {
+  string id = 1;
+  string subject_kind = 2; // deployment | deployment_step | runbook_run | run_gate
+  string subject_id = 3;
+  string deployment_id = 4;
+  string environment_id = 5;
+  string status = 6; // pending | approved | rejected | expired | cancelled
+  int32 required = 7;
+  int32 approved_count = 8;
+  repeated Approver approvers = 9;
+  bool allow_self_approval = 10;
+  string requested_by = 11;
+  string message = 12;
+  google.protobuf.Timestamp expires_at = 13;
+  google.protobuf.Timestamp resolved_at = 14;
+  string resolved_reason = 15;
+  repeated ApprovalDecision decisions = 16;
+  google.protobuf.Timestamp created_at = 17;
+  // Caller-specific hints for the UI.
+  bool viewer_can_decide = 18;
+  string viewer_blocked_reason = 19;
+  // Denormalised context for the approvals inbox.
+  string service_name = 20;
+  string release_version = 21;
+  string environment_name = 22;
+}
+
+message IntervalMetricResult {
+  string name = 1;
+  string kind = 2; // absolute | relative | error_rate
+  double canary_value = 3;
+  double baseline_value = 4;
+  bool has_baseline = 5;
+  string verdict = 6; // pass | fail | inconclusive
+  string reason = 7;
+  bool critical = 8;
+  int32 canary_samples = 9;
+  int32 baseline_samples = 10;
+  double p_value = 11;
+}
+
+message VerificationInterval {
+  int32 index = 1;
+  google.protobuf.Timestamp at = 2;
+  string verdict = 3; // pass | fail | inconclusive
+  double score = 4;   // 0..100
+  repeated IntervalMetricResult metrics = 5;
+}
+
+message VerificationRun {
+  string id = 1;
+  string deployment_id = 2;
+  string step_id = 3;
+  string provider = 4;
+  google.protobuf.Struct config = 5;
+  string status = 6; // running | passed | failed | inconclusive | cancelled
+  string verdict = 7;
+  repeated VerificationInterval intervals = 8;
+  int32 consecutive_failures = 9;
+  google.protobuf.Timestamp started_at = 10;
+  google.protobuf.Timestamp next_interval_at = 11;
+  google.protobuf.Timestamp finished_at = 12;
+}
+
+message Deployment {
+  string id = 1;
+  string project_id = 2;
+  string service_id = 3;
+  string release_id = 4;
+  string release_version = 5;
+  string environment_id = 6;
+  string infrastructure_id = 7;
+  string tenant = 8;
+  string strategy = 9; // recreate | rolling | bluegreen | canary | progressive
+  google.protobuf.Struct strategy_config = 10;
+  // pending | waiting_approval | waiting_window | in_progress | verifying | paused | succeeded | failed | rolled_back | cancelled
+  string status = 11;
+  string status_reason = 12;
+  string triggered_by = 13; // run | promotion | manual | rollback
+  Actor actor = 14;
+  string run_id = 15;
+  string job_id = 16;
+  string previous_deployment_id = 17;
+  string rollback_of_deployment_id = 18;
+  int32 current_step = 19;
+  bool rolling_back = 20;
+  bool auto_rollback = 21;
+  bool force = 22;
+  string comment = 23;
+  repeated DeploymentStep steps = 24;
+  repeated DeploymentGate gates = 25;
+  Approval approval = 26;
+  repeated VerificationRun verification_runs = 27;
+  google.protobuf.Timestamp scheduled_for = 28;
+  google.protobuf.Timestamp queued_at = 29;
+  google.protobuf.Timestamp started_at = 30;
+  google.protobuf.Timestamp finished_at = 31;
+  google.protobuf.Timestamp created_at = 32;
+  string service_name = 33;
+  string environment_name = 34;
+}
+
+// DeploymentSummary is the compact form used on the environment board.
+message DeploymentSummary {
+  string deployment_id = 1;
+  string release_id = 2;
+  string version = 3;
+  string channel = 4;
+  string status = 5;
+  string strategy = 6;
+  string triggered_by = 7;
+  string actor_name = 8;
+  string infrastructure_id = 9;
+  google.protobuf.Timestamp started_at = 10;
+  google.protobuf.Timestamp finished_at = 11;
+}
+
+message BoardCell {
+  string environment_id = 1;
+  string service_id = 2;
+  string tenant = 3;
+  DeploymentSummary current = 4;
+  DeploymentSummary in_flight = 5;
+  DeploymentSummary last_failure = 6; // newer than current
+  string drift_status = 7;            // in_sync | drifted | unsupported | error | ""
+  bool frozen = 8;
+}
+
+message EnvironmentBoard {
+  repeated Environment environments = 1;
+  repeated DeployableService services = 2;
+  repeated BoardCell cells = 3;
+  repeated FreezeInterval active_freezes = 4;
+}
+
+message DriftFieldDiff {
+  string path = 1;
+  string desired = 2;
+  string live = 3;
+}
+
+message DriftItem {
+  string kind = 1;
+  string name = 2;
+  string namespace = 3;
+  string status = 4; // modified | missing | unexpected
+  repeated DriftFieldDiff fields = 5;
+}
+
+message DriftReport {
+  string id = 1;
+  string infrastructure_id = 2;
+  string environment_id = 3;
+  string service_id = 4;
+  string deployment_id = 5;
+  string status = 6; // in_sync | drifted | unsupported | error
+  repeated DriftItem items = 7;
+  string summary = 8;
+  google.protobuf.Timestamp checked_at = 9;
+  string tenant = 10; // "" for the untenanted targets
+}
+
+// ----------------------------------------------------------------------------------------------------------
+// Runbooks
+// ----------------------------------------------------------------------------------------------------------
+
+message RunbookParameter {
+  string name = 1;
+  string label = 2;
+  string type = 3; // string | number | boolean | choice | secret
+  bool required = 4;
+  string default_value = 5;
+  repeated string options = 6;
+  string description = 7;
+  string pattern = 8; // optional regex for strings
+}
+
+message Runbook {
+  string id = 1;
+  string project_id = 2;
+  string service_id = 3;
+  string name = 4;
+  string slug = 5;
+  string description = 6;
+  repeated RunbookParameter parameters = 7;
+  repeated google.protobuf.Struct steps = 8; // pipeline-step syntax
+  repeated string environment_ids = 9;
+  bool requires_approval = 10;
+  repeated string runs_on = 11;
+  google.protobuf.Duration timeout = 12;
+  bool enabled = 13;
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp updated_at = 15;
+}
+
+message RunbookRun {
+  string id = 1;
+  string project_id = 2;
+  string runbook_id = 3;
+  string environment_id = 4;
+  string infrastructure_id = 5;
+  string status = 6; // pending | waiting_approval | queued | running | succeeded | failed | cancelled
+  map<string, string> parameters = 7; // sensitive values masked
+  string approval_id = 8;
+  string job_ref = 9;
+  string error = 10;
+  google.protobuf.Struct result = 11;
+  Actor actor = 12;
+  google.protobuf.Timestamp started_at = 13;
+  google.protobuf.Timestamp finished_at = 14;
+  google.protobuf.Timestamp created_at = 15;
+}
+
+// ----------------------------------------------------------------------------------------------------------
+// DORA
+// ----------------------------------------------------------------------------------------------------------
+
+message DoraBucket {
+  google.protobuf.Timestamp bucket = 1;
+  int64 succeeded = 2;
+  int64 failed = 3;
+}
+
+message DoraServiceMetrics {
+  string service_id = 1;
+  string environment_id = 2;
+  int64 deployments = 3;
+  int64 failed = 4;
+  double deployments_per_day = 5;
+}
+
+message DoraMetrics {
+  message Frequency {
+    int64 total = 1;
+    double per_day = 2;
+    string band = 3; // elite | high | medium | low
+    repeated DoraBucket series = 4;
+  }
+  message LeadTime {
+    int64 samples = 1;
+    google.protobuf.Duration p50 = 2;
+    google.protobuf.Duration p90 = 3;
+    google.protobuf.Duration mean = 4;
+    string band = 5;
+  }
+  message ChangeFailure {
+    int64 total = 1;
+    int64 failures = 2;
+    double rate = 3; // 0..1
+    string band = 4;
+  }
+  message Restore {
+    int64 samples = 1;
+    google.protobuf.Duration p50 = 2;
+    google.protobuf.Duration mean = 3;
+    string band = 4;
+  }
+  Frequency deployment_frequency = 1;
+  LeadTime lead_time = 2;
+  ChangeFailure change_failure_rate = 3;
+  Restore time_to_restore = 4;
+  repeated DoraServiceMetrics by_service = 5;
+  google.protobuf.Timestamp from = 6;
+  google.protobuf.Timestamp to = 7;
+}
+
+// ----------------------------------------------------------------------------------------------------------
+// DeployService: deployable services, deployments, verification, DORA
+// ----------------------------------------------------------------------------------------------------------
+
+service DeployService {
+  rpc CreateService(CreateServiceRequest) returns (CreateServiceResponse);
+  rpc GetService(GetServiceRequest) returns (GetServiceResponse);
+  rpc ListServices(ListServicesRequest) returns (ListServicesResponse);
+  rpc UpdateService(UpdateServiceRequest) returns (UpdateServiceResponse);
+  rpc DeleteService(DeleteServiceRequest) returns (DeleteServiceResponse);
+
+  rpc CreateDeployment(CreateDeploymentRequest) returns (CreateDeploymentResponse);
+  rpc PreviewDeployment(PreviewDeploymentRequest) returns (PreviewDeploymentResponse);
+  rpc GetDeployment(GetDeploymentRequest) returns (GetDeploymentResponse);
+  rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
+  rpc CancelDeployment(CancelDeploymentRequest) returns (CancelDeploymentResponse);
+  rpc PauseDeployment(PauseDeploymentRequest) returns (PauseDeploymentResponse);
+  rpc ResumeDeployment(ResumeDeploymentRequest) returns (ResumeDeploymentResponse);
+  rpc RetryDeployment(RetryDeploymentRequest) returns (RetryDeploymentResponse);
+  rpc RollbackDeployment(RollbackDeploymentRequest) returns (RollbackDeploymentResponse);
+  // WatchDeployment streams a snapshot whenever the deployment (or its steps, gates, verification) changes.
+  rpc WatchDeployment(WatchDeploymentRequest) returns (stream WatchDeploymentResponse);
+
+  rpc ListVerificationRuns(ListVerificationRunsRequest) returns (ListVerificationRunsResponse);
+  rpc GetDoraMetrics(GetDoraMetricsRequest) returns (GetDoraMetricsResponse);
+}
+
+message CreateServiceRequest {
+  string project_id = 1;
+  string name = 2;
+  string slug = 3; // derived from name when empty
+  string description = 4;
+  string kind = 5;
+  google.protobuf.Struct artifact_spec = 6;
+  google.protobuf.Struct health_check = 7;
+  string repository = 8;
+  string default_strategy = 9;
+  map<string, string> labels = 10;
+}
+message CreateServiceResponse { DeployableService service = 1; }
+message GetServiceRequest { string id = 1; }
+message GetServiceResponse { DeployableService service = 1; }
+message ListServicesRequest {
+  string project_id = 1;
+  PageRequest page = 2;
+}
+message ListServicesResponse {
+  repeated DeployableService items = 1;
+  PageResponse page = 2;
+}
+message UpdateServiceRequest {
+  DeployableService service = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+message UpdateServiceResponse { DeployableService service = 1; }
+message DeleteServiceRequest { string id = 1; }
+message DeleteServiceResponse {}
+
+message CreateDeploymentRequest {
+  string release_id = 1;
+  string environment_id = 2;
+  string infrastructure_id = 3; // optional: defaults to the environment's infrastructure serving the service
+  string strategy = 4;          // optional: defaults to environment then service default
+  google.protobuf.Struct strategy_config = 5;
+  string tenant = 6;
+  string comment = 7;
+  bool force = 8;               // skip lifecycle ordering (needs deployments.force)
+  google.protobuf.Timestamp scheduled_for = 9;
+  string run_id = 11;           // set by the pipeline deploy step
+  string job_id = 12;
+  reserved 10;
+  string triggered_by = 13;     // run | promotion | manual (default manual)
+  bool disable_auto_rollback = 14;
+}
+message CreateDeploymentResponse { Deployment deployment = 1; }
+
+message PreviewDeploymentRequest {
+  string release_id = 1;
+  string environment_id = 2;
+  string infrastructure_id = 3;
+  string strategy = 4;
+  google.protobuf.Struct strategy_config = 5;
+  string tenant = 6;
+}
+message PreviewDeploymentResponse {
+  string strategy = 1;
+  string infrastructure_id = 2;
+  repeated DeploymentStep steps = 3;   // the plan that would run
+  repeated DeploymentGate gates = 4;   // evaluation of protection rules right now
+  bool approval_required = 5;
+  int32 approvals_required = 6;
+  repeated Approver approvers = 7;
+  repeated ResolvedVariable variables = 8; // masked
+  bool lifecycle_allows = 9;
+  string lifecycle_reason = 10;
+  Release release = 11;
+  Deployment current = 12; // what is deployed there now, if anything
+}
+
+message GetDeploymentRequest { string id = 1; }
+message GetDeploymentResponse { Deployment deployment = 1; }
+message ListDeploymentsRequest {
+  string project_id = 1;
+  string service_id = 2;
+  string environment_id = 3;
+  string release_id = 4;
+  repeated string statuses = 5;
+  string run_id = 6;
+  PageRequest page = 7;
+}
+message ListDeploymentsResponse {
+  repeated Deployment items = 1;
+  PageResponse page = 2;
+}
+message CancelDeploymentRequest {
+  string id = 1;
+  string reason = 2;
+  // Whether to roll back work already done. Unset (default): roll back when traffic was shifted or a new stack
+  // staged (canary, blue/green, progressive). false: abandon the deployment as it is. true: require a rollback.
+  optional bool rollback = 3;
+}
+message CancelDeploymentResponse { Deployment deployment = 1; }
+message PauseDeploymentRequest {
+  string id = 1;
+  string reason = 2;
+}
+message PauseDeploymentResponse { Deployment deployment = 1; }
+message ResumeDeploymentRequest { string id = 1; }
+message ResumeDeploymentResponse { Deployment deployment = 1; }
+message RetryDeploymentRequest { string id = 1; } // re-run the failed step of a failed (not yet rolled back) deployment
+message RetryDeploymentResponse { Deployment deployment = 1; }
+message RollbackDeploymentRequest {
+  string id = 1;               // the deployment to roll back
+  string target_release_id = 2; // default: the release of the previous successful deployment
+  string reason = 3;
+  string strategy = 4;          // default: the strategy of the deployment being rolled back
+  google.protobuf.Struct strategy_config = 5;
+}
+message RollbackDeploymentResponse { Deployment deployment = 1; }
+message WatchDeploymentRequest { string id = 1; }
+message WatchDeploymentResponse {
+  Deployment deployment = 1;
+  bool terminal = 2;
+}
+message ListVerificationRunsRequest { string deployment_id = 1; }
+message ListVerificationRunsResponse { repeated VerificationRun items = 1; }
+
+message GetDoraMetricsRequest {
+  string project_id = 1;
+  string service_id = 2;
+  string environment_id = 3;
+  google.protobuf.Timestamp from = 4;
+  google.protobuf.Timestamp to = 5;
+  string bucket = 6; // hour | day | week | month (default day)
+  bool include_non_production = 7;
+}
+message GetDoraMetricsResponse { DoraMetrics metrics = 1; }
+
+// ----------------------------------------------------------------------------------------------------------
+// ReleaseService: releases, lifecycles, channels, promotion
+// ----------------------------------------------------------------------------------------------------------
+
+service ReleaseService {
+  rpc CreateRelease(CreateReleaseRequest) returns (CreateReleaseResponse);
+  rpc GetRelease(GetReleaseRequest) returns (GetReleaseResponse);
+  rpc ListReleases(ListReleasesRequest) returns (ListReleasesResponse);
+  rpc UpdateRelease(UpdateReleaseRequest) returns (UpdateReleaseResponse);
+  rpc DeleteRelease(DeleteReleaseRequest) returns (DeleteReleaseResponse);
+  rpc DiffReleases(DiffReleasesRequest) returns (DiffReleasesResponse);
+  rpc GetReleaseProgress(GetReleaseProgressRequest) returns (GetReleaseProgressResponse);
+  rpc PromoteRelease(PromoteReleaseRequest) returns (PromoteReleaseResponse);
+
+  rpc CreateLifecycle(CreateLifecycleRequest) returns (CreateLifecycleResponse);
+  rpc GetLifecycle(GetLifecycleRequest) returns (GetLifecycleResponse);
+  rpc ListLifecycles(ListLifecyclesRequest) returns (ListLifecyclesResponse);
+  rpc UpdateLifecycle(UpdateLifecycleRequest) returns (UpdateLifecycleResponse);
+  rpc DeleteLifecycle(DeleteLifecycleRequest) returns (DeleteLifecycleResponse);
+
+  rpc CreateChannel(CreateChannelRequest) returns (CreateChannelResponse);
+  rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse);
+  rpc UpdateChannel(UpdateChannelRequest) returns (UpdateChannelResponse);
+  rpc DeleteChannel(DeleteChannelRequest) returns (DeleteChannelResponse);
+}
+
+message CreateReleaseRequest {
+  string project_id = 1;
+  string service_id = 2;
+  string version = 3;
+  string channel = 4; // channel name; resolved from the version rules when empty
+  map<string, ReleaseArtifact> artifacts = 5;
+  map<string, string> variable_overrides = 6;
+  ReleaseProvenance provenance = 7;
+  string release_notes = 8;
+  string run_id = 9;
+}
+message CreateReleaseResponse {
+  Release release = 1;
+  repeated Deployment auto_deployments = 2; // created by an auto-promoting first phase
+}
+message GetReleaseRequest {
+  string id = 1;
+}
+message GetReleaseResponse { Release release = 1; }
+message ListReleasesRequest {
+  string project_id = 1;
+  string service_id = 2;
+  string channel = 3;
+  string version_prefix = 4;
+  PageRequest page = 5;
+}
+message ListReleasesResponse {
+  repeated Release items = 1;
+  PageResponse page = 2;
+}
+message UpdateReleaseRequest {
+  string id = 1;
+  string release_notes = 2; // the only mutable field of an immutable release
+}
+message UpdateReleaseResponse { Release release = 1; }
+message DeleteReleaseRequest { string id = 1; }
+message DeleteReleaseResponse {}
+message DiffReleasesRequest {
+  string from_release_id = 1;
+  string to_release_id = 2;
+}
+message DiffReleasesResponse { ReleaseDiff diff = 1; }
+message GetReleaseProgressRequest { string release_id = 1; }
+message GetReleaseProgressResponse { ReleaseProgress progress = 1; }
+message PromoteReleaseRequest {
+  string release_id = 1;
+  string environment_id = 2; // empty = the next eligible environment(s) in the lifecycle
+  string strategy = 3;
+  string tenant = 4;
+  string comment = 5;
+  bool force = 6;
+}
+message PromoteReleaseResponse { repeated Deployment deployments = 1; }
+
+message CreateLifecycleRequest {
+  string project_id = 1;
+  string name = 2;
+  string description = 3;
+  repeated LifecyclePhase phases = 4;
+  bool is_default = 5;
+}
+message CreateLifecycleResponse { Lifecycle lifecycle = 1; }
+message GetLifecycleRequest { string id = 1; }
+message GetLifecycleResponse { Lifecycle lifecycle = 1; }
+message ListLifecyclesRequest { string project_id = 1; }
+message ListLifecyclesResponse { repeated Lifecycle items = 1; }
+message UpdateLifecycleRequest {
+  Lifecycle lifecycle = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+message UpdateLifecycleResponse { Lifecycle lifecycle = 1; }
+message DeleteLifecycleRequest { string id = 1; }
+message DeleteLifecycleResponse {}
+
+message CreateChannelRequest {
+  string project_id = 1;
+  string service_id = 2;
+  string name = 3;
+  string description = 4;
+  VersionRule version_rule = 5;
+  string lifecycle_id = 6;
+  bool is_default = 7;
+}
+message CreateChannelResponse { ReleaseChannel channel = 1; }
+message ListChannelsRequest {
+  string project_id = 1;
+  string service_id = 2;
+}
+message ListChannelsResponse { repeated ReleaseChannel items = 1; }
+message UpdateChannelRequest {
+  ReleaseChannel channel = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+message UpdateChannelResponse { ReleaseChannel channel = 1; }
+message DeleteChannelRequest { string id = 1; }
+message DeleteChannelResponse {}
+
+// ----------------------------------------------------------------------------------------------------------
+// EnvironmentService: environments, infrastructure, variables, freezes, board, drift
+// ----------------------------------------------------------------------------------------------------------
+
+service EnvironmentService {
+  rpc CreateEnvironment(CreateEnvironmentRequest) returns (CreateEnvironmentResponse);
+  rpc GetEnvironment(GetEnvironmentRequest) returns (GetEnvironmentResponse);
+  rpc ListEnvironments(ListEnvironmentsRequest) returns (ListEnvironmentsResponse);
+  rpc UpdateEnvironment(UpdateEnvironmentRequest) returns (UpdateEnvironmentResponse);
+  rpc DeleteEnvironment(DeleteEnvironmentRequest) returns (DeleteEnvironmentResponse);
+  rpc ReorderEnvironments(ReorderEnvironmentsRequest) returns (ReorderEnvironmentsResponse);
+  rpc GetEnvironmentBoard(GetEnvironmentBoardRequest) returns (GetEnvironmentBoardResponse);
+
+  rpc CreateInfrastructure(CreateInfrastructureRequest) returns (CreateInfrastructureResponse);
+  rpc GetInfrastructure(GetInfrastructureRequest) returns (GetInfrastructureResponse);
+  rpc ListInfrastructures(ListInfrastructuresRequest) returns (ListInfrastructuresResponse);
+  rpc UpdateInfrastructure(UpdateInfrastructureRequest) returns (UpdateInfrastructureResponse);
+  rpc DeleteInfrastructure(DeleteInfrastructureRequest) returns (DeleteInfrastructureResponse);
+  rpc TestInfrastructure(TestInfrastructureRequest) returns (TestInfrastructureResponse);
+  // GetAwsExternalId returns the sts:ExternalId the organisation must require in the trust policy of the IAM role it
+  // gives ECS and Lambda infrastructures.
+  rpc GetAwsExternalId(GetAwsExternalIdRequest) returns (GetAwsExternalIdResponse);
+
+  rpc CreateVariable(CreateVariableRequest) returns (CreateVariableResponse);
+  rpc ListVariables(ListVariablesRequest) returns (ListVariablesResponse);
+  rpc UpdateVariable(UpdateVariableRequest) returns (UpdateVariableResponse);
+  rpc DeleteVariable(DeleteVariableRequest) returns (DeleteVariableResponse);
+  rpc PreviewVariables(PreviewVariablesRequest) returns (PreviewVariablesResponse);
+
+  rpc CreateFreeze(CreateFreezeRequest) returns (CreateFreezeResponse);
+  rpc ListFreezes(ListFreezesRequest) returns (ListFreezesResponse);
+  rpc UpdateFreeze(UpdateFreezeRequest) returns (UpdateFreezeResponse);
+  rpc DeleteFreeze(DeleteFreezeRequest) returns (DeleteFreezeResponse);
+  rpc GetFreezeCalendar(GetFreezeCalendarRequest) returns (GetFreezeCalendarResponse);
+
+  rpc CheckDrift(CheckDriftRequest) returns (CheckDriftResponse);
+  rpc ListDriftReports(ListDriftReportsRequest) returns (ListDriftReportsResponse);
+}
+
+message CreateEnvironmentRequest {
+  string project_id = 1;
+  string name = 2;
+  string slug = 3;
+  string description = 4;
+  int32 order = 5;
+  string kind = 6;
+  string url = 7;
+  ProtectionRules protection_rules = 8;
+  string default_strategy = 9;
+}
+message CreateEnvironmentResponse { Environment environment = 1; }
+message GetEnvironmentRequest { string id = 1; }
+message GetEnvironmentResponse { Environment environment = 1; }
+message ListEnvironmentsRequest { string project_id = 1; }
+message ListEnvironmentsResponse { repeated Environment items = 1; }
+message UpdateEnvironmentRequest {
+  Environment environment = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+message UpdateEnvironmentResponse { Environment environment = 1; }
+message DeleteEnvironmentRequest { string id = 1; }
+message DeleteEnvironmentResponse {}
+message ReorderEnvironmentsRequest {
+  string project_id = 1;
+  repeated string environment_ids = 2; // in the desired order
+}
+message ReorderEnvironmentsResponse { repeated Environment items = 1; }
+message GetEnvironmentBoardRequest {
+  string project_id = 1;
+  repeated string service_ids = 2; // empty = all
+  string tenant = 3;
+}
+message GetEnvironmentBoardResponse { EnvironmentBoard board = 1; }
+
+message CreateInfrastructureRequest {
+  string project_id = 1;
+  string environment_id = 2;
+  string name = 3;
+  string kind = 4;
+  google.protobuf.Struct config = 5;
+  string connection_id = 6;
+  string runner_pool_id = 7;
+  repeated string service_ids = 8;
+  string region = 9;
+  map<string, string> labels = 10;
+  google.protobuf.Duration drift_interval = 11;
+}
+message CreateInfrastructureResponse { Infrastructure infrastructure = 1; }
+message GetInfrastructureRequest { string id = 1; }
+message GetInfrastructureResponse { Infrastructure infrastructure = 1; }
+message ListInfrastructuresRequest {
+  string project_id = 1;
+  string environment_id = 2;
+}
+message ListInfrastructuresResponse { repeated Infrastructure items = 1; }
+message UpdateInfrastructureRequest {
+  Infrastructure infrastructure = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+message UpdateInfrastructureResponse { Infrastructure infrastructure = 1; }
+message DeleteInfrastructureRequest { string id = 1; }
+message DeleteInfrastructureResponse {}
+message TestInfrastructureRequest { string id = 1; }
+message TestInfrastructureResponse {
+  bool ok = 1;
+  string message = 2;
+  google.protobuf.Struct details = 3;
+}
+
+message GetAwsExternalIdRequest {}
+message GetAwsExternalIdResponse {
+  string external_id = 1;
+  // JSON "Condition" block to add to the role's trust policy statement.
+  string trust_policy_condition = 2;
+}
+
+message CreateVariableRequest {
+  string project_id = 1;
+  string name = 2;
+  string value = 3;
+  string secret_ref = 4;
+  bool sensitive = 5;
+  string description = 6;
+  VariableScope scope = 7;
+}
+message CreateVariableResponse { DeployVariable variable = 1; }
+message ListVariablesRequest { string project_id = 1; }
+message ListVariablesResponse { repeated DeployVariable items = 1; }
+message UpdateVariableRequest {
+  DeployVariable variable = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+message UpdateVariableResponse { DeployVariable variable = 1; }
+message DeleteVariableRequest { string id = 1; }
+message DeleteVariableResponse {}
+message PreviewVariablesRequest {
+  string project_id = 1;
+  VariableScope scope = 2; // the context to resolve for
+  string release_id = 3;   // optional: include the release snapshot and release.* template namespace
+  map<string, string> overrides = 4;
+}
+message PreviewVariablesResponse { repeated ResolvedVariable items = 1; }
+
+message CreateFreezeRequest {
+  string project_id = 1;
+  string environment_id = 2;
+  string name = 3;
+  string reason = 4;
+  DeployWindow window = 5;
+  bool allow_override = 6;
+}
+message CreateFreezeResponse { Freeze freeze = 1; }
+message ListFreezesRequest {
+  string project_id = 1;
+  string environment_id = 2;
+}
+message ListFreezesResponse { repeated Freeze items = 1; }
+message UpdateFreezeRequest {
+  Freeze freeze = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+message UpdateFreezeResponse { Freeze freeze = 1; }
+message DeleteFreezeRequest { string id = 1; }
+message DeleteFreezeResponse {}
+message GetFreezeCalendarRequest {
+  string project_id = 1;
+  string environment_id = 2;
+  google.protobuf.Timestamp from = 3;
+  google.protobuf.Timestamp to = 4;
+}
+message GetFreezeCalendarResponse { repeated FreezeInterval items = 1; }
+
+message CheckDriftRequest { string infrastructure_id = 1; }
+message CheckDriftResponse {
+  DriftReport report = 1;           // the first of reports; read reports, there may be several
+  repeated DriftReport reports = 2; // one per target (service and tenant)
+}
+message ListDriftReportsRequest {
+  string project_id = 1;
+  string environment_id = 2;
+  string infrastructure_id = 3; // when set: history for one infrastructure; otherwise each infrastructure's latest check, one report per target
+}
+message ListDriftReportsResponse { repeated DriftReport items = 1; }
+
+// ----------------------------------------------------------------------------------------------------------
+// ApprovalService
+// ----------------------------------------------------------------------------------------------------------
+
+service ApprovalService {
+  rpc ListApprovals(ListApprovalsRequest) returns (ListApprovalsResponse);
+  rpc GetApproval(GetApprovalRequest) returns (GetApprovalResponse);
+  rpc DecideApproval(DecideApprovalRequest) returns (DecideApprovalResponse);
+  rpc CancelApproval(CancelApprovalRequest) returns (CancelApprovalResponse);
+  // EvaluateGates runs the protection rules for a hypothetical deployment without creating one.
+  rpc EvaluateGates(EvaluateGatesRequest) returns (EvaluateGatesResponse);
+}
+
+message ListApprovalsRequest {
+  repeated string statuses = 1; // default: pending
+  string environment_id = 2;
+  string deployment_id = 3;
+  bool mine = 4; // only approvals the caller is eligible to decide
+  PageRequest page = 5;
+}
+message ListApprovalsResponse {
+  repeated Approval items = 1;
+  PageResponse page = 2;
+}
+message GetApprovalRequest { string id = 1; }
+message GetApprovalResponse { Approval approval = 1; }
+message DecideApprovalRequest {
+  string id = 1;
+  string decision = 2; // approve | reject
+  string comment = 3;
+}
+message DecideApprovalResponse {
+  Approval approval = 1;
+  Deployment deployment = 2;
+}
+message CancelApprovalRequest {
+  string id = 1;
+  string reason = 2;
+}
+message CancelApprovalResponse { Approval approval = 1; }
+message EvaluateGatesRequest {
+  string release_id = 1;
+  string environment_id = 2;
+  string tenant = 3;
+}
+message EvaluateGatesResponse {
+  repeated DeploymentGate gates = 1;
+  bool would_block = 2;
+  bool approval_required = 3;
+}
+
+// ----------------------------------------------------------------------------------------------------------
+// RunbookService
+// ----------------------------------------------------------------------------------------------------------
+
+service RunbookService {
+  rpc CreateRunbook(CreateRunbookRequest) returns (CreateRunbookResponse);
+  rpc GetRunbook(GetRunbookRequest) returns (GetRunbookResponse);
+  rpc ListRunbooks(ListRunbooksRequest) returns (ListRunbooksResponse);
+  rpc UpdateRunbook(UpdateRunbookRequest) returns (UpdateRunbookResponse);
+  rpc DeleteRunbook(DeleteRunbookRequest) returns (DeleteRunbookResponse);
+  rpc RunRunbook(RunRunbookRequest) returns (RunRunbookResponse);
+  rpc GetRunbookRun(GetRunbookRunRequest) returns (GetRunbookRunResponse);
+  rpc ListRunbookRuns(ListRunbookRunsRequest) returns (ListRunbookRunsResponse);
+  rpc CancelRunbookRun(CancelRunbookRunRequest) returns (CancelRunbookRunResponse);
+}
+
+message CreateRunbookRequest {
+  string project_id = 1;
+  string service_id = 2;
+  string name = 3;
+  string slug = 4;
+  string description = 5;
+  repeated RunbookParameter parameters = 6;
+  repeated google.protobuf.Struct steps = 7;
+  repeated string environment_ids = 8;
+  bool requires_approval = 9;
+  repeated string runs_on = 10;
+  google.protobuf.Duration timeout = 11;
+}
+message CreateRunbookResponse { Runbook runbook = 1; }
+message GetRunbookRequest { string id = 1; }
+message GetRunbookResponse { Runbook runbook = 1; }
+message ListRunbooksRequest {
+  string project_id = 1;
+  string service_id = 2;
+}
+message ListRunbooksResponse { repeated Runbook items = 1; }
+message UpdateRunbookRequest {
+  Runbook runbook = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+message UpdateRunbookResponse { Runbook runbook = 1; }
+message DeleteRunbookRequest { string id = 1; }
+message DeleteRunbookResponse {}
+message RunRunbookRequest {
+  string runbook_id = 1;
+  string environment_id = 2;
+  string infrastructure_id = 3;
+  map<string, string> parameters = 4;
+}
+message RunRunbookResponse { RunbookRun run = 1; }
+message GetRunbookRunRequest { string id = 1; }
+message GetRunbookRunResponse { RunbookRun run = 1; }
+message ListRunbookRunsRequest {
+  string project_id = 1;
+  string runbook_id = 2;
+  string environment_id = 3;
+  PageRequest page = 4;
+}
+message ListRunbookRunsResponse {
+  repeated RunbookRun items = 1;
+  PageResponse page = 2;
+}
+message CancelRunbookRunRequest {
+  string id = 1;
+  string reason = 2;
+}
+message CancelRunbookRunResponse { RunbookRun run = 1; }

@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package slipway.v1;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+// Shared pagination, metadata and error-detail types. Every domain proto imports this.
+
+message PageRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  string filter = 3; // CEL subset, documented per endpoint
+  string order_by = 4;
+}
+
+message PageResponse {
+  string next_page_token = 1;
+  int64 total_size = 2; // -1 when unknown
+}
+
+// Actor is who caused something: a user, service account, job or system process.
+message Actor {
+  string id = 1; // user_…, sa_…, job_… or "system"
+  ActorKind kind = 2;
+  string display_name = 3;
+}
+
+enum ActorKind {
+  ACTOR_KIND_UNSPECIFIED = 0;
+  ACTOR_KIND_USER = 1;
+  ACTOR_KIND_SERVICE_ACCOUNT = 2;
+  ACTOR_KIND_JOB = 3;
+  ACTOR_KIND_SYSTEM = 4;
+  ACTOR_KIND_INTEGRATION = 5;
+}
+
+message GitRef {
+  string ref = 1;      // refs/heads/main
+  string branch = 2;   // main
+  string tag = 3;
+  string sha = 4;
+  string message = 5;
+  string author_name = 6;
+  string author_email = 7;
+  string repo_full_name = 8;
+  string before_sha = 9;
+}
+
+// Event is the envelope published on JetStream `events.<org>.<domain>.<action>` and delivered to outbound webhooks.
+message Event {
+  string id = 1;
+  string org_id = 2;
+  string type = 3; // "run.started", "deployment.approved" …
+  google.protobuf.Timestamp at = 4;
+  Actor actor = 5;
+  google.protobuf.Struct data = 6;
+}
+
+// EntitlementViolation is attached as an error detail on resource_exhausted errors.
+message EntitlementViolation {
+  string meter = 1;    // hosted_minutes, concurrency, environments …
+  int64 limit = 2;
+  int64 current = 3;
+  string plan = 4;
+  string upgrade_url = 5;
+}
+
+// Label is a free-form key/value used on runners, pools, projects.
+message Label {
+  string key = 1;
+  string value = 2;
+}

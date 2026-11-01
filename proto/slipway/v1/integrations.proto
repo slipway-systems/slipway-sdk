@@ -1,0 +1,586 @@
+syntax = "proto3";
+
+package slipway.v1;
+
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "slipway/v1/common.proto";
+
+// Integrations: provider catalogue, installed integrations, notification subscriptions,
+// outbound webhooks and scanner-report ingestion. Owned by the integrations agent (B9).
+
+// ---------------------------------------------------------------------------
+// Provider catalogue
+// ---------------------------------------------------------------------------
+
+// CredentialField describes one secret or non-secret input collected when installing via a form.
+message CredentialField {
+  string key = 1;
+  string label = 2;
+  string description = 3;
+  bool secret = 4;      // true: stored in the secret store, never returned by the API
+  bool required = 5;
+  string placeholder = 6;
+  string kind = 7;      // text | password | textarea | url
+}
+
+// OAuthSpec describes the authorization-code flow of a provider.
+message OAuthSpec {
+  string authorize_url = 1;
+  string token_url = 2;
+  repeated string scopes = 3;
+  bool pkce = 4;
+  bool configured = 5; // true when the server operator has configured a client id/secret for this provider
+}
+
+// ProviderManifest is the static description of a provider (DOMAIN.md: ProviderManifest).
+message ProviderManifest {
+  string id = 1;                     // slack, jira, datadog …
+  string category = 2;               // notification | incident | issue | change | metrics | registry | feature_flags | scanner | observability
+  string name = 3;
+  string description = 4;
+  string icon_key = 5;
+  string docs_url = 6;
+  string vendor = 7;
+  google.protobuf.Struct config_schema = 8; // JSON Schema for non-secret config
+  google.protobuf.Struct target_schema = 9; // JSON Schema for subscription targets (notification providers)
+  repeated CredentialField credential_fields = 10;
+  OAuthSpec oauth = 11;              // unset when the provider has no OAuth install
+  repeated string capabilities = 12; // notify, interactive_approvals, change_management, metrics, registry, feature_flags, issue_tracker, deploy_marker, scanner
+  string min_plan = 13;              // free | team | business | enterprise
+  repeated string install_modes = 14; // oauth | form
+  bool beta = 15;
+  map<string, string> capability_min_plan = 16; // per-capability plan overrides (e.g. change_management -> business)
+  repeated string event_types = 17;  // event types the provider can render natively; empty means all
+}
+
+// ---------------------------------------------------------------------------
+// Installed integrations
+// ---------------------------------------------------------------------------
+
+message IntegrationHealth {
+  string status = 1; // healthy | degraded | unhealthy | unknown
+  string message = 2;
+  google.protobuf.Timestamp checked_at = 3;
+  int64 latency_ms = 4;
+  map<string, string> details = 5;
+}
+
+// Integration is an installed provider instance in an org (DOMAIN.md: Integration). Secret credential
+// values are never returned; credential_keys lists which keys are present.
+message Integration {
+  string id = 1;
+  string provider = 2;
+  string category = 3;
+  string name = 4;
+  google.protobuf.Struct config = 5;
+  string status = 6; // active | disabled | error
+  IntegrationHealth health = 7;
+  string external_id = 8; // provider-side identity (Slack team id, Jira cloud id …)
+  string project_id = 9;  // empty = org-wide
+  string installed_by = 10;
+  repeated string credential_keys = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+}
+
+message ListProvidersRequest {
+  string category = 1; // optional filter
+}
+message ListProvidersResponse {
+  repeated ProviderManifest items = 1;
+}
+
+message ListIntegrationsRequest {
+  PageRequest page = 1;
+  string provider = 2;
+  string category = 3;
+  string project_id = 4;
+}
+message ListIntegrationsResponse {
+  repeated Integration items = 1;
+  PageResponse page = 2;
+}
+
+message GetIntegrationRequest {
+  string id = 1;
+}
+message GetIntegrationResponse {
+  Integration integration = 1;
+}
+
+// StartInstall begins an OAuth install and returns the URL to send the browser to.
+message StartInstallRequest {
+  string provider = 1;
+  string name = 2;
+  string return_to = 3; // SPA path to land on after the callback
+  google.protobuf.Struct config = 4; // non-secret config known before redirect (e.g. Jira site)
+  string project_id = 5;
+}
+message StartInstallResponse {
+  string authorize_url = 1;
+  string state = 2;
+}
+
+// CompleteInstall finishes an OAuth install when the SPA (not the server callback) received the code.
+message CompleteInstallRequest {
+  string provider = 1;
+  string state = 2;
+  string code = 3;
+}
+message CompleteInstallResponse {
+  Integration integration = 1;
+  string return_to = 2;
+}
+
+// Install installs a provider from a form: config plus credentials.
+message InstallRequest {
+  string provider = 1;
+  string name = 2;
+  google.protobuf.Struct config = 3;
+  map<string, string> credentials = 4;
+  string project_id = 5;
+}
+message InstallResponse {
+  Integration integration = 1;
+}
+
+message UpdateIntegrationRequest {
+  string id = 1;
+  string name = 2;
+  google.protobuf.Struct config = 3;
+  map<string, string> credentials = 4; // merged over existing credentials; empty values are ignored
+  bool disabled = 5;
+  google.protobuf.FieldMask update_mask = 6;
+}
+message UpdateIntegrationResponse {
+  Integration integration = 1;
+}
+
+message TestIntegrationRequest {
+  string id = 1;
+}
+message TestIntegrationResponse {
+  IntegrationHealth health = 1;
+}
+
+// ListTargets asks the provider for the choices behind a subscription target field (Slack channels …). Providers
+// that cannot list answer supported=false and the field stays a free-text input.
+message ListTargetsRequest {
+  string id = 1;    // integration id
+  string query = 2; // optional name filter
+}
+message TargetOption {
+  string field = 1;       // target schema property the option is for, e.g. "channel"
+  string value = 2;       // what to store in the target
+  string label = 3;       // what to show
+  string description = 4;
+}
+message ListTargetsResponse {
+  bool supported = 1;
+  repeated TargetOption items = 2;
+}
+
+message UninstallIntegrationRequest {
+  string id = 1;
+}
+message UninstallIntegrationResponse {}
+
+// ---------------------------------------------------------------------------
+// Subscriptions (integration x event filter x target)
+// ---------------------------------------------------------------------------
+
+message Subscription {
+  string id = 1;
+  string integration_id = 2;
+  string name = 3;
+  repeated string event_types = 4; // glob patterns: "run.*", "deployment.failed", "*"
+  string filter = 5;               // CEL over `type`, `data`, `actor`
+  string project_id = 6;           // optional: only events for this project
+  google.protobuf.Struct target = 7; // provider specific: channel, routing_key, project_key …
+  string template = 8;             // optional Go template overriding the default body
+  bool enabled = 9;
+  string created_by = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+message ListSubscriptionsRequest {
+  PageRequest page = 1;
+  string integration_id = 2;
+}
+message ListSubscriptionsResponse {
+  repeated Subscription items = 1;
+  PageResponse page = 2;
+}
+
+message CreateSubscriptionRequest {
+  Subscription subscription = 1;
+}
+message CreateSubscriptionResponse {
+  Subscription subscription = 1;
+}
+
+message UpdateSubscriptionRequest {
+  Subscription subscription = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+message UpdateSubscriptionResponse {
+  Subscription subscription = 1;
+}
+
+message DeleteSubscriptionRequest {
+  string id = 1;
+}
+message DeleteSubscriptionResponse {}
+
+message SendTestRequest {
+  string integration_id = 1;
+  string subscription_id = 2;          // optional: use this subscription's target and template
+  google.protobuf.Struct target = 3;   // used when subscription_id is empty
+  string event_type = 4;               // sample event to render; default deployment.succeeded
+}
+message SendTestResponse {
+  bool ok = 1;
+  string message = 2; // provider receipt or error text
+}
+
+// NotificationDelivery is one attempt chain of delivering an event to a subscription target.
+message NotificationDelivery {
+  string id = 1;
+  string subscription_id = 2;
+  string integration_id = 3;
+  string event_id = 4;
+  string event_type = 5;
+  int32 attempt = 6;
+  string status = 7; // pending | succeeded | retrying | dead
+  string error = 8;
+  google.protobuf.Timestamp next_attempt_at = 9;
+  google.protobuf.Timestamp delivered_at = 10;
+  google.protobuf.Timestamp created_at = 11;
+}
+
+message ListNotificationDeliveriesRequest {
+  PageRequest page = 1;
+  string integration_id = 2;
+  string subscription_id = 3;
+  string status = 4;
+}
+message ListNotificationDeliveriesResponse {
+  repeated NotificationDelivery items = 1;
+  PageResponse page = 2;
+}
+
+// ---------------------------------------------------------------------------
+// Registries
+// ---------------------------------------------------------------------------
+
+message RegistryTag {
+  string name = 1;
+  string digest = 2;
+}
+
+message ListRegistryRepositoriesRequest {
+  string integration_id = 1;
+  string query = 2;
+}
+message ListRegistryRepositoriesResponse {
+  repeated string repositories = 1;
+}
+
+message ListRegistryTagsRequest {
+  string integration_id = 1;
+  string repository = 2;
+  int32 limit = 3;
+  bool resolve_digests = 4;
+}
+message ListRegistryTagsResponse {
+  repeated RegistryTag tags = 1;
+}
+
+// ---------------------------------------------------------------------------
+// Scanner results
+// ---------------------------------------------------------------------------
+
+message ScanFinding {
+  string id = 1;
+  string vuln_id = 2;   // CVE-… / rule id
+  string severity = 3;  // critical | high | medium | low | info | unknown
+  string title = 4;
+  string package = 5;
+  string installed_version = 6;
+  string fixed_version = 7;
+  string location = 8;  // file:line or image layer
+  string description = 9;
+  string url = 10;
+  string fingerprint = 11;
+}
+
+message ScanSummary {
+  int32 critical = 1;
+  int32 high = 2;
+  int32 medium = 3;
+  int32 low = 4;
+  int32 info = 5;
+  int32 unknown = 6;
+  int32 total = 7;
+  int32 fixable = 8;
+}
+
+message ScanReport {
+  string id = 1;
+  string tool = 2;       // trivy | grype | snyk | semgrep | sonarqube
+  string target = 3;     // image ref, path or project key
+  string project_id = 4;
+  string run_id = 5;
+  string job_id = 6;
+  string release_id = 7;
+  ScanSummary summary = 8;
+  bool gate_passed = 9;
+  string gate_reason = 10;
+  google.protobuf.Timestamp created_at = 11;
+}
+
+// ScanGate is the threshold policy applied on ingestion. Zero means "no findings of this severity allowed";
+// negative means "unlimited".
+message ScanGate {
+  int32 max_critical = 1;
+  int32 max_high = 2;
+  int32 max_medium = 3;
+  int32 max_low = 4;
+  bool fixable_only = 5; // count only findings with a fixed version
+  bool disabled = 6;
+}
+
+message IngestScanReportRequest {
+  string tool = 1;
+  bytes report = 2;          // raw tool output (JSON)
+  string target = 3;
+  string project_id = 4;
+  string run_id = 5;
+  string job_id = 6;
+  string release_id = 7;
+  ScanGate gate = 8;
+}
+message IngestScanReportResponse {
+  ScanReport report = 1;
+}
+
+message ListScanReportsRequest {
+  PageRequest page = 1;
+  string project_id = 2;
+  string run_id = 3;
+  string release_id = 4;
+  string tool = 5;
+}
+message ListScanReportsResponse {
+  repeated ScanReport items = 1;
+  PageResponse page = 2;
+}
+
+message GetScanReportRequest {
+  string id = 1;
+  PageRequest findings_page = 2;
+  string min_severity = 3;
+}
+message GetScanReportResponse {
+  ScanReport report = 1;
+  repeated ScanFinding findings = 2;
+  PageResponse findings_page = 3;
+}
+
+// ---------------------------------------------------------------------------
+// Chat account linking (Slack/Teams user -> Slipway user)
+// ---------------------------------------------------------------------------
+
+// ChatLink binds a chat user id on one integration to the Slipway user that authenticated the link. Chat
+// approvals and commands act only as the linked user.
+message ChatLink {
+  string id = 1;
+  string integration_id = 2;
+  string provider = 3;
+  string external_id = 4;
+  string external_name = 5;
+  string user_id = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message CreateChatLinkCodeRequest {
+  string integration_id = 1;
+}
+message CreateChatLinkCodeResponse {
+  // One-time code the signed-in user sends from chat as `/slipway link <code>`. Shown once; only a hash is stored.
+  string code = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+// ListChatLinksRequest lists the caller's own linked chat accounts.
+message ListChatLinksRequest {}
+message ListChatLinksResponse {
+  repeated ChatLink items = 1;
+}
+
+message DeleteChatLinkRequest {
+  string id = 1;
+}
+message DeleteChatLinkResponse {}
+
+// IntegrationService manages providers, installed integrations, subscriptions and scanner reports.
+// Permissions: integrations.read, integrations.manage, scans.write.
+service IntegrationService {
+  rpc ListProviders(ListProvidersRequest) returns (ListProvidersResponse);
+  rpc ListIntegrations(ListIntegrationsRequest) returns (ListIntegrationsResponse);
+  rpc GetIntegration(GetIntegrationRequest) returns (GetIntegrationResponse);
+  rpc StartInstall(StartInstallRequest) returns (StartInstallResponse);
+  rpc CompleteInstall(CompleteInstallRequest) returns (CompleteInstallResponse);
+  rpc Install(InstallRequest) returns (InstallResponse);
+  rpc UpdateIntegration(UpdateIntegrationRequest) returns (UpdateIntegrationResponse);
+  rpc TestIntegration(TestIntegrationRequest) returns (TestIntegrationResponse);
+  rpc UninstallIntegration(UninstallIntegrationRequest) returns (UninstallIntegrationResponse);
+  rpc ListTargets(ListTargetsRequest) returns (ListTargetsResponse);
+  rpc ListSubscriptions(ListSubscriptionsRequest) returns (ListSubscriptionsResponse);
+  rpc CreateSubscription(CreateSubscriptionRequest) returns (CreateSubscriptionResponse);
+  rpc UpdateSubscription(UpdateSubscriptionRequest) returns (UpdateSubscriptionResponse);
+  rpc DeleteSubscription(DeleteSubscriptionRequest) returns (DeleteSubscriptionResponse);
+  rpc SendTest(SendTestRequest) returns (SendTestResponse);
+  rpc ListNotificationDeliveries(ListNotificationDeliveriesRequest) returns (ListNotificationDeliveriesResponse);
+  rpc ListRegistryRepositories(ListRegistryRepositoriesRequest) returns (ListRegistryRepositoriesResponse);
+  rpc ListRegistryTags(ListRegistryTagsRequest) returns (ListRegistryTagsResponse);
+  rpc IngestScanReport(IngestScanReportRequest) returns (IngestScanReportResponse);
+  rpc ListScanReports(ListScanReportsRequest) returns (ListScanReportsResponse);
+  rpc GetScanReport(GetScanReportRequest) returns (GetScanReportResponse);
+  // Chat account linking. Callable only by a signed-in user session (not tokens or service accounts); no
+  // integrations.* permission is needed to manage one's own links.
+  rpc CreateChatLinkCode(CreateChatLinkCodeRequest) returns (CreateChatLinkCodeResponse);
+  rpc ListChatLinks(ListChatLinksRequest) returns (ListChatLinksResponse);
+  rpc DeleteChatLink(DeleteChatLinkRequest) returns (DeleteChatLinkResponse);
+}
+
+// ---------------------------------------------------------------------------
+// Outbound webhooks
+// ---------------------------------------------------------------------------
+
+message OutboundWebhook {
+  string id = 1;
+  string name = 2;
+  string url = 3;
+  repeated string event_types = 4; // glob patterns
+  string filter = 5;               // CEL over `type`, `data`, `actor`
+  bool enabled = 6;
+  string secret_prefix = 7;        // first characters of the signing secret, for identification
+  map<string, string> headers = 8; // extra static, non-secret headers
+  string project_id = 9;
+  string last_status = 10;         // status of the most recent delivery
+  google.protobuf.Timestamp last_delivery_at = 11;
+  string created_by = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+}
+
+message WebhookDelivery {
+  string id = 1;
+  string webhook_id = 2;
+  string event_id = 3;
+  string event_type = 4;
+  int32 attempt = 5;
+  string status = 6; // pending | succeeded | retrying | dead
+  int32 response_status = 7;
+  string response_body = 8; // truncated
+  string error = 9;
+  int64 duration_ms = 10;
+  google.protobuf.Struct payload = 11;
+  string redelivery_of = 12;
+  google.protobuf.Timestamp next_attempt_at = 13;
+  google.protobuf.Timestamp created_at = 14;
+}
+
+message ListWebhooksRequest {
+  PageRequest page = 1;
+}
+message ListWebhooksResponse {
+  repeated OutboundWebhook items = 1;
+  PageResponse page = 2;
+}
+
+message GetWebhookRequest {
+  string id = 1;
+}
+message GetWebhookResponse {
+  OutboundWebhook webhook = 1;
+}
+
+message CreateWebhookRequest {
+  OutboundWebhook webhook = 1;
+}
+message CreateWebhookResponse {
+  OutboundWebhook webhook = 1;
+  string secret = 2; // returned exactly once
+}
+
+message UpdateWebhookRequest {
+  OutboundWebhook webhook = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+message UpdateWebhookResponse {
+  OutboundWebhook webhook = 1;
+}
+
+message DeleteWebhookRequest {
+  string id = 1;
+}
+message DeleteWebhookResponse {}
+
+message RotateWebhookSecretRequest {
+  string id = 1;
+}
+message RotateWebhookSecretResponse {
+  OutboundWebhook webhook = 1;
+  string secret = 2; // returned exactly once
+}
+
+message ListWebhookDeliveriesRequest {
+  PageRequest page = 1;
+  string webhook_id = 2;
+  string status = 3;
+}
+message ListWebhookDeliveriesResponse {
+  repeated WebhookDelivery items = 1;
+  PageResponse page = 2;
+}
+
+message GetWebhookDeliveryRequest {
+  string id = 1;
+}
+message GetWebhookDeliveryResponse {
+  WebhookDelivery delivery = 1;
+}
+
+message RedeliverWebhookRequest {
+  string delivery_id = 1;
+}
+message RedeliverWebhookResponse {
+  WebhookDelivery delivery = 1; // the new delivery, already attempted once
+}
+
+message PingWebhookRequest {
+  string id = 1;
+}
+message PingWebhookResponse {
+  WebhookDelivery delivery = 1;
+}
+
+// WebhookService manages generic outbound webhooks (HMAC-signed with X-Slipway-Signature).
+// Permissions: webhooks.read, webhooks.manage.
+service WebhookService {
+  rpc ListWebhooks(ListWebhooksRequest) returns (ListWebhooksResponse);
+  rpc GetWebhook(GetWebhookRequest) returns (GetWebhookResponse);
+  rpc CreateWebhook(CreateWebhookRequest) returns (CreateWebhookResponse);
+  rpc UpdateWebhook(UpdateWebhookRequest) returns (UpdateWebhookResponse);
+  rpc DeleteWebhook(DeleteWebhookRequest) returns (DeleteWebhookResponse);
+  rpc RotateWebhookSecret(RotateWebhookSecretRequest) returns (RotateWebhookSecretResponse);
+  rpc ListWebhookDeliveries(ListWebhookDeliveriesRequest) returns (ListWebhookDeliveriesResponse);
+  rpc GetWebhookDelivery(GetWebhookDeliveryRequest) returns (GetWebhookDeliveryResponse);
+  rpc RedeliverWebhook(RedeliverWebhookRequest) returns (RedeliverWebhookResponse);
+  rpc PingWebhook(PingWebhookRequest) returns (PingWebhookResponse);
+}

@@ -1,0 +1,18 @@
+# All three plugins come from PATH, at the versions the release process pins: protoc-gen-go and protoc-gen-connect-go at
+# the versions in go/go.mod, protoc-gen-es at the version ts/package.json's @bufbuild/protobuf needs.
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/slipway-systems/slipway-sdk/go
+plugins:
+  - local: protoc-gen-go
+    out: go
+    opt: paths=source_relative
+  - local: protoc-gen-connect-go
+    out: go
+    opt: paths=source_relative
+  - local: protoc-gen-es
+    out: ts/src/gen
+    opt: [target=ts, import_extension=js]

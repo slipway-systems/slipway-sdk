@@ -1,0 +1,1022 @@
+syntax = "proto3";
+
+package slipway.v1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "slipway/v1/common.proto";
+
+// Runs, jobs, steps, logs, artifacts, caches, test reports and runners.
+//
+// Naming note: to stay collision-free inside the shared slipway.v1 package, job/step/artifact style
+// messages that sound generic are prefixed with "Run" (RunJob, RunStep, RunArtifact ...).
+// Services: RunService (users), RunnerPoolService (admin), LogService, ArtifactService (users),
+// RunnerService (runner agent <-> server; authenticated with runner tokens, not user sessions).
+
+// ---------------------------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------------------------
+
+enum RunStatus {
+  RUN_STATUS_UNSPECIFIED = 0;
+  RUN_STATUS_QUEUED = 1;
+  RUN_STATUS_RUNNING = 2;
+  RUN_STATUS_SUCCEEDED = 3;
+  RUN_STATUS_FAILED = 4;
+  RUN_STATUS_CANCELLED = 5;
+  RUN_STATUS_SKIPPED = 6;
+  RUN_STATUS_ERRORED = 7;
+}
+
+enum RunJobStatus {
+  RUN_JOB_STATUS_UNSPECIFIED = 0;
+  RUN_JOB_STATUS_PENDING = 1;
+  RUN_JOB_STATUS_WAITING_APPROVAL = 2;
+  RUN_JOB_STATUS_QUEUED = 3;
+  RUN_JOB_STATUS_ASSIGNED = 4;
+  RUN_JOB_STATUS_RUNNING = 5;
+  RUN_JOB_STATUS_SUCCEEDED = 6;
+  RUN_JOB_STATUS_FAILED = 7;
+  RUN_JOB_STATUS_CANCELLED = 8;
+  RUN_JOB_STATUS_SKIPPED = 9;
+  RUN_JOB_STATUS_TIMED_OUT = 10;
+  RUN_JOB_STATUS_RUNNER_LOST = 11;
+}
+
+enum RunStepStatus {
+  RUN_STEP_STATUS_UNSPECIFIED = 0;
+  RUN_STEP_STATUS_PENDING = 1;
+  RUN_STEP_STATUS_RUNNING = 2;
+  RUN_STEP_STATUS_SUCCEEDED = 3;
+  RUN_STEP_STATUS_FAILED = 4;
+  RUN_STEP_STATUS_SKIPPED = 5;
+  RUN_STEP_STATUS_CANCELLED = 6;
+}
+
+enum RunnerStatus {
+  RUNNER_STATUS_UNSPECIFIED = 0;
+  RUNNER_STATUS_ONLINE = 1;
+  RUNNER_STATUS_OFFLINE = 2;
+  RUNNER_STATUS_BUSY = 3;
+  RUNNER_STATUS_DRAINING = 4;
+}
+
+enum RunnerPoolKind {
+  RUNNER_POOL_KIND_UNSPECIFIED = 0;
+  RUNNER_POOL_KIND_SELF_HOSTED = 1;
+  RUNNER_POOL_KIND_HOSTED = 2;
+}
+
+enum RunnerExecutor {
+  RUNNER_EXECUTOR_UNSPECIFIED = 0;
+  RUNNER_EXECUTOR_SHELL = 1;
+  RUNNER_EXECUTOR_DOCKER = 2;
+  RUNNER_EXECUTOR_KUBERNETES = 3;
+}
+
+enum LogStream {
+  LOG_STREAM_UNSPECIFIED = 0;
+  LOG_STREAM_STDOUT = 1;
+  LOG_STREAM_STDERR = 2;
+  LOG_STREAM_SYSTEM = 3; // runner/executor messages (image pulls, step banners)
+}
+
+enum TestStatus {
+  TEST_STATUS_UNSPECIFIED = 0;
+  TEST_STATUS_PASSED = 1;
+  TEST_STATUS_FAILED = 2;
+  TEST_STATUS_ERRORED = 3;
+  TEST_STATUS_SKIPPED = 4;
+}
+
+enum ReportFormat {
+  REPORT_FORMAT_UNSPECIFIED = 0;
+  REPORT_FORMAT_JUNIT = 1;
+  REPORT_FORMAT_GO_TEST_JSON = 2;
+  REPORT_FORMAT_LCOV = 3;
+  REPORT_FORMAT_COBERTURA = 4;
+}
+
+enum AnnotationLevel {
+  ANNOTATION_LEVEL_UNSPECIFIED = 0;
+  ANNOTATION_LEVEL_NOTICE = 1;
+  ANNOTATION_LEVEL_WARNING = 2;
+  ANNOTATION_LEVEL_ERROR = 3;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Resources
+// ---------------------------------------------------------------------------------------------
+
+// RunTrigger records why a run exists.
+message RunTrigger {
+  string kind = 1;   // push | pull_request | tag | schedule | manual | api | pipeline | release | webhook
+  string source = 2; // provider/integration/UI that produced the event
+  google.protobuf.Struct payload = 3;
+}
+
+message Run {
+  string id = 1; // run_…
+  string project_id = 2;
+  string pipeline_id = 3;
+  string pipeline_name = 4;
+  int64 number = 5; // per pipeline, monotonic
+  RunStatus status = 6;
+  RunTrigger trigger = 7;
+  Actor actor = 8;
+  GitRef git = 9;
+  google.protobuf.Struct inputs = 10;
+  int32 attempt = 11; // run attempt, incremented by RerunRun
+  string concurrency_group = 12;
+  string concurrency_state = 13; // none | holding | waiting
+  string error_message = 14;     // set when status == ERRORED (compile failure ...)
+  string rerun_of = 15;          // run_… this run re-executes, if any
+  google.protobuf.Timestamp created_at = 16;
+  google.protobuf.Timestamp started_at = 17;
+  google.protobuf.Timestamp finished_at = 18;
+  google.protobuf.Duration duration = 19;
+  bool cancel_requested = 20;
+  int32 jobs_total = 21;
+  int32 jobs_succeeded = 22;
+  int32 jobs_failed = 23;
+  int32 jobs_running = 24;
+  repeated RunJob jobs = 25; // populated by GetRun / WatchRun only
+  string waiting_reason = 26; // while the run is not running: why its first waiting job is not (no matching pool, pool at its limit, no online runner with the labels)
+}
+
+message RunJob {
+  string id = 1; // job_…
+  string run_id = 2;
+  string name = 3;
+  string display_name = 4;
+  string stage = 5;
+  RunJobStatus status = 6;
+  repeated string runs_on = 7;
+  string pool_id = 8;
+  string runner_id = 9;
+  string runner_name = 10;
+  int32 attempt = 11;
+  int32 max_attempts = 12;
+  repeated string needs = 13;
+  google.protobuf.Struct matrix = 14;
+  google.protobuf.Struct outputs = 15;
+  string environment_id = 16;
+  string environment_name = 17;
+  string deployment_id = 18;
+  bool allow_failure = 19;
+  string failure_reason = 20; // runner_lost, timeout, queue_timeout, step_failed, denied ...
+  google.protobuf.Timestamp queued_at = 21;
+  google.protobuf.Timestamp started_at = 22;
+  google.protobuf.Timestamp finished_at = 23;
+  google.protobuf.Duration duration = 24;
+  google.protobuf.Duration timeout = 25;
+  repeated RunStep steps = 26; // populated by GetRun / GetJob only (latest attempt)
+  string matrix_group = 27;    // base job name shared by all matrix siblings
+  string waiting_reason = 28;  // why a pending or queued job is not running yet; empty once it runs
+}
+
+message RunStep {
+  string id = 1; // step_…
+  string job_id = 2;
+  int32 attempt = 3;
+  int32 index = 4;
+  string name = 5;
+  string kind = 6;    // run | uses | template
+  RunStepStatus status = 7;
+  string outcome = 8; // succeeded | failed | skipped | cancelled (continue_on_error may make status != outcome)
+  int32 exit_code = 9;
+  google.protobuf.Timestamp started_at = 10;
+  google.protobuf.Timestamp finished_at = 11;
+  google.protobuf.Duration duration = 12;
+  int64 log_line_count = 13;
+  int64 log_bytes = 14;
+}
+
+message RunArtifact {
+  string id = 1; // art_…
+  string run_id = 2;
+  string job_id = 3;
+  string name = 4;
+  int64 size = 5;
+  string sha256 = 6;
+  string content_type = 7;
+  google.protobuf.Timestamp retention_until = 8;
+  google.protobuf.Timestamp created_at = 9;
+  bool expired = 10;
+  string pipeline_id = 11;
+  string project_id = 12;
+}
+
+message CacheEntry {
+  string id = 1;
+  string project_id = 2;
+  string key = 3;
+  string scope = 4; // branch name or "project"
+  int64 size = 5;
+  string sha256 = 6;
+  int64 hit_count = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp last_hit_at = 9;
+}
+
+message RunTestReport {
+  string id = 1;
+  string run_id = 2;
+  string job_id = 3;
+  int32 attempt = 4;
+  ReportFormat format = 5;
+  string name = 6;
+  int32 tests = 7;
+  int32 passed = 8;
+  int32 failures = 9;
+  int32 errors = 10;
+  int32 skipped = 11;
+  google.protobuf.Duration duration = 12;
+  google.protobuf.Timestamp created_at = 13;
+}
+
+message RunTestCase {
+  string id = 1;
+  string report_id = 2;
+  string suite = 3;
+  string classname = 4;
+  string name = 5;
+  TestStatus status = 6;
+  google.protobuf.Duration duration = 7;
+  string message = 8;
+  string details = 9; // stack trace / diff, truncated server-side
+  string file = 10;
+}
+
+message RunCoverage {
+  string id = 1;
+  string run_id = 2;
+  string job_id = 3;
+  ReportFormat format = 4;
+  int64 lines_total = 5;
+  int64 lines_covered = 6;
+  double line_percent = 7;
+  int64 branches_total = 8;
+  int64 branches_covered = 9;
+  double branch_percent = 10;
+  google.protobuf.Timestamp created_at = 11;
+}
+
+message RunAnnotation {
+  string id = 1;
+  string run_id = 2;
+  string job_id = 3;
+  int32 step_index = 4;
+  AnnotationLevel level = 5;
+  string file = 6;
+  int32 line = 7;
+  int32 end_line = 8;
+  string title = 9;
+  string message = 10;
+  google.protobuf.Timestamp created_at = 11;
+}
+
+message RunnerPool {
+  string id = 1; // pool_…
+  string project_id = 2; // empty = org-wide
+  string name = 3;
+  RunnerPoolKind kind = 4;
+  RunnerExecutor executor = 5;
+  repeated string labels = 6;
+  int32 max_runners = 7;
+  int32 concurrency_limit = 8; // 0 = unlimited
+  string description = 9;
+  int32 runners_online = 10;
+  int32 runners_total = 11;
+  int32 jobs_queued = 12;
+  int32 jobs_running = 13;
+  google.protobuf.Timestamp created_at = 14;
+}
+
+message Runner {
+  string id = 1; // rnr_…
+  string pool_id = 2;
+  string name = 3;
+  repeated string labels = 4;
+  string os = 5;
+  string arch = 6;
+  string version = 7;
+  RunnerStatus status = 8;
+  int32 capacity = 9;
+  int32 active_jobs = 10;
+  string ip = 11;
+  google.protobuf.Timestamp last_seen_at = 12;
+  google.protobuf.Timestamp created_at = 13;
+  bool compatible = 14;         // within one minor version of the control plane; an incompatible runner gets no jobs
+  string server_version = 15;   // what it should run; differs from version when an update is available, empty for development builds
+  string update_problem = 16;   // why this runner cannot get that build from the control plane
+}
+
+message RegistrationToken {
+  string id = 1;
+  string pool_id = 2;
+  string description = 3;
+  string prefix = 4; // first characters, for identification
+  int32 max_uses = 5; // 0 = unlimited
+  int32 uses = 6;
+  bool revoked = 7;
+  google.protobuf.Timestamp expires_at = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+// ---------------------------------------------------------------------------------------------
+// RunService
+// ---------------------------------------------------------------------------------------------
+
+service RunService {
+  // ListRuns filter (CEL subset): status, pipeline_id, branch, actor, trigger, created_at comparisons, e.g.
+  // `status == "failed" && branch == "main"`. order_by: "created_at desc" (default) | "number desc".
+  rpc ListRuns(ListRunsRequest) returns (ListRunsResponse);
+  rpc GetRun(GetRunRequest) returns (GetRunResponse);
+  // WatchRun streams a full snapshot first, then a RunDiff each time run/job/step state changes, until the run
+  // is terminal (and the final diff has been sent) or the client disconnects.
+  rpc WatchRun(WatchRunRequest) returns (stream WatchRunResponse);
+  rpc TriggerRun(TriggerRunRequest) returns (TriggerRunResponse);
+  rpc CancelRun(CancelRunRequest) returns (CancelRunResponse);
+  rpc RerunRun(RerunRunRequest) returns (RerunRunResponse);
+  rpc CancelJob(CancelJobRequest) returns (CancelJobResponse);
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse);
+  rpc GetJob(GetJobRequest) returns (GetJobResponse);
+  rpc ListTestReports(ListTestReportsRequest) returns (ListTestReportsResponse);
+  rpc ListTestCases(ListTestCasesRequest) returns (ListTestCasesResponse);
+  rpc ListCoverage(ListCoverageRequest) returns (ListCoverageResponse);
+  rpc ListAnnotations(ListAnnotationsRequest) returns (ListAnnotationsResponse);
+  rpc GetBadge(GetBadgeRequest) returns (GetBadgeResponse);
+  // GetStepTimingStats powers the UI timing view: p50/p95 per job and step over recent successful runs, plus a
+  // regression hint comparing the latest run against the baseline.
+  rpc GetStepTimingStats(GetStepTimingStatsRequest) returns (GetStepTimingStatsResponse);
+}
+
+message ListRunsRequest {
+  string project_id = 1;
+  PageRequest page = 2;
+}
+message ListRunsResponse {
+  repeated Run items = 1;
+  PageResponse page = 2;
+}
+message GetRunRequest { string id = 1; }
+message GetRunResponse { Run run = 1; }
+
+message WatchRunRequest {
+  string id = 1;
+  string resume_token = 2; // from a previous diff; best effort, a fresh snapshot is sent when unknown
+}
+message WatchRunResponse {
+  oneof event {
+    Run snapshot = 1;
+    RunDiff diff = 2;
+  }
+  string resume_token = 3;
+}
+// RunDiff carries only the entities that changed.
+message RunDiff {
+  Run run = 1;               // run-level fields (jobs omitted)
+  repeated RunJob jobs = 2;  // changed jobs (steps omitted unless they changed)
+  repeated RunStep steps = 3;
+  bool terminal = 4;
+  google.protobuf.Timestamp at = 5;
+}
+
+message RunInput {
+  string key = 1;
+  string value = 2; // JSON-encoded scalar; validated against the pipeline's input schema by the compiler
+}
+message TriggerRunRequest {
+  string project_id = 1;
+  string pipeline_id = 2;
+  string ref = 3; // branch, tag or full ref; defaults to the repository default branch
+  string sha = 4; // optional, defaults to ref head
+  repeated RunInput inputs = 5;
+  string idempotency_key = 6;
+}
+message TriggerRunResponse { Run run = 1; }
+
+message CancelRunRequest {
+  string id = 1;
+  string reason = 2;
+}
+message CancelRunResponse { Run run = 1; }
+
+enum RerunMode {
+  RERUN_MODE_UNSPECIFIED = 0;
+  RERUN_MODE_ALL = 1;
+  RERUN_MODE_FAILED = 2;
+  RERUN_MODE_FROM_JOB = 3;
+}
+message RerunRunRequest {
+  string id = 1;
+  RerunMode mode = 2;
+  string job_id = 3; // required for FROM_JOB
+}
+message RerunRunResponse { Run run = 1; }
+
+message CancelJobRequest { string id = 1; string reason = 2; }
+message CancelJobResponse { RunJob job = 1; }
+
+message ListJobsRequest {
+  string run_id = 1;
+  PageRequest page = 2; // filter: status, name
+}
+message ListJobsResponse {
+  repeated RunJob items = 1;
+  PageResponse page = 2;
+}
+message GetJobRequest { string id = 1; int32 attempt = 2; } // attempt 0 = latest
+message GetJobResponse { RunJob job = 1; }
+
+message ListTestReportsRequest { string run_id = 1; string job_id = 2; }
+message ListTestReportsResponse { repeated RunTestReport items = 1; }
+message ListTestCasesRequest {
+  string report_id = 1;
+  PageRequest page = 2; // filter: status == "failed", name
+}
+message ListTestCasesResponse {
+  repeated RunTestCase items = 1;
+  PageResponse page = 2;
+}
+message ListCoverageRequest { string run_id = 1; string job_id = 2; }
+message ListCoverageResponse { repeated RunCoverage items = 1; }
+message ListAnnotationsRequest { string run_id = 1; string job_id = 2; PageRequest page = 3; }
+message ListAnnotationsResponse {
+  repeated RunAnnotation items = 1;
+  PageResponse page = 2;
+}
+
+message GetBadgeRequest {
+  string project_id = 1;
+  string pipeline_id = 2;
+  string branch = 3; // default branch when empty
+}
+message GetBadgeResponse {
+  RunStatus status = 1;
+  string run_id = 2;
+  int64 run_number = 3;
+  google.protobuf.Timestamp finished_at = 4;
+  google.protobuf.Duration duration = 5;
+  double success_rate_30d = 6; // 0..1 over the last 30 days on this branch
+}
+
+message GetStepTimingStatsRequest {
+  string pipeline_id = 1;
+  string branch = 2;           // optional
+  int32 window_runs = 3;       // default 50, max 500
+}
+message StepTimingStat {
+  string job_name = 1;
+  int32 step_index = 2;   // -1 for the job-level total
+  string step_name = 3;
+  int32 samples = 4;
+  google.protobuf.Duration p50 = 5;
+  google.protobuf.Duration p95 = 6;
+  google.protobuf.Duration mean = 7;
+  google.protobuf.Duration latest = 8;
+  double regression_ratio = 9; // latest / p50, 0 when not enough samples
+  bool regressed = 10;         // latest > 1.5 x p50 and > 5s slower, with >= 5 samples
+}
+message GetStepTimingStatsResponse {
+  repeated StepTimingStat items = 1;
+  int32 runs_considered = 2;
+}
+
+// ---------------------------------------------------------------------------------------------
+// RunnerPoolService (admin: pools, registration tokens, runner inventory)
+// ---------------------------------------------------------------------------------------------
+
+service RunnerPoolService {
+  rpc ListRunnerPools(ListRunnerPoolsRequest) returns (ListRunnerPoolsResponse);
+  rpc GetRunnerPool(GetRunnerPoolRequest) returns (GetRunnerPoolResponse);
+  rpc CreateRunnerPool(CreateRunnerPoolRequest) returns (CreateRunnerPoolResponse);
+  rpc UpdateRunnerPool(UpdateRunnerPoolRequest) returns (UpdateRunnerPoolResponse);
+  rpc DeleteRunnerPool(DeleteRunnerPoolRequest) returns (DeleteRunnerPoolResponse);
+  // CreateRegistrationToken returns the secret exactly once.
+  rpc CreateRegistrationToken(CreateRegistrationTokenRequest) returns (CreateRegistrationTokenResponse);
+  rpc ListRegistrationTokens(ListRegistrationTokensRequest) returns (ListRegistrationTokensResponse);
+  rpc RevokeRegistrationToken(RevokeRegistrationTokenRequest) returns (RevokeRegistrationTokenResponse);
+  rpc ListRunners(ListRunnersRequest) returns (ListRunnersResponse);
+  rpc GetRunner(GetRunnerRequest) returns (GetRunnerResponse);
+  rpc UpdateRunner(UpdateRunnerRequest) returns (UpdateRunnerResponse);
+  rpc DeleteRunner(DeleteRunnerRequest) returns (DeleteRunnerResponse);
+  // GetHostedSuspension reports an organisation's hosted-runner kill switch: any org for platform operators, the
+  // caller's own (org_id empty) for anyone who can read its runners.
+  rpc GetHostedSuspension(GetHostedSuspensionRequest) returns (GetHostedSuspensionResponse);
+  // SuspendHostedRunners (platform operators) stops an organisation from using Slipway-hosted runners: its jobs wait
+  // instead of being queued on hosted pools, and its runs with hosted jobs in flight are cancelled.
+  rpc SuspendHostedRunners(SuspendHostedRunnersRequest) returns (SuspendHostedRunnersResponse);
+  // ResumeHostedRunners (platform operators) lifts the suspension; waiting jobs are queued again within seconds.
+  rpc ResumeHostedRunners(ResumeHostedRunnersRequest) returns (ResumeHostedRunnersResponse);
+}
+
+// HostedSuspension is an organisation's kill switch for Slipway-hosted runners.
+message HostedSuspension {
+  string org_id = 1;
+  string reason = 2;       // shown to the organisation on its waiting jobs
+  string suspended_by = 3; // user id of the operator
+  google.protobuf.Timestamp suspended_at = 4;
+}
+message GetHostedSuspensionRequest { string org_id = 1; } // empty: the caller's organisation
+message GetHostedSuspensionResponse { HostedSuspension suspension = 1; } // unset when not suspended
+message SuspendHostedRunnersRequest {
+  string org_id = 1;
+  string reason = 2; // required
+}
+message SuspendHostedRunnersResponse {
+  HostedSuspension suspension = 1;
+  int32 cancelled_runs = 2;
+}
+message ResumeHostedRunnersRequest { string org_id = 1; }
+message ResumeHostedRunnersResponse { bool was_suspended = 1; }
+
+message ListRunnerPoolsRequest { string project_id = 1; PageRequest page = 2; }
+message ListRunnerPoolsResponse { repeated RunnerPool items = 1; PageResponse page = 2; }
+message GetRunnerPoolRequest { string id = 1; }
+message GetRunnerPoolResponse { RunnerPool pool = 1; }
+message CreateRunnerPoolRequest {
+  string project_id = 1;
+  string name = 2;
+  RunnerPoolKind kind = 3;
+  RunnerExecutor executor = 4;
+  repeated string labels = 5;
+  int32 max_runners = 6;
+  int32 concurrency_limit = 7;
+  string description = 8;
+}
+message CreateRunnerPoolResponse { RunnerPool pool = 1; }
+message UpdateRunnerPoolRequest {
+  string id = 1;
+  optional string name = 2;
+  repeated string labels = 3;
+  bool replace_labels = 4;
+  optional int32 max_runners = 5;
+  optional int32 concurrency_limit = 6;
+  optional string description = 7;
+}
+message UpdateRunnerPoolResponse { RunnerPool pool = 1; }
+message DeleteRunnerPoolRequest { string id = 1; }
+message DeleteRunnerPoolResponse {}
+
+message CreateRegistrationTokenRequest {
+  string pool_id = 1;
+  string description = 2;
+  google.protobuf.Duration ttl = 3; // default 24h, max 90d
+  int32 max_uses = 4;
+}
+message CreateRegistrationTokenResponse {
+  RegistrationToken token = 1;
+  string secret = 2; // sreg_… shown once
+}
+message ListRegistrationTokensRequest { string pool_id = 1; }
+message ListRegistrationTokensResponse { repeated RegistrationToken items = 1; }
+message RevokeRegistrationTokenRequest { string id = 1; }
+message RevokeRegistrationTokenResponse {}
+
+message ListRunnersRequest {
+  string pool_id = 1; // optional
+  PageRequest page = 2; // filter: status, name
+}
+message ListRunnersResponse { repeated Runner items = 1; PageResponse page = 2; }
+message GetRunnerRequest { string id = 1; }
+message GetRunnerResponse { Runner runner = 1; repeated RunJob active_jobs = 2; }
+message UpdateRunnerRequest {
+  string id = 1;
+  optional bool drain = 2;
+  repeated string labels = 3;
+  bool replace_labels = 4;
+  optional string name = 5;
+}
+message UpdateRunnerResponse { Runner runner = 1; }
+message DeleteRunnerRequest { string id = 1; }
+message DeleteRunnerResponse {}
+
+// ---------------------------------------------------------------------------------------------
+// LogService
+// ---------------------------------------------------------------------------------------------
+
+message LogLine {
+  google.protobuf.Timestamp ts = 1;
+  LogStream stream = 2;
+  string text = 3; // valid UTF-8, ANSI escapes preserved, no trailing newline
+  int64 line = 4;  // 1-based line number within the step; assigned by the server
+}
+
+// LogChunk is the unit of ingest and of storage: an ordered batch of lines of one step.
+message LogChunk {
+  string job_id = 1;
+  int32 attempt = 2;
+  int32 step_index = 3;
+  int64 seq = 4; // 1-based, contiguous per (job, attempt, step); duplicates are ignored, gaps rejected
+  repeated LogLine lines = 5;
+  bool final = 6; // last chunk of the step
+}
+
+service LogService {
+  // Tail replays stored logs from `from_line` then follows live output until the job reaches a terminal status
+  // (when follow is true) or the client cancels.
+  rpc Tail(TailRequest) returns (stream TailResponse);
+  rpc GetLogs(GetLogsRequest) returns (GetLogsResponse);
+  rpc SearchLogs(SearchLogsRequest) returns (SearchLogsResponse);
+  // GetLogDownload returns a presigned URL for the whole job log (NDJSON), once the job is finished.
+  rpc GetLogDownload(GetLogDownloadRequest) returns (GetLogDownloadResponse);
+}
+
+message TailRequest {
+  string job_id = 1;
+  int32 attempt = 2;       // 0 = latest
+  int32 step_index = 3;    // -1 = all steps of the job
+  int64 from_line = 4;     // 1-based, 0 = from the beginning
+  bool follow = 5;
+}
+message TailResponse {
+  int32 step_index = 1;
+  repeated LogLine lines = 2;
+  bool end_of_job = 3;     // sent last when the job is terminal and everything was delivered
+  bool replaying = 4;      // true while sending stored history
+}
+
+message GetLogsRequest {
+  string job_id = 1;
+  int32 attempt = 2;
+  int32 step_index = 3;
+  int64 offset_line = 4;   // 1-based first line, 0 = beginning
+  int32 limit = 5;         // default 1000, max 10000
+}
+message GetLogsResponse {
+  repeated LogLine lines = 1;
+  int64 total_lines = 2;
+  bool has_more = 3;
+}
+
+message SearchLogsRequest {
+  string job_id = 1;
+  int32 attempt = 2;
+  int32 step_index = 3;    // -1 = all steps
+  string query = 4;        // case-insensitive substring
+  int32 limit = 5;         // default 100, max 1000
+  int32 context_lines = 6; // lines of context before/after, max 5
+}
+message LogMatch {
+  int32 step_index = 1;
+  LogLine line = 2;
+  repeated LogLine before = 3;
+  repeated LogLine after = 4;
+}
+message SearchLogsResponse {
+  repeated LogMatch matches = 1;
+  bool truncated = 2;
+}
+message GetLogDownloadRequest { string job_id = 1; int32 attempt = 2; }
+message GetLogDownloadResponse { string url = 1; google.protobuf.Timestamp expires_at = 2; }
+
+// ---------------------------------------------------------------------------------------------
+// ArtifactService (user-facing)
+// ---------------------------------------------------------------------------------------------
+
+service ArtifactService {
+  rpc ListArtifacts(ListArtifactsRequest) returns (ListArtifactsResponse);
+  rpc GetArtifact(GetArtifactRequest) returns (GetArtifactResponse);
+  rpc GetArtifactDownloadUrl(GetArtifactDownloadUrlRequest) returns (GetArtifactDownloadUrlResponse);
+  rpc DeleteArtifact(DeleteArtifactRequest) returns (DeleteArtifactResponse);
+  rpc ListCacheEntries(ListCacheEntriesRequest) returns (ListCacheEntriesResponse);
+  rpc DeleteCacheEntry(DeleteCacheEntryRequest) returns (DeleteCacheEntryResponse);
+}
+
+message ListArtifactsRequest {
+  string run_id = 1;
+  string job_id = 2;
+  string pipeline_id = 3;
+  PageRequest page = 4;
+}
+message ListArtifactsResponse { repeated RunArtifact items = 1; PageResponse page = 2; }
+message GetArtifactRequest { string id = 1; }
+message GetArtifactResponse { RunArtifact artifact = 1; }
+message GetArtifactDownloadUrlRequest { string id = 1; }
+message GetArtifactDownloadUrlResponse { string url = 1; google.protobuf.Timestamp expires_at = 2; }
+message DeleteArtifactRequest { string id = 1; }
+message DeleteArtifactResponse {}
+message ListCacheEntriesRequest { string project_id = 1; PageRequest page = 2; }
+message ListCacheEntriesResponse { repeated CacheEntry items = 1; PageResponse page = 2; }
+message DeleteCacheEntryRequest { string id = 1; }
+message DeleteCacheEntryResponse {}
+
+// ---------------------------------------------------------------------------------------------
+// RunnerService (runner agent <-> server)
+// ---------------------------------------------------------------------------------------------
+//
+// Authentication: Register uses a registration token (sreg_…) in the body. Every other call carries the
+// runner token (srun_…) returned by Register, as `Authorization: Bearer srun_…`. The API layer must route
+// these procedures around the user/session auth interceptors; the handlers authenticate themselves.
+
+service RunnerService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  // Connect is the long-lived control stream. The runner sends Hello first; the server answers Welcome and then
+  // pushes JobAssignment / CancelJob messages whenever the runner has free capacity.
+  rpc Connect(stream ConnectRequest) returns (stream ConnectResponse);
+
+  rpc CreateArtifact(CreateArtifactRequest) returns (CreateArtifactResponse);
+  rpc FinalizeArtifact(FinalizeArtifactRequest) returns (FinalizeArtifactResponse);
+  rpc GetArtifactDownload(GetArtifactDownloadRequest) returns (GetArtifactDownloadResponse);
+  rpc LookupCache(LookupCacheRequest) returns (LookupCacheResponse);
+  rpc ReserveCache(ReserveCacheRequest) returns (ReserveCacheResponse);
+  rpc CommitCache(CommitCacheRequest) returns (CommitCacheResponse);
+  rpc UploadTestReport(UploadTestReportRequest) returns (UploadTestReportResponse);
+  rpc AddAnnotations(AddAnnotationsRequest) returns (AddAnnotationsResponse);
+  rpc IssueJobToken(IssueJobTokenRequest) returns (IssueJobTokenResponse);
+  rpc GetRunnerDownload(GetRunnerDownloadRequest) returns (GetRunnerDownloadResponse);
+}
+
+// GetRunnerDownloadRequest asks for the runner build to run: always the control plane's own version.
+message GetRunnerDownloadRequest {
+  string os = 1;
+  string arch = 2;
+}
+message GetRunnerDownloadResponse {
+  string version = 1; // empty when there is no download: a development build, or see unavailable_reason
+  string url = 2;
+  string sha256 = 3;
+  string unavailable_reason = 4;
+}
+
+message RegisterRequest {
+  string registration_token = 1;
+  string name = 2;
+  repeated string labels = 3;
+  string os = 4;
+  string arch = 5;
+  string version = 6;
+  int32 capacity = 7; // max concurrent jobs
+  RunnerExecutor executor = 8;
+}
+message RegisterResponse {
+  string runner_id = 1;
+  string runner_token = 2; // srun_… persisted by the runner; shown once
+  string pool_id = 3;
+  google.protobuf.Duration heartbeat_interval = 4;
+  google.protobuf.Duration lease_ttl = 5;
+}
+
+// JobRef identifies one attempt of a job.
+message JobRef {
+  string job_id = 1;
+  int32 attempt = 2;
+}
+
+message ConnectRequest {
+  oneof msg {
+    Hello hello = 1;
+    Heartbeat heartbeat = 2;
+    JobAccepted accepted = 3;
+    StepUpdate step_update = 4;
+    LogChunk log_chunk = 5;
+    JobResult result = 6;
+    JobRejected rejected = 7;
+  }
+}
+
+// JobRejected refuses an assignment the runner cannot take. The server requeues the job at once, without consuming a
+// retry. A runner that does not send it falls back to lease expiry.
+message JobRejected {
+  JobRef job = 1;
+  string reason = 2; // draining | at_capacity
+}
+
+message Hello {
+  string runner_token = 1;
+  int32 capacity = 2;
+  repeated string labels = 3;
+  string version = 4;
+  repeated JobRef running = 5; // jobs the runner still executes (reconnect)
+  bool draining = 6;
+}
+message Heartbeat {
+  repeated JobRef running = 1;
+  int32 capacity = 2;
+  bool draining = 3;
+  string nonce = 4; // echoed in the server's Pong
+}
+message JobAccepted { JobRef job = 1; }
+message StepUpdate {
+  JobRef job = 1;
+  int32 step_index = 2;
+  RunStepStatus status = 3;
+  string outcome = 4;
+  int32 exit_code = 5;
+  google.protobuf.Timestamp started_at = 6;
+  google.protobuf.Timestamp finished_at = 7;
+  google.protobuf.Struct outputs = 8; // step outputs
+}
+message JobResult {
+  JobRef job = 1;
+  RunJobStatus status = 2; // SUCCEEDED | FAILED | CANCELLED
+  string failure_reason = 3;
+  google.protobuf.Struct outputs = 4; // job outputs, referenced by needs.<job>.outputs
+}
+
+message ConnectResponse {
+  oneof msg {
+    Welcome welcome = 1;
+    JobAssignment assignment = 2;
+    CancelJob cancel = 3;
+    LogAck log_ack = 4;
+    ServerError error = 5;
+    Drain drain = 6;
+    JobAck job_ack = 7;
+    Pong pong = 8;
+  }
+}
+message Welcome {
+  string runner_id = 1;
+  string pool_id = 2;
+  google.protobuf.Duration heartbeat_interval = 3;
+  google.protobuf.Duration lease_ttl = 4;
+  google.protobuf.Timestamp server_time = 5;
+  repeated JobRef revoked = 6; // jobs from Hello.running the server no longer considers yours: abort them
+  string server_version = 7;
+  // job_logs_acked says this control plane stores job-level log chunks (step_index -1) and answers every log chunk:
+  // with a LogAck, a retryable ServerError (kind "log") or, when resending cannot help, a JobAck the runner stops
+  // retrying on. Kind "log" refuses the named step's log from that chunk on; kind "log_job" says no chunk of the job
+  // attempt will be stored any more. Control planes without it leave job-level chunks and refusals unanswered.
+  bool job_logs_acked = 8;
+}
+message JobAssignment {
+  JobRef job = 1;
+  string lease_id = 2;
+  google.protobuf.Timestamp lease_expires_at = 3;
+  string org_id = 4;
+  string project_id = 5;
+  string run_id = 6;
+  int64 run_number = 7;
+  string pipeline_id = 8;
+  string pipeline_name = 9;
+  string job_name = 10;
+  string display_name = 11;
+  string stage = 12;
+  GitRef git = 13;
+  google.protobuf.Struct event = 14;   // trigger payload (event.*)
+  google.protobuf.Struct inputs = 15;
+  google.protobuf.Struct matrix = 16;
+  google.protobuf.Struct needs = 17;   // {job: {result, outputs}}
+  google.protobuf.Struct spec = 18;    // compiled job spec (container, services, steps, cache, artifacts ...), job-level expressions resolved
+  map<string, string> env = 19;
+  map<string, string> secrets = 20;    // resolved secret values; the runner must mask them
+  repeated string mask_values = 21;
+  string id_token = 22;                // OIDC job token ($SLIPWAY_ID_TOKEN)
+  google.protobuf.Duration timeout = 23;
+  string environment_name = 24;
+  string environment_id = 25;
+  string deployment_id = 26;
+  string api_url = 27;                 // base URL the runner should use for artifact/cache calls
+  // eval_context is the server's own expression context for this job (git incl. short_sha/default_branch/
+  // changed_files, run, pipeline, vars, env without secrets, environment, release). The runner evaluates step
+  // conditions against it so they see exactly what job-level expressions saw.
+  google.protobuf.Struct eval_context = 28;
+  // run_attempt is the run's attempt (run.attempt), 1 then +1 per re-run; job.attempt is the job's. It is a field, not
+  // only SLIPWAY_RUN_ATTEMPT in env, because a job's own env can shadow that variable on the runner. 0 from a control
+  // plane older than this field: the runner reads the server's env instead.
+  int32 run_attempt = 29;
+}
+message CancelJob {
+  JobRef job = 1;
+  string reason = 2;
+  google.protobuf.Duration grace = 3; // after which the runner should kill the job
+}
+message LogAck {
+  JobRef job = 1;
+  int32 step_index = 2;
+  int64 up_to_seq = 3; // highest contiguous seq stored; the runner resends anything after it
+}
+message ServerError {
+  string code = 1;
+  string message = 2;
+  bool fatal = 3;
+  // retryable says the report named by job/kind could not be recorded right now (a transient server error); the
+  // runner keeps it and resends it. Unset on errors that retrying cannot fix.
+  bool retryable = 4;
+  JobRef job = 5;
+  string kind = 6; // "accepted" | "step" | "step_outputs" | "result" (as in JobAck)
+}
+message Drain {}
+
+// JobAck confirms that a job-critical report (accepted, step update, result) was recorded, or that the server holds
+// no live attempt it could still apply to (already recorded, superseded): either way the runner may stop resending it.
+message JobAck {
+  JobRef job = 1;
+  string kind = 2; // "accepted" | "step" | "step_outputs" | "result"
+  int32 step_index = 3;
+  RunStepStatus step_status = 4; // for kind "step": the status of the acknowledged update
+}
+
+// Pong answers a Heartbeat so the runner can tell a live control plane from a half-open connection.
+message Pong {
+  string nonce = 1;
+  google.protobuf.Timestamp at = 2;
+}
+
+message CreateArtifactRequest {
+  JobRef job = 1;
+  string name = 2;
+  int64 size = 3;
+  string content_type = 4;
+  google.protobuf.Duration retention = 5; // 0 = plan default
+}
+message CreateArtifactResponse {
+  string artifact_id = 1;
+  string upload_url = 2; // presigned PUT
+  map<string, string> upload_headers = 3;
+  google.protobuf.Timestamp expires_at = 4;
+}
+message FinalizeArtifactRequest {
+  JobRef job = 1;
+  string artifact_id = 2;
+  string sha256 = 3;
+  int64 size = 4;
+}
+message FinalizeArtifactResponse { RunArtifact artifact = 1; }
+message GetArtifactDownloadRequest {
+  JobRef job = 1;       // caller job
+  string run_id = 2;    // empty = caller's run
+  string name = 3;      // artifact name; the latest uploaded wins
+  string from_job = 4;  // optional producer job name filter
+}
+message GetArtifactDownloadResponse {
+  string artifact_id = 1;
+  string download_url = 2;
+  int64 size = 3;
+  string sha256 = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+
+message LookupCacheRequest {
+  JobRef job = 1;
+  string key = 2;
+  repeated string restore_keys = 3; // prefix match, newest first
+  string scope = 4;                 // branch scope; project scope is always searched as fallback
+  string version = 5;               // hash of paths+compression; entries must match
+}
+message LookupCacheResponse {
+  bool hit = 1;
+  bool exact = 2;
+  string matched_key = 3;
+  string download_url = 4;
+  int64 size = 5;
+  string sha256 = 6;
+}
+message ReserveCacheRequest {
+  JobRef job = 1;
+  string key = 2;
+  string scope = 3;
+  string version = 4;
+  int64 size = 5;
+}
+message ReserveCacheResponse {
+  bool already_exists = 1;
+  string reservation_id = 2;
+  string upload_url = 3;
+  map<string, string> upload_headers = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+message CommitCacheRequest {
+  JobRef job = 1;
+  string reservation_id = 2;
+  string sha256 = 3;
+  int64 size = 4;
+}
+message CommitCacheResponse { CacheEntry entry = 1; }
+
+message UploadTestReportRequest {
+  JobRef job = 1;
+  ReportFormat format = 2;
+  string name = 3;
+  bytes content = 4; // raw report, max 32 MiB
+}
+message UploadTestReportResponse {
+  RunTestReport report = 1;
+  RunCoverage coverage = 2;
+}
+message AnnotationInput {
+  int32 step_index = 1;
+  AnnotationLevel level = 2;
+  string file = 3;
+  int32 line = 4;
+  int32 end_line = 5;
+  string title = 6;
+  string message = 7;
+}
+message AddAnnotationsRequest {
+  JobRef job = 1;
+  repeated AnnotationInput annotations = 2;
+}
+message AddAnnotationsResponse { int32 accepted = 1; }
+message IssueJobTokenRequest {
+  JobRef job = 1;
+  string audience = 2;
+}
+message IssueJobTokenResponse {
+  string token = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}

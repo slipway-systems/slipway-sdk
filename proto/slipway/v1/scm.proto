@@ -1,0 +1,312 @@
+syntax = "proto3";
+
+package slipway.v1;
+
+import "google/protobuf/timestamp.proto";
+import "slipway/v1/common.proto";
+
+// ScmService manages connections to source-control providers (GitHub App, GitLab, Bitbucket Cloud/Data Center,
+// Azure Repos, Gitea/Forgejo), the repositories linked into projects, and the inbound webhook delivery log.
+// Slipway does not host code; everything here is a view over the provider. IDs are prefixed: conn_… (connection),
+// repo_… (repository), whd_… (webhook delivery). The org comes from the auth context.
+
+enum ScmProviderKind {
+  SCM_PROVIDER_KIND_UNSPECIFIED = 0;
+  SCM_PROVIDER_KIND_GITHUB = 1;           // github.com and GitHub Enterprise Server
+  SCM_PROVIDER_KIND_GITLAB = 2;           // gitlab.com and self-managed
+  SCM_PROVIDER_KIND_BITBUCKET_CLOUD = 3;
+  SCM_PROVIDER_KIND_BITBUCKET_DC = 4;     // Bitbucket Data Center / Server
+  SCM_PROVIDER_KIND_AZURE_REPOS = 5;
+  SCM_PROVIDER_KIND_GITEA = 6;            // Gitea and Forgejo
+}
+
+enum ScmAuthMethod {
+  SCM_AUTH_METHOD_UNSPECIFIED = 0;
+  SCM_AUTH_METHOD_GITHUB_APP = 1;         // install flow; short-lived installation tokens
+  SCM_AUTH_METHOD_OAUTH = 2;              // OAuth 2 authorization-code flow with refresh
+  SCM_AUTH_METHOD_PAT = 3;                // personal / project access token supplied by the user
+}
+
+enum ScmConnectionStatus {
+  SCM_CONNECTION_STATUS_UNSPECIFIED = 0;
+  SCM_CONNECTION_STATUS_ACTIVE = 1;
+  SCM_CONNECTION_STATUS_NEEDS_REAUTH = 2; // token revoked/expired and could not be refreshed
+  SCM_CONNECTION_STATUS_SUSPENDED = 3;    // e.g. GitHub App installation suspended
+  SCM_CONNECTION_STATUS_REVOKED = 4;      // uninstalled on the provider side
+}
+
+enum ScmWebhookStatus {
+  SCM_WEBHOOK_STATUS_UNSPECIFIED = 0;
+  SCM_WEBHOOK_STATUS_NONE = 1;            // no hook registered
+  SCM_WEBHOOK_STATUS_ACTIVE = 2;          // Slipway created a repository hook
+  SCM_WEBHOOK_STATUS_APP = 3;             // events arrive through the provider app (GitHub App); no per-repo hook
+  SCM_WEBHOOK_STATUS_FAILED = 4;          // creation failed; see webhook_error
+  SCM_WEBHOOK_STATUS_MANUAL = 5;          // user opted to configure the hook themselves
+}
+
+enum ScmDeliveryStatus {
+  SCM_DELIVERY_STATUS_UNSPECIFIED = 0;
+  SCM_DELIVERY_STATUS_RECEIVED = 1;
+  SCM_DELIVERY_STATUS_PROCESSED = 2;      // handed to orchestration
+  SCM_DELIVERY_STATUS_IGNORED = 3;        // valid but no linked repository / uninteresting event
+  SCM_DELIVERY_STATUS_DUPLICATE = 4;
+  SCM_DELIVERY_STATUS_FAILED = 5;         // verified but processing failed; can be redelivered
+  SCM_DELIVERY_STATUS_REJECTED = 6;       // signature check failed
+}
+
+message ScmProvider {
+  ScmProviderKind kind = 1;
+  string id = 2;                          // github, gitlab, bitbucket_cloud, bitbucket_dc, azure_repos, gitea
+  string display_name = 3;
+  repeated ScmAuthMethod auth_methods = 4;
+  bool supports_self_managed = 5;         // base_url may be set on StartConnection
+  bool oauth_configured = 6;              // server has OAuth/App credentials for the SaaS offering
+  bool supports_checks = 7;               // rich check runs with annotations
+  bool supports_deployments = 8;
+  bool supports_pr_comments = 9;
+  bool app_webhooks = 10;                 // events arrive via the app, no per-repo hook needed
+}
+
+message ScmConnection {
+  string id = 1;
+  ScmProviderKind provider = 2;
+  ScmAuthMethod auth_method = 3;
+  string display_name = 4;
+  string base_url = 5;
+  string account_login = 6;
+  string account_type = 7;
+  ScmConnectionStatus status = 8;
+  string status_detail = 9;
+  string installation_id = 10;
+  string created_by = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+  int32 repository_count = 14;
+}
+
+message ScmRepository {
+  string id = 1;
+  string project_id = 2;
+  string connection_id = 3;
+  ScmProviderKind provider = 4;
+  string external_id = 5;
+  string full_name = 6;
+  string default_branch = 7;
+  string clone_url = 8;
+  string html_url = 9;
+  bool private = 10;
+  string webhook_id = 11;
+  ScmWebhookStatus webhook_status = 12;
+  string webhook_error = 13;
+  google.protobuf.Timestamp created_at = 14;
+  // Pipeline files the last default-branch sync did not load because their name is already taken in the project.
+  repeated ScmPipelineConflict pipeline_conflicts = 15;
+}
+
+// ScmPipelineConflict is a pipeline file of a linked repository that was not loaded: its `name:` is already used in
+// the project by an inline pipeline, another repository's file or another file of the same repository.
+message ScmPipelineConflict {
+  string path = 1;        // ".slipway/ci.yaml"
+  string name = 2;        // the pipeline name the file declares
+  string message = 3;     // what holds the name and what to do, ready to show
+  string pipeline_id = 4; // the pipeline holding the name (as PipelineService returns it); empty when another file of the same repository does
+}
+
+// RemoteRepository is a repository visible through a connection, linked or not.
+message RemoteRepository {
+  string external_id = 1;
+  string full_name = 2;
+  string description = 3;
+  string default_branch = 4;
+  string clone_url = 5;
+  string html_url = 6;
+  bool private = 7;
+  bool archived = 8;
+  bool linked = 9;                        // linked into at least one project in this org
+  repeated string linked_project_ids = 10;
+}
+
+message ScmBranch {
+  string name = 1;
+  string sha = 2;
+  bool protected = 3;
+  bool is_default = 4;
+}
+
+message ScmFileEntry {
+  string path = 1;
+  string name = 2;
+  string type = 3;                        // file | dir | symlink | submodule
+  int64 size = 4;
+  string sha = 5;
+}
+
+message ScmWebhookDelivery {
+  string id = 1;
+  string connection_id = 2;
+  string repository_id = 3;
+  ScmProviderKind provider = 4;
+  string delivery_id = 5;                 // provider-supplied
+  string event_type = 6;
+  string action = 7;
+  string repo_full_name = 8;
+  string ref = 9;
+  string sha = 10;
+  ScmDeliveryStatus status = 11;
+  string detail = 12;
+  int32 http_status = 13;
+  map<string, string> headers = 14;
+  int64 payload_size = 15;
+  string redelivery_of = 16;
+  google.protobuf.Timestamp received_at = 17;
+  google.protobuf.Timestamp processed_at = 18;
+  bytes payload = 19;                     // only populated by GetWebhookDelivery
+}
+
+message ScmServiceListProvidersRequest {}
+message ScmServiceListProvidersResponse { repeated ScmProvider items = 1; }
+
+// StartConnection begins connecting a provider. For redirect flows (GitHub App install, OAuth) the response carries an
+// authorization_url to send the browser to; for token flows (PAT) the connection is created immediately.
+message StartConnectionRequest {
+  ScmProviderKind provider = 1;
+  ScmAuthMethod auth_method = 2;          // default: the provider's preferred method
+  string base_url = 3;                    // GHES, self-managed GitLab, Bitbucket DC, Gitea; empty for SaaS
+  string display_name = 4;
+  string token = 5;                       // PAT flows
+  string username = 6;                    // Bitbucket Cloud app-password flows
+  string azure_organization = 7;          // Azure Repos organisation (dev.azure.com/{org})
+  string client_id = 8;                   // per-connection OAuth app (self-managed instances)
+  string client_secret = 9;
+  string return_to = 10;                  // SPA path to land on after the callback
+}
+message StartConnectionResponse {
+  string authorization_url = 1;           // set for redirect flows
+  ScmConnection connection = 2;           // set when the connection was created immediately
+}
+
+// CompleteConnection finishes a redirect flow. The browser normally lands on /auth/scm/{provider}/callback, which
+// calls this internally; the RPC exists for SPAs that proxy the callback.
+message CompleteConnectionRequest {
+  ScmProviderKind provider = 1;
+  string state = 2;
+  map<string, string> params = 3;         // code, installation_id, setup_action, error, ...
+}
+message CompleteConnectionResponse {
+  ScmConnection connection = 1;
+  string return_to = 2;
+}
+
+message ScmServiceListConnectionsRequest { PageRequest page = 1; }
+message ScmServiceListConnectionsResponse { repeated ScmConnection items = 1; PageResponse page = 2; }
+message ScmServiceGetConnectionRequest { string id = 1; }
+message ScmServiceGetConnectionResponse { ScmConnection connection = 1; }
+message ScmServiceDeleteConnectionRequest { string id = 1; bool delete_webhooks = 2; }
+message ScmServiceDeleteConnectionResponse {}
+
+message ListAvailableReposRequest {
+  string connection_id = 1;
+  string query = 2;
+  PageRequest page = 3;                   // page_token is the provider's cursor, opaque
+}
+message ListAvailableReposResponse { repeated RemoteRepository items = 1; PageResponse page = 2; }
+
+message LinkRepoRequest {
+  string project_id = 1;
+  string connection_id = 2;
+  string external_id = 3;                 // from ListAvailableRepos; or full_name when external_id is unknown
+  string full_name = 4;
+  bool create_webhook = 5;                // register the push/PR hook on the provider (ignored for app-webhook providers)
+}
+message LinkRepoResponse { ScmRepository repository = 1; }
+message UnlinkRepoRequest { string repository_id = 1; bool delete_webhook = 2; }
+message UnlinkRepoResponse {}
+
+message ScmServiceListRepositoriesRequest { string project_id = 1; string connection_id = 2; }
+message ScmServiceListRepositoriesResponse { repeated ScmRepository items = 1; }
+
+message ScmServiceListBranchesRequest { string repository_id = 1; string query = 2; PageRequest page = 3; }
+message ScmServiceListBranchesResponse { repeated ScmBranch items = 1; PageResponse page = 2; }
+
+message GetFileContentRequest { string repository_id = 1; string ref = 2; string path = 3; }
+message GetFileContentResponse {
+  string path = 1;
+  string ref = 2;
+  string sha = 3;
+  int64 size = 4;
+  bytes content = 5;
+}
+
+// CommitFile creates or updates one file on an existing branch with a single commit (scm.manage). Providers
+// without a write API (Azure DevOps, Bitbucket Data Center) answer unimplemented.
+message CommitFileRequest {
+  string repository_id = 1;
+  string branch = 2;   // default: the repository's default branch
+  string path = 3;
+  bytes content = 4;
+  string message = 5;  // default: "Add <path>"
+}
+message CommitFileResponse {
+  string sha = 1;      // the new commit, when the provider reports it
+  string message = 2;
+}
+
+message ScmServiceListFilesRequest { string repository_id = 1; string ref = 2; string path = 3; }
+message ScmServiceListFilesResponse { repeated ScmFileEntry items = 1; }
+
+// DiscoverPipelineFiles lists candidate pipeline definitions (.slipway/*.yaml, .slipway/*.yml, slipway.yaml).
+message DiscoverPipelineFilesRequest { string repository_id = 1; string ref = 2; }
+message DiscoverPipelineFilesResponse { repeated ScmFileEntry items = 1; string ref = 2; }
+
+// SyncWebhook retries hook creation for a repository whose hook failed.
+message ScmServiceSyncWebhookRequest { string repository_id = 1; }
+message ScmServiceSyncWebhookResponse { ScmRepository repository = 1; }
+
+message ScmServiceListWebhookDeliveriesRequest {
+  string connection_id = 1;
+  string repository_id = 2;               // optional filter
+  ScmDeliveryStatus status = 3;           // optional filter
+  PageRequest page = 4;
+}
+message ScmServiceListWebhookDeliveriesResponse { repeated ScmWebhookDelivery items = 1; PageResponse page = 2; }
+message ScmServiceGetWebhookDeliveryRequest { string id = 1; }
+message ScmServiceGetWebhookDeliveryResponse { ScmWebhookDelivery delivery = 1; }
+message ScmServiceRedeliverWebhookRequest { string id = 1; }
+message ScmServiceRedeliverWebhookResponse { ScmWebhookDelivery delivery = 1; }
+
+// ScmStatusEnvelope is the work.scm_status queue payload: orchestration enqueues one per run/job/deployment state
+// change and a worker applies it to the SCM. The payload is the JSON encoding of a status update; the envelope carries
+// what routing, tracing and de-duplication need.
+message ScmStatusEnvelope {
+  string org_id = 1;
+  string repository_id = 2;
+  string kind = 3;             // check | commit_status | deployment | comment
+  string idempotency_key = 4;  // used as Nats-Msg-Id so retried publishes collapse
+  bytes payload = 5;           // JSON StatusUpdate
+  google.protobuf.Timestamp enqueued_at = 6;
+}
+
+service ScmService {
+  rpc ListProviders(ScmServiceListProvidersRequest) returns (ScmServiceListProvidersResponse);
+  rpc StartConnection(StartConnectionRequest) returns (StartConnectionResponse);
+  rpc CompleteConnection(CompleteConnectionRequest) returns (CompleteConnectionResponse);
+  rpc ListConnections(ScmServiceListConnectionsRequest) returns (ScmServiceListConnectionsResponse);
+  rpc GetConnection(ScmServiceGetConnectionRequest) returns (ScmServiceGetConnectionResponse);
+  rpc DeleteConnection(ScmServiceDeleteConnectionRequest) returns (ScmServiceDeleteConnectionResponse);
+
+  rpc ListAvailableRepos(ListAvailableReposRequest) returns (ListAvailableReposResponse);
+  rpc LinkRepo(LinkRepoRequest) returns (LinkRepoResponse);
+  rpc UnlinkRepo(UnlinkRepoRequest) returns (UnlinkRepoResponse);
+  rpc SyncWebhook(ScmServiceSyncWebhookRequest) returns (ScmServiceSyncWebhookResponse);
+  rpc ListRepositories(ScmServiceListRepositoriesRequest) returns (ScmServiceListRepositoriesResponse);
+
+  rpc ListBranches(ScmServiceListBranchesRequest) returns (ScmServiceListBranchesResponse);
+  rpc GetFileContent(GetFileContentRequest) returns (GetFileContentResponse);
+  rpc ListFiles(ScmServiceListFilesRequest) returns (ScmServiceListFilesResponse);
+  rpc CommitFile(CommitFileRequest) returns (CommitFileResponse);
+  rpc DiscoverPipelineFiles(DiscoverPipelineFilesRequest) returns (DiscoverPipelineFilesResponse);
+
+  rpc ListWebhookDeliveries(ScmServiceListWebhookDeliveriesRequest) returns (ScmServiceListWebhookDeliveriesResponse);
+  rpc GetWebhookDelivery(ScmServiceGetWebhookDeliveryRequest) returns (ScmServiceGetWebhookDeliveryResponse);
+  rpc RedeliverWebhook(ScmServiceRedeliverWebhookRequest) returns (ScmServiceRedeliverWebhookResponse);
+}

@@ -1,0 +1,232 @@
+syntax = "proto3";
+
+package slipway.v1;
+
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "slipway/v1/common.proto";
+
+// Pipeline definitions: validation, schema, compile preview and org templates.
+// The language is specified in the pipeline reference at https://slipway.systems/docs.
+//
+// Storage of pipeline definitions belongs to orchestration (table `pipelines`). Other domains refer to a
+// definition by its ID string (`pipe_…`) and may embed the Pipeline message below.
+
+// PipelineSource says where a definition lives.
+enum PipelineSource {
+  PIPELINE_SOURCE_UNSPECIFIED = 0;
+  PIPELINE_SOURCE_REPO = 1;   // discovered from `.slipway/*.yaml` or `slipway.yaml` in a linked repository
+  PIPELINE_SOURCE_INLINE = 2; // stored in Slipway and edited in the UI
+}
+
+enum PipelineDiagnosticSeverity {
+  PIPELINE_DIAGNOSTIC_SEVERITY_UNSPECIFIED = 0;
+  PIPELINE_DIAGNOSTIC_SEVERITY_ERROR = 1;
+  PIPELINE_DIAGNOSTIC_SEVERITY_WARNING = 2;
+  PIPELINE_DIAGNOSTIC_SEVERITY_INFO = 3;
+}
+
+// PipelineSourcePosition is a 1-based range in the YAML source. line == 0 means unknown.
+message PipelineSourcePosition {
+  int32 line = 1;
+  int32 column = 2;
+  int32 end_line = 3;
+  int32 end_column = 4;
+}
+
+// PipelineDiagnostic is one finding of parsing, validation or compilation.
+// Codes (SLP1xx structure, 2xx references, 3xx steps, 4xx expressions, 5xx matrix, 6xx limits,
+// 7xx templates, 8xx triggers, 9xx warnings) are stable.
+message PipelineDiagnostic {
+  PipelineDiagnosticSeverity severity = 1;
+  string code = 2;    // "SLP201"
+  string message = 3;
+  string file = 4;    // set when several files are validated together
+  string path = 5;    // logical path, e.g. "stages[1].jobs[0].steps[2].run"
+  PipelineSourcePosition position = 6;
+  string hint = 7;    // suggested fix
+}
+
+// Pipeline is a stored pipeline definition.
+message Pipeline {
+  string id = 1;          // pipe_…
+  string project_id = 2;
+  string name = 3;
+  string description = 4;
+  string path = 5;        // ".slipway/ci.yaml" for repo pipelines
+  PipelineSource source = 6;
+  string yaml = 7;        // latest source text (omitted by ListPipelines)
+  google.protobuf.Struct spec = 8; // latest parsed definition, same shape as the YAML (omitted by ListPipelines)
+  int32 schema_version = 9;
+  bool enabled = 10;
+  repeated string triggers = 11; // summary, e.g. ["push", "pull_request", "schedule"]
+  string repository_id = 12;
+  string ref = 13;       // branch or tag the repo definition was read from
+  string revision = 14;  // commit SHA
+  bool valid = 15;
+  int32 error_count = 16;
+  int32 warning_count = 17;
+  repeated PipelineDiagnostic diagnostics = 18; // omitted by ListPipelines
+  repeated string template_refs = 19;           // "acme/go-test@v1" versions the definition uses
+  google.protobuf.Timestamp created_at = 20;
+  google.protobuf.Timestamp updated_at = 21;
+  // branch is set for a repository pipeline whose file exists only on that branch (or tag) so far: it runs for
+  // pushes and pull requests that carry the file, never for default-branch, scheduled or release events, until
+  // the file reaches the default branch.
+  string branch = 22;
+}
+
+// ---- Validation and schema ---------------------------------------------------------------------------------------
+
+message ValidatePipelineRequest {
+  string yaml = 1;
+  string file_name = 2;  // used to stamp diagnostics and to pick the entry point of a repo file
+  string project_id = 3; // optional: enables project-aware checks (pipeline triggers, environments, runner labels)
+  bool skip_templates = 4; // do not resolve `template:` / `extends:` (faster; template content is not validated)
+}
+message ValidatePipelineResponse {
+  bool valid = 1; // no error-level diagnostics
+  repeated PipelineDiagnostic diagnostics = 2;
+  google.protobuf.Struct spec = 3;      // parsed definition when the YAML could be parsed
+  repeated string triggers = 4;         // trigger summary
+  repeated string template_refs = 5;
+  int32 error_count = 6;
+  int32 warning_count = 7;
+  string formatted_yaml = 8;            // canonical formatting of the document (comments and key order preserved)
+}
+
+message GetSchemaRequest {}
+message GetSchemaResponse {
+  string id = 1;          // https://slipway.systems/schema/pipeline-v1.json
+  int32 version = 2;
+  string json_schema = 3; // JSON Schema (draft 2020-12) text
+}
+
+// ---- Stored pipelines (storage implemented by orchestration) ---------------------------------------------------
+
+message ListPipelinesRequest {
+  string project_id = 1;
+  PageRequest page = 2; // filter (CEL subset): name, source, enabled, e.g. `enabled && source == "repo"`
+}
+message ListPipelinesResponse {
+  repeated Pipeline items = 1;
+  PageResponse page = 2;
+}
+message GetPipelineRequest { string id = 1; }
+message GetPipelineResponse { Pipeline pipeline = 1; }
+
+// CreatePipeline stores a new inline pipeline (source `inline`: the definition lives in Slipway, not in a repository).
+// The YAML is validated first; errors reject the request. The pipeline name is the YAML's `name:`; `name`, when set,
+// must match it. A name already used in the project fails with already_exists.
+message CreatePipelineRequest {
+  string project_id = 1;
+  string name = 2; // optional check against the YAML's name
+  string yaml = 3;
+  bool disabled = 4; // pipelines are created enabled; set to create one that does not run until it is enabled
+}
+message CreatePipelineResponse {
+  Pipeline pipeline = 1;
+  repeated PipelineDiagnostic diagnostics = 2; // warnings of the accepted definition
+}
+
+// DeletePipeline removes an inline pipeline together with its runs. Repository pipelines cannot be deleted (their
+// definition lives in the repository): disable them with UpdatePipeline instead.
+message DeletePipelineRequest { string id = 1; }
+message DeletePipelineResponse {}
+
+// UpdatePipeline edits an inline pipeline (`yaml`, `enabled`) or toggles a repo pipeline (`enabled` only: repo
+// definitions change by committing to the repository). The YAML is validated first; errors reject the update.
+message UpdatePipelineRequest {
+  Pipeline pipeline = 1;                    // id plus the fields named by update_mask
+  google.protobuf.FieldMask update_mask = 2; // "yaml", "enabled"
+}
+message UpdatePipelineResponse {
+  Pipeline pipeline = 1;
+  repeated PipelineDiagnostic diagnostics = 2; // warnings of the accepted definition
+}
+
+// ---- Compile preview ---------------------------------------------------------------------------------------------
+
+// CompilePreview expands templates and matrices for a YAML document against a fake trigger context and returns
+// the compiled plan (the DAG the scheduler would execute) without creating a run.
+message CompilePreviewRequest {
+  string yaml = 1;
+  string project_id = 2;
+  string event = 3;                       // push | pull_request | tag | schedule | manual | api | pipeline | release | webhook (default push)
+  google.protobuf.Struct inputs = 4;      // values for declared inputs; defaults apply to the rest
+  google.protobuf.Struct git = 5;         // overrides for git.* (branch, tag, sha, changed_files ...)
+  google.protobuf.Struct vars = 6;        // variables available to compile-time expressions
+}
+message CompilePreviewResponse {
+  bool valid = 1;
+  repeated PipelineDiagnostic diagnostics = 2;
+  google.protobuf.Struct plan = 3;        // compiled plan, same JSON stored as run.compiled_plan
+  int32 job_count = 4;                    // jobs after matrix expansion
+  string plan_digest = 5;
+  repeated string template_refs = 6;
+  bool trigger_matches = 7;               // would this event start the pipeline
+  string trigger_reason = 8;              // why not, when trigger_matches is false
+}
+
+// ---- Org templates -----------------------------------------------------------------------------------------------
+
+message PipelineTemplateParameter {
+  string name = 1;
+  string type = 2; // string | number | boolean | list | map | any
+  bool required = 3;
+  string description = 4;
+  string default_json = 5; // JSON-encoded default, empty when none
+  repeated string options = 6;
+}
+
+// PipelineTemplate is one published, immutable version of an org-level template.
+message PipelineTemplate {
+  string id = 1;
+  string name = 2;     // "go-test" (the org slug is the owner part of the ref)
+  string version = 3;  // "v1"
+  string ref = 4;      // "acme/go-test@v1"
+  string kind = 5;     // step | job | stage | pipeline
+  string description = 6;
+  repeated PipelineTemplateParameter parameters = 7;
+  string yaml = 8;     // omitted by ListTemplates
+  string published_by = 9;
+  google.protobuf.Timestamp published_at = 10;
+}
+
+message ListTemplatesRequest {
+  PageRequest page = 1; // filter (CEL subset): kind, name, e.g. `kind == "job"`
+  bool latest_only = 2; // one entry per template name (the highest version)
+}
+message ListTemplatesResponse {
+  repeated PipelineTemplate items = 1;
+  PageResponse page = 2;
+}
+
+// PublishTemplate validates and stores a new immutable version. Publishing an existing name+version fails with
+// already_exists.
+message PublishTemplateRequest {
+  string name = 1;
+  string version = 2;
+  string yaml = 3;
+}
+message PublishTemplateResponse {
+  PipelineTemplate template = 1;
+  repeated PipelineDiagnostic diagnostics = 2; // warnings of the accepted template
+}
+
+service PipelineService {
+  rpc ValidatePipeline(ValidatePipelineRequest) returns (ValidatePipelineResponse);
+  rpc GetSchema(GetSchemaRequest) returns (GetSchemaResponse);
+
+  rpc ListPipelines(ListPipelinesRequest) returns (ListPipelinesResponse);
+  rpc GetPipeline(GetPipelineRequest) returns (GetPipelineResponse);
+  rpc CreatePipeline(CreatePipelineRequest) returns (CreatePipelineResponse);
+  rpc UpdatePipeline(UpdatePipelineRequest) returns (UpdatePipelineResponse);
+  rpc DeletePipeline(DeletePipelineRequest) returns (DeletePipelineResponse);
+
+  rpc CompilePreview(CompilePreviewRequest) returns (CompilePreviewResponse);
+
+  rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse);
+  rpc PublishTemplate(PublishTemplateRequest) returns (PublishTemplateResponse);
+}

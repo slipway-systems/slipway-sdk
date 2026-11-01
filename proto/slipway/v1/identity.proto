@@ -1,0 +1,585 @@
+syntax = "proto3";
+
+package slipway.v1;
+
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "slipway/v1/common.proto";
+
+// Identity contract: users, orgs, projects, teams, roles, tokens, service accounts, audit, SSO and SCIM.
+// IDs on the wire are prefixed (user_…, org_…, proj_…, team_…, sa_…, tok_…, aud_…); role IDs are built-in role names
+// ("owner", "developer"…) or "role_<ulid>" for custom roles. Org is derived from the auth context, never the request body.
+// Seeded by the planner; extended by B2 (identity) — existing field numbers and RPCs are stable.
+
+message User {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+  string avatar_url = 4;
+  bool mfa_enabled = 5;
+  google.protobuf.Timestamp created_at = 6;
+  bool email_verified = 7;
+  repeated string mfa_methods = 8; // totp | webauthn
+  bool has_password = 9;           // false for SSO-only accounts
+}
+
+message Organization {
+  string id = 1;
+  string slug = 2;
+  string name = 3;
+  string plan = 4; // free | team | business | enterprise
+  string avatar_url = 5;
+  google.protobuf.Timestamp created_at = 6;
+  OrganizationSettings settings = 7;
+}
+
+message OrganizationSettings {
+  bool require_mfa = 1;                  // members must have a second factor enrolled
+  repeated string allowed_domains = 2;   // invitations and SSO are limited to these email domains
+  bool auto_join = 3;                    // verified users from allowed_domains join automatically
+  string auto_join_role = 4;             // role for auto-joined members (never owner/admin)
+  repeated string ip_allowlist = 5;      // CIDR ranges; empty = any
+  int32 log_retention_days = 6;
+  int32 artifact_retention_days = 7;
+  int32 token_max_ttl_days = 8;          // 0 = no limit
+  bool require_token_expiry = 9;
+  bool sso_enforced = 10;                // read-only: derived from the org's enforced SSO connection
+}
+
+message Project {
+  string id = 1;
+  string org_id = 2;
+  string slug = 3;
+  string name = 4;
+  string description = 5;
+  string default_runner_pool_id = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message Membership {
+  string org_id = 1;
+  User user = 2;
+  string role = 3;
+  google.protobuf.Timestamp created_at = 4;
+  string status = 5; // active | suspended
+  string source = 6; // manual | invite | sso | scim | signup
+}
+
+message Role {
+  string id = 1;
+  string name = 2;
+  bool builtin = 3;
+  repeated string permissions = 4;
+  string description = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message ApiToken {
+  string id = 1;
+  string name = 2;
+  string prefix = 3; // first 8 chars for identification
+  repeated string scopes = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  google.protobuf.Timestamp last_used_at = 6;
+  google.protobuf.Timestamp created_at = 7;
+  string owner_kind = 8; // user | service_account
+  string owner_id = 9;
+}
+
+message AuditEvent {
+  string id = 1;
+  Actor actor = 2;
+  string action = 3;
+  string target_type = 4;
+  string target_id = 5;
+  string ip = 6;
+  google.protobuf.Timestamp at = 7;
+  string metadata_json = 8;
+  string org_id = 9;
+  string user_agent = 10;
+}
+
+message WhoAmIRequest {}
+message WhoAmIResponse {
+  User user = 1;
+  repeated Organization organizations = 2;
+  Organization current_org = 3;
+  repeated string permissions = 4; // effective org-wide permissions in current org
+  string role = 5;                 // base role in the current org
+  string session_method = 6;       // password | webauthn | oidc:<provider> | saml:<org> | token
+  bool mfa_verified = 7;
+  bool org_requires_mfa = 8;
+}
+
+message ListOrganizationsRequest { PageRequest page = 1; }
+message ListOrganizationsResponse { repeated Organization items = 1; PageResponse page = 2; }
+message CreateOrganizationRequest { string slug = 1; string name = 2; }
+message CreateOrganizationResponse { Organization organization = 1; }
+message GetOrganizationRequest { string id = 1; }
+message GetOrganizationResponse { Organization organization = 1; }
+message UpdateOrganizationRequest { Organization organization = 1; google.protobuf.FieldMask update_mask = 2; }
+message UpdateOrganizationResponse { Organization organization = 1; }
+
+message ListProjectsRequest { PageRequest page = 1; }
+message ListProjectsResponse { repeated Project items = 1; PageResponse page = 2; }
+message CreateProjectRequest { string slug = 1; string name = 2; string description = 3; }
+message CreateProjectResponse { Project project = 1; }
+message GetProjectRequest { string id = 1; }
+message GetProjectResponse { Project project = 1; }
+message UpdateProjectRequest { Project project = 1; google.protobuf.FieldMask update_mask = 2; }
+message UpdateProjectResponse { Project project = 1; }
+message DeleteProjectRequest { string id = 1; }
+message DeleteProjectResponse {}
+
+message ListMembersRequest { PageRequest page = 1; }
+message ListMembersResponse { repeated Membership items = 1; PageResponse page = 2; }
+message InviteMemberRequest { string email = 1; string role = 2; }
+message InviteMemberResponse { string invitation_id = 1; Invitation invitation = 2; }
+message UpdateMemberRoleRequest { string user_id = 1; string role = 2; }
+message UpdateMemberRoleResponse { Membership membership = 1; }
+message RemoveMemberRequest { string user_id = 1; }
+message RemoveMemberResponse {}
+
+message ListRolesRequest {}
+message ListRolesResponse { repeated Role items = 1; }
+
+message ListApiTokensRequest {
+  PageRequest page = 1;
+  string owner_id = 2; // empty = the caller's own tokens; others' tokens need tokens.read
+}
+message ListApiTokensResponse { repeated ApiToken items = 1; PageResponse page = 2; }
+message CreateApiTokenRequest { string name = 1; repeated string scopes = 2; google.protobuf.Timestamp expires_at = 3; }
+message CreateApiTokenResponse { ApiToken token = 1; string secret = 2; } // secret shown once
+message RevokeApiTokenRequest { string id = 1; }
+message RevokeApiTokenResponse {}
+
+// ListAuditEventsRequest.page.filter accepts: actor_id == "…" && action.startsWith("deployment.") && at >= "RFC3339" && at < "RFC3339".
+message ListAuditEventsRequest { PageRequest page = 1; }
+message ListAuditEventsResponse { repeated AuditEvent items = 1; PageResponse page = 2; }
+
+// Browser auth is cookie based; these RPCs drive it. OIDC/SAML start/callback are plain HTTP under /auth/*.
+message LoginRequest { string email = 1; string password = 2; string totp_code = 3; }
+message LoginResponse {
+  User user = 1;
+  bool mfa_required = 2;
+  repeated string mfa_methods = 3; // totp | webauthn | recovery_code — what can satisfy the challenge
+  string mfa_token = 4;            // pass to BeginWebAuthnLogin to complete with a security key
+  Organization current_org = 5;
+}
+message LogoutRequest {}
+message LogoutResponse {}
+message SignupRequest {
+  string email = 1;
+  string password = 2;
+  string name = 3;
+  string org_name = 4;
+  string org_slug = 5;          // optional; derived from org_name when empty
+  string invitation_token = 6;  // join the inviting org instead of creating one
+}
+message SignupResponse { User user = 1; Organization organization = 2; bool verification_sent = 3; }
+message ListAuthProvidersRequest {}
+message ListAuthProvidersResponse {
+  message Provider { string id = 1; string display_name = 2; string start_url = 3; string kind = 4; }
+  repeated Provider providers = 1;
+  bool password_enabled = 2;
+  bool signup_enabled = 3;
+  bool webauthn_enabled = 4;
+}
+
+// ---- Account lifecycle -------------------------------------------------------------------------------------------
+
+message VerifyEmailRequest { string token = 1; }
+message VerifyEmailResponse { User user = 1; }
+message ResendVerificationRequest {}
+message ResendVerificationResponse {}
+message RequestPasswordResetRequest { string email = 1; }
+message RequestPasswordResetResponse {} // always succeeds for well-formed addresses
+message ResetPasswordRequest { string token = 1; string new_password = 2; }
+message ResetPasswordResponse {}
+message ChangePasswordRequest { string current_password = 1; string new_password = 2; }
+message ChangePasswordResponse {}
+message UpdateProfileRequest { User user = 1; google.protobuf.FieldMask update_mask = 2; } // name, avatar_url
+message UpdateProfileResponse { User user = 1; }
+message SignOutEverywhereRequest {}
+message SignOutEverywhereResponse {}
+message SwitchOrganizationRequest { string organization_id = 1; } // id or slug
+message SwitchOrganizationResponse { Organization organization = 1; }
+
+message LinkedIdentity { string id = 1; string provider = 2; string email = 3; }
+message ListLinkedIdentitiesRequest {}
+message ListLinkedIdentitiesResponse { repeated LinkedIdentity items = 1; }
+message UnlinkIdentityRequest { string id = 1; }
+message UnlinkIdentityResponse {}
+
+// ---- MFA ----------------------------------------------------------------------------------------------------------
+
+message GetMfaStatusRequest {}
+message GetMfaStatusResponse {
+  bool totp_enabled = 1;
+  int32 webauthn_credentials = 2;
+  int32 recovery_codes_remaining = 3;
+  bool webauthn_available = 4;
+}
+message BeginTotpEnrollmentRequest {}
+message BeginTotpEnrollmentResponse { string secret = 1; string otpauth_url = 2; }
+message ConfirmTotpEnrollmentRequest { string code = 1; }
+message ConfirmTotpEnrollmentResponse { repeated string recovery_codes = 1; } // shown once
+message RegenerateRecoveryCodesRequest { string code = 1; }
+message RegenerateRecoveryCodesResponse { repeated string recovery_codes = 1; }
+message DisableMfaRequest { string password = 1; string code = 2; } // password, or a code for passwordless accounts
+message DisableMfaResponse {}
+
+message WebAuthnCredential { string id = 1; string name = 2; google.protobuf.Timestamp created_at = 3; google.protobuf.Timestamp last_used_at = 4; }
+message ListWebAuthnCredentialsRequest {}
+message ListWebAuthnCredentialsResponse { repeated WebAuthnCredential items = 1; }
+message BeginWebAuthnRegistrationRequest { string name = 1; }
+// options_json is PublicKeyCredentialCreationOptionsJSON for navigator.credentials.create().
+message BeginWebAuthnRegistrationResponse { string options_json = 1; }
+// credential_json is the JSON-serialised PublicKeyCredential returned by the browser.
+message FinishWebAuthnRegistrationRequest { string credential_json = 1; }
+message FinishWebAuthnRegistrationResponse { WebAuthnCredential credential = 1; repeated string recovery_codes = 2; }
+message DeleteWebAuthnCredentialRequest { string id = 1; }
+message DeleteWebAuthnCredentialResponse {}
+// Empty mfa_token starts a passwordless passkey login; otherwise it is the second factor of a password login.
+message BeginWebAuthnLoginRequest { string mfa_token = 1; }
+message BeginWebAuthnLoginResponse { string ceremony_id = 1; string options_json = 2; }
+message FinishWebAuthnLoginRequest { string ceremony_id = 1; string credential_json = 2; }
+message FinishWebAuthnLoginResponse { User user = 1; Organization current_org = 2; }
+
+// ---- Invitations -------------------------------------------------------------------------------------------------
+
+message Invitation {
+  string id = 1;
+  string email = 2;
+  string role = 3;
+  string invited_by = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+// GetInvitation is public: the token is the credential. It reveals only what the invitee needs to decide.
+message GetInvitationRequest { string token = 1; }
+message GetInvitationResponse { string organization_name = 1; string organization_slug = 2; string email = 3; string role = 4; bool user_exists = 5; }
+message AcceptInvitationRequest { string token = 1; }
+message AcceptInvitationResponse { Organization organization = 1; }
+message ListInvitationsRequest {}
+message ListInvitationsResponse { repeated Invitation items = 1; }
+message RevokeInvitationRequest { string id = 1; }
+message RevokeInvitationResponse {}
+
+service IdentityService {
+  rpc WhoAmI(WhoAmIRequest) returns (WhoAmIResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc Signup(SignupRequest) returns (SignupResponse);
+  rpc ListAuthProviders(ListAuthProvidersRequest) returns (ListAuthProvidersResponse);
+
+  rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse);
+  rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse);
+  rpc GetOrganization(GetOrganizationRequest) returns (GetOrganizationResponse);
+  rpc UpdateOrganization(UpdateOrganizationRequest) returns (UpdateOrganizationResponse);
+
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
+  rpc InviteMember(InviteMemberRequest) returns (InviteMemberResponse);
+  rpc UpdateMemberRole(UpdateMemberRoleRequest) returns (UpdateMemberRoleResponse);
+  rpc RemoveMember(RemoveMemberRequest) returns (RemoveMemberResponse);
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse);
+
+  rpc ListApiTokens(ListApiTokensRequest) returns (ListApiTokensResponse);
+  rpc CreateApiToken(CreateApiTokenRequest) returns (CreateApiTokenResponse);
+  rpc RevokeApiToken(RevokeApiTokenRequest) returns (RevokeApiTokenResponse);
+
+  rpc ListAuditEvents(ListAuditEventsRequest) returns (ListAuditEventsResponse);
+
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
+  rpc ResendVerification(ResendVerificationRequest) returns (ResendVerificationResponse);
+  rpc RequestPasswordReset(RequestPasswordResetRequest) returns (RequestPasswordResetResponse);
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+  rpc SignOutEverywhere(SignOutEverywhereRequest) returns (SignOutEverywhereResponse);
+  rpc SwitchOrganization(SwitchOrganizationRequest) returns (SwitchOrganizationResponse);
+  rpc ListLinkedIdentities(ListLinkedIdentitiesRequest) returns (ListLinkedIdentitiesResponse);
+  rpc UnlinkIdentity(UnlinkIdentityRequest) returns (UnlinkIdentityResponse);
+
+  rpc GetMfaStatus(GetMfaStatusRequest) returns (GetMfaStatusResponse);
+  rpc BeginTotpEnrollment(BeginTotpEnrollmentRequest) returns (BeginTotpEnrollmentResponse);
+  rpc ConfirmTotpEnrollment(ConfirmTotpEnrollmentRequest) returns (ConfirmTotpEnrollmentResponse);
+  rpc RegenerateRecoveryCodes(RegenerateRecoveryCodesRequest) returns (RegenerateRecoveryCodesResponse);
+  rpc DisableMfa(DisableMfaRequest) returns (DisableMfaResponse);
+  rpc ListWebAuthnCredentials(ListWebAuthnCredentialsRequest) returns (ListWebAuthnCredentialsResponse);
+  rpc BeginWebAuthnRegistration(BeginWebAuthnRegistrationRequest) returns (BeginWebAuthnRegistrationResponse);
+  rpc FinishWebAuthnRegistration(FinishWebAuthnRegistrationRequest) returns (FinishWebAuthnRegistrationResponse);
+  rpc DeleteWebAuthnCredential(DeleteWebAuthnCredentialRequest) returns (DeleteWebAuthnCredentialResponse);
+  rpc BeginWebAuthnLogin(BeginWebAuthnLoginRequest) returns (BeginWebAuthnLoginResponse);
+  rpc FinishWebAuthnLogin(FinishWebAuthnLoginRequest) returns (FinishWebAuthnLoginResponse);
+
+  rpc GetInvitation(GetInvitationRequest) returns (GetInvitationResponse);
+  rpc AcceptInvitation(AcceptInvitationRequest) returns (AcceptInvitationResponse);
+  rpc ListInvitations(ListInvitationsRequest) returns (ListInvitationsResponse);
+  rpc RevokeInvitation(RevokeInvitationRequest) returns (RevokeInvitationResponse);
+}
+
+service ProjectService {
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
+  rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
+  rpc UpdateProject(UpdateProjectRequest) returns (UpdateProjectResponse);
+  rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse);
+  // GetBadgeKey returns the read-only key status badge URLs carry. Needs pipelines.read.
+  rpc GetBadgeKey(GetBadgeKeyRequest) returns (GetBadgeKeyResponse);
+  // RegenerateBadgeKey replaces the key; badge URLs with the old one stop working at once. Needs projects.update.
+  rpc RegenerateBadgeKey(RegenerateBadgeKeyRequest) returns (RegenerateBadgeKeyResponse);
+}
+
+// ======================================================================================================================
+// Teams
+
+message Team {
+  string id = 1;
+  string slug = 2;
+  string name = 3;
+  string description = 4;
+  string external_id = 5; // set for SCIM-managed teams
+  int32 member_count = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+message TeamMember { User user = 1; }
+
+message ListTeamsRequest { PageRequest page = 1; }
+message ListTeamsResponse { repeated Team items = 1; PageResponse page = 2; }
+message CreateTeamRequest { string slug = 1; string name = 2; string description = 3; }
+message CreateTeamResponse { Team team = 1; }
+message GetTeamRequest { string id = 1; }
+message GetTeamResponse { Team team = 1; }
+message UpdateTeamRequest { Team team = 1; google.protobuf.FieldMask update_mask = 2; } // name, description
+message UpdateTeamResponse { Team team = 1; }
+message DeleteTeamRequest { string id = 1; }
+message DeleteTeamResponse {}
+message ListTeamMembersRequest { string team_id = 1; }
+message ListTeamMembersResponse { repeated TeamMember items = 1; }
+message AddTeamMemberRequest { string team_id = 1; string user_id = 2; }
+message AddTeamMemberResponse {}
+message RemoveTeamMemberRequest { string team_id = 1; string user_id = 2; }
+message RemoveTeamMemberResponse {}
+
+service TeamService {
+  rpc ListTeams(ListTeamsRequest) returns (ListTeamsResponse);
+  rpc CreateTeam(CreateTeamRequest) returns (CreateTeamResponse);
+  rpc GetTeam(GetTeamRequest) returns (GetTeamResponse);
+  rpc UpdateTeam(UpdateTeamRequest) returns (UpdateTeamResponse);
+  rpc DeleteTeam(DeleteTeamRequest) returns (DeleteTeamResponse);
+  rpc ListTeamMembers(ListTeamMembersRequest) returns (ListTeamMembersResponse);
+  rpc AddTeamMember(AddTeamMemberRequest) returns (AddTeamMemberResponse);
+  rpc RemoveTeamMember(RemoveTeamMemberRequest) returns (RemoveTeamMemberResponse);
+}
+
+// ======================================================================================================================
+// Roles, permissions and bindings
+
+message PermissionInfo {
+  string name = 1;        // "deployments.approve"
+  string description = 2;
+  string category = 3;
+  bool scopable = 4;      // may be written "name:<environment>"
+}
+
+// RoleBinding grants a role to a subject at org, project or environment scope.
+message RoleBinding {
+  string id = 1;
+  string subject_kind = 2; // user | team | service_account
+  string subject_id = 3;
+  string role_id = 4;
+  string scope_kind = 5;   // org | project | environment
+  string project_id = 6;
+  string environment_id = 7;
+  string created_by = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+message ListPermissionsRequest {}
+message ListPermissionsResponse { repeated PermissionInfo items = 1; }
+message CreateRoleRequest { string name = 1; string description = 2; repeated string permissions = 3; }
+message CreateRoleResponse { Role role = 1; }
+message GetRoleRequest { string id = 1; }
+message GetRoleResponse { Role role = 1; }
+message UpdateRoleRequest { Role role = 1; google.protobuf.FieldMask update_mask = 2; } // name, description, permissions
+message UpdateRoleResponse { Role role = 1; }
+message DeleteRoleRequest { string id = 1; }
+message DeleteRoleResponse {}
+message ListRoleBindingsRequest { string subject_id = 1; string project_id = 2; }
+message ListRoleBindingsResponse { repeated RoleBinding items = 1; }
+message CreateRoleBindingRequest { RoleBinding binding = 1; }
+message CreateRoleBindingResponse { RoleBinding binding = 1; }
+message DeleteRoleBindingRequest { string id = 1; }
+message DeleteRoleBindingResponse {}
+
+// CheckPermissions answers "what may the caller do here" for UI gating. Every name in permissions is evaluated at
+// the given scope.
+message CheckPermissionsRequest { repeated string permissions = 1; string project_id = 2; string environment_id = 3; string environment_name = 4; }
+message CheckPermissionsResponse { map<string, bool> allowed = 1; }
+
+service RoleService {
+  rpc ListPermissions(ListPermissionsRequest) returns (ListPermissionsResponse);
+  rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse);
+  rpc GetRole(GetRoleRequest) returns (GetRoleResponse);
+  rpc UpdateRole(UpdateRoleRequest) returns (UpdateRoleResponse);
+  rpc DeleteRole(DeleteRoleRequest) returns (DeleteRoleResponse);
+  rpc ListRoleBindings(ListRoleBindingsRequest) returns (ListRoleBindingsResponse);
+  rpc CreateRoleBinding(CreateRoleBindingRequest) returns (CreateRoleBindingResponse);
+  rpc DeleteRoleBinding(DeleteRoleBindingRequest) returns (DeleteRoleBindingResponse);
+  rpc CheckPermissions(CheckPermissionsRequest) returns (CheckPermissionsResponse);
+}
+
+// ======================================================================================================================
+// Service accounts
+
+message ServiceAccount {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  bool disabled = 4;
+  string created_by = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message ListServiceAccountsRequest { PageRequest page = 1; }
+message ListServiceAccountsResponse { repeated ServiceAccount items = 1; PageResponse page = 2; }
+message CreateServiceAccountRequest { string name = 1; string description = 2; string role_id = 3; } // role_id defaults to viewer
+message CreateServiceAccountResponse { ServiceAccount service_account = 1; }
+message GetServiceAccountRequest { string id = 1; }
+message GetServiceAccountResponse { ServiceAccount service_account = 1; }
+message UpdateServiceAccountRequest { ServiceAccount service_account = 1; google.protobuf.FieldMask update_mask = 2; } // name, description, disabled
+message UpdateServiceAccountResponse { ServiceAccount service_account = 1; }
+message DeleteServiceAccountRequest { string id = 1; }
+message DeleteServiceAccountResponse {}
+message ListServiceAccountTokensRequest { string service_account_id = 1; PageRequest page = 2; }
+message ListServiceAccountTokensResponse { repeated ApiToken items = 1; PageResponse page = 2; }
+message CreateServiceAccountTokenRequest { string service_account_id = 1; string name = 2; repeated string scopes = 3; google.protobuf.Timestamp expires_at = 4; }
+message CreateServiceAccountTokenResponse { ApiToken token = 1; string secret = 2; } // secret shown once
+message RevokeServiceAccountTokenRequest { string service_account_id = 1; string token_id = 2; }
+message RevokeServiceAccountTokenResponse {}
+
+service ServiceAccountService {
+  rpc ListServiceAccounts(ListServiceAccountsRequest) returns (ListServiceAccountsResponse);
+  rpc CreateServiceAccount(CreateServiceAccountRequest) returns (CreateServiceAccountResponse);
+  rpc GetServiceAccount(GetServiceAccountRequest) returns (GetServiceAccountResponse);
+  rpc UpdateServiceAccount(UpdateServiceAccountRequest) returns (UpdateServiceAccountResponse);
+  rpc DeleteServiceAccount(DeleteServiceAccountRequest) returns (DeleteServiceAccountResponse);
+  rpc ListServiceAccountTokens(ListServiceAccountTokensRequest) returns (ListServiceAccountTokensResponse);
+  rpc CreateServiceAccountToken(CreateServiceAccountTokenRequest) returns (CreateServiceAccountTokenResponse);
+  rpc RevokeServiceAccountToken(RevokeServiceAccountTokenRequest) returns (RevokeServiceAccountTokenResponse);
+}
+
+// ======================================================================================================================
+// Audit
+
+message QueryAuditEventsRequest {
+  PageRequest page = 1;
+  string actor_id = 2;
+  string action = 3;
+  string action_prefix = 4;
+  string target_type = 5;
+  string target_id = 6;
+  google.protobuf.Timestamp since = 7;
+  google.protobuf.Timestamp until = 8;
+}
+message QueryAuditEventsResponse { repeated AuditEvent items = 1; PageResponse page = 2; }
+message VerifyAuditChainRequest {}
+message VerifyAuditChainResponse { bool ok = 1; int64 events_checked = 2; string first_bad_event_id = 3; string reason = 4; }
+message GetAuditRetentionRequest {}
+message GetAuditRetentionResponse { int32 retention_days = 1; bool export_enabled = 2; bool streaming_enabled = 3; string export_url = 4; } // retention_days 0 = unlimited
+
+service AuditService {
+  rpc QueryAuditEvents(QueryAuditEventsRequest) returns (QueryAuditEventsResponse);
+  rpc VerifyAuditChain(VerifyAuditChainRequest) returns (VerifyAuditChainResponse);
+  rpc GetAuditRetention(GetAuditRetentionRequest) returns (GetAuditRetentionResponse);
+}
+
+// ======================================================================================================================
+// Single sign-on and SCIM provisioning (Business and Enterprise plans)
+
+message SsoConnection {
+  string id = 1;
+  string kind = 2; // saml
+  string name = 3;
+  bool enabled = 4;
+  bool enforce = 5;          // browser logins to the org must use SSO
+  bool auto_provision = 6;   // create users and memberships on first login
+  string default_role = 7;   // never owner/admin
+  repeated string domains = 8;
+  string idp_metadata_url = 9;
+  string idp_metadata_xml = 10;
+  string email_attribute = 11;
+  string name_attribute = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+}
+message ListSsoConnectionsRequest {}
+message ListSsoConnectionsResponse { repeated SsoConnection items = 1; }
+message CreateSsoConnectionRequest { SsoConnection connection = 1; }
+message CreateSsoConnectionResponse { SsoConnection connection = 1; }
+message UpdateSsoConnectionRequest { SsoConnection connection = 1; google.protobuf.FieldMask update_mask = 2; }
+message UpdateSsoConnectionResponse { SsoConnection connection = 1; }
+message DeleteSsoConnectionRequest { string id = 1; }
+message DeleteSsoConnectionResponse {}
+// SAML service-provider details to paste into the identity provider.
+message GetSamlServiceProviderRequest {}
+message GetSamlServiceProviderResponse { string entity_id = 1; string acs_url = 2; string metadata_url = 3; string login_url = 4; }
+
+// An email domain an organisation claims. A claim only counts (SSO assertions, auto-join) once verified: publish the
+// TXT record `verification_record` with content `verification_value` in DNS, then call ConfirmOrgDomain. A domain can
+// be verified by one organisation at a time.
+message OrgDomain {
+  string domain = 1;
+  string verification_record = 2; // DNS name, e.g. _slipway-verify.acme.com
+  string verification_value = 3;  // TXT content, e.g. slipway-verify=<token>
+  bool verified = 4;
+  google.protobuf.Timestamp verified_at = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+message ListOrgDomainsRequest {}
+message ListOrgDomainsResponse { repeated OrgDomain items = 1; }
+// AddOrgDomain starts verification of a domain (idempotent: re-adding returns the same record).
+message AddOrgDomainRequest { string domain = 1; }
+message AddOrgDomainResponse { OrgDomain domain = 1; }
+// ConfirmOrgDomain looks up the TXT record and marks the domain verified. FAILED_PRECONDITION while the record is absent.
+message ConfirmOrgDomainRequest { string domain = 1; }
+message ConfirmOrgDomainResponse { OrgDomain domain = 1; }
+message DeleteOrgDomainRequest { string domain = 1; }
+message DeleteOrgDomainResponse {}
+
+message ScimToken {
+  string id = 1;
+  string name = 2;
+  string prefix = 3;
+  google.protobuf.Timestamp expires_at = 4;
+  google.protobuf.Timestamp last_used_at = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+message ListScimTokensRequest {}
+message ListScimTokensResponse { repeated ScimToken items = 1; string scim_base_url = 2; }
+message CreateScimTokenRequest { string name = 1; google.protobuf.Timestamp expires_at = 2; }
+message CreateScimTokenResponse { ScimToken token = 1; string secret = 2; } // secret shown once
+message RevokeScimTokenRequest { string id = 1; }
+message RevokeScimTokenResponse {}
+
+service SsoService {
+  rpc ListSsoConnections(ListSsoConnectionsRequest) returns (ListSsoConnectionsResponse);
+  rpc CreateSsoConnection(CreateSsoConnectionRequest) returns (CreateSsoConnectionResponse);
+  rpc UpdateSsoConnection(UpdateSsoConnectionRequest) returns (UpdateSsoConnectionResponse);
+  rpc DeleteSsoConnection(DeleteSsoConnectionRequest) returns (DeleteSsoConnectionResponse);
+  rpc GetSamlServiceProvider(GetSamlServiceProviderRequest) returns (GetSamlServiceProviderResponse);
+  rpc ListOrgDomains(ListOrgDomainsRequest) returns (ListOrgDomainsResponse);
+  rpc AddOrgDomain(AddOrgDomainRequest) returns (AddOrgDomainResponse);
+  rpc ConfirmOrgDomain(ConfirmOrgDomainRequest) returns (ConfirmOrgDomainResponse);
+  rpc DeleteOrgDomain(DeleteOrgDomainRequest) returns (DeleteOrgDomainResponse);
+  rpc ListScimTokens(ListScimTokensRequest) returns (ListScimTokensResponse);
+  rpc CreateScimToken(CreateScimTokenRequest) returns (CreateScimTokenResponse);
+  rpc RevokeScimToken(RevokeScimTokenRequest) returns (RevokeScimTokenResponse);
+}
+
+message GetBadgeKeyRequest { string project_id = 1; }
+message GetBadgeKeyResponse { string key = 1; }
+message RegenerateBadgeKeyRequest { string project_id = 1; }
+message RegenerateBadgeKeyResponse { string key = 1; }

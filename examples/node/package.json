@@ -1,0 +1,16 @@
+{
+  "name": "slipway-sdk-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js"
+  },
+  "dependencies": {
+    "@slipway-systems/sdk": "file:../../ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "5.9.3"
+  }
+}

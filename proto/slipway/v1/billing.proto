@@ -1,0 +1,221 @@
+syntax = "proto3";
+
+package slipway.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Billing contract. Plans, their limits and the entitlements they grant.
+// Conventions for every numeric limit below:
+//   -1  means unlimited
+//    0  means "not included"
+// Plan ids: free | team | business | enterprise.
+// Meter ids: hosted_minutes | self_hosted_minutes | storage_bytes | concurrency_hosted |
+//            concurrency_self_hosted | environments.
+
+// Entitlements are the typed limits and feature flags of a plan (with any per-org override applied).
+message Entitlements {
+  int64 hosted_minutes_included = 1;      // per month, Linux 2 vCPU equivalent
+  string hosted_overage_mode = 2;         // hard_stop | metered | negotiated
+  int64 hosted_overage_micros_per_minute = 3; // USD micros (1e-6) per minute beyond included; 0 when hard_stop
+  int64 concurrent_jobs_self_hosted = 4;
+  int64 concurrent_jobs_hosted = 5;
+  int64 environments_per_project = 6;
+  repeated string deployment_strategies = 7; // recreate, rolling, bluegreen, canary, progressive, release_trains, custom
+  int64 policy_gates = 8;                 // CEL policies
+  bool change_management = 9;             // ServiceNow / Jira change requests
+  bool sso = 10;
+  bool saml_scim = 11;
+  bool custom_rbac = 12;
+  int64 audit_retention_days = 13;
+  bool audit_export = 14;
+  bool audit_streaming = 15;
+  int64 log_retention_days = 16;
+  int64 artifact_retention_days = 17;
+  bool secrets_byok = 18;
+  bool secrets_hsm = 19;
+  bool signed_provenance = 20;
+  string support_tier = 21;               // community | email | priority | enterprise
+  string support_response = 22;           // human readable response target
+  string uptime_sla = 23;                 // "" | "99.9%" | "99.95%"
+  bool dedicated_cell = 24;
+  bool negotiated = 25;                   // limits are contract-specific (enterprise)
+  // Longest a job may run on a Slipway-hosted runner; self-hosted runners only have the plan's general job limit.
+  // 0 or negative: no hosted-specific limit.
+  int64 hosted_job_timeout_minutes = 26;
+}
+
+// Plan is one entry of the public catalogue.
+message Plan {
+  string id = 1;
+  string name = 2;
+  string tagline = 3;
+  int64 price_cents_monthly = 4;          // 0 for free; floor price for enterprise
+  bool price_is_from = 5;                 // "from $2,000"
+  bool contact_sales = 6;                 // cannot be bought via checkout
+  int32 trial_days = 7;                   // 0 = none
+  Entitlements entitlements = 8;
+  int32 rank = 9;                         // ordering, free = 0
+}
+
+message BillingSubscription {
+  string id = 1;                          // Stripe subscription id, empty when none
+  string plan = 2;
+  string status = 3;                      // none | trialing | active | past_due | canceled | unpaid | incomplete | admin
+  google.protobuf.Timestamp current_period_start = 4;
+  google.protobuf.Timestamp current_period_end = 5;
+  google.protobuf.Timestamp trial_end = 6;
+  bool cancel_at_period_end = 7;
+  bool trial_available = 8;               // org has never used its Business trial
+  string plan_source = 9;                 // default | stripe | admin
+  bool has_billing_account = 10;          // a Stripe customer exists (portal available)
+}
+
+message ProjectUsage {
+  string project_id = 1;                  // empty = unattributed / org-level
+  int64 quantity = 2;
+  int64 peak = 3;
+}
+
+// MeterUsage is one meter for one period.
+message MeterUsage {
+  string meter = 1;
+  string unit = 2;                        // minutes | bytes | jobs | environments
+  string kind = 3;                        // counter | gauge
+  int64 quantity = 4;                     // counter: sum, gauge: latest (max across projects for environments)
+  int64 peak = 5;
+  int64 limit = 6;                        // -1 unlimited
+  double percent = 7;                     // 0 when unlimited
+  int64 overage_quantity = 8;             // counters beyond the included amount (paid plans)
+  int64 estimated_overage_micros = 9;     // overage_quantity * rate
+  bool hard_limit = 10;                   // true when hitting the limit blocks work
+  repeated ProjectUsage by_project = 11;
+}
+
+message UsagePeriod {
+  google.protobuf.Timestamp period_start = 1;
+  google.protobuf.Timestamp period_end = 2;
+  repeated MeterUsage meters = 3;
+}
+
+// AlertSettings is the organisation's usage alert configuration (BillingService.GetAlertSettings / UpdateAlertSettings).
+message AlertSettings {
+  repeated int32 thresholds = 1;   // percent of a meter's limit, ascending; default 80 and 100
+  repeated string recipients = 2;  // extra email addresses, besides the members who manage billing
+}
+message GetAlertSettingsRequest {}
+message GetAlertSettingsResponse { AlertSettings settings = 1; }
+message UpdateAlertSettingsRequest { AlertSettings settings = 1; }
+message UpdateAlertSettingsResponse { AlertSettings settings = 1; }
+
+message UsageAlert {
+  string meter = 1;
+  int32 threshold = 2;                    // a configured threshold, 80 or 100 by default
+  int64 usage = 3;
+  int64 limit = 4;
+  google.protobuf.Timestamp fired_at = 5;
+}
+
+message BillingInvoice {
+  string id = 1;
+  string number = 2;
+  string status = 3;
+  string currency = 4;
+  int64 amount_due = 5;
+  int64 amount_paid = 6;
+  int64 total = 7;
+  string hosted_invoice_url = 8;
+  string invoice_pdf = 9;
+  google.protobuf.Timestamp period_start = 10;
+  google.protobuf.Timestamp period_end = 11;
+  google.protobuf.Timestamp issued_at = 12;
+}
+
+message GetPlanRequest {
+  string plan_id = 1; // empty = the caller's current plan with overrides applied
+}
+message GetPlanResponse {
+  Plan plan = 1;
+}
+
+message ListPlansRequest {}
+message ListPlansResponse {
+  repeated Plan plans = 1;
+  string current_plan_id = 2;
+}
+
+message GetUsageRequest {
+  int32 history_months = 1; // 0 = current period only; max 24
+}
+message GetUsageResponse {
+  string plan_id = 1;
+  UsagePeriod current = 2;
+  repeated UsagePeriod history = 3; // most recent first, excludes current
+  repeated UsageAlert alerts = 4;   // alerts fired in the current period
+}
+
+message CreateCheckoutSessionRequest {
+  string plan_id = 1;      // team | business
+  bool start_trial = 2;    // honoured only for plans with a trial and when the org has not used it
+  string return_path = 3;  // optional app-relative path (must start with "/"); defaults to /settings/billing
+}
+message CreateCheckoutSessionResponse {
+  string url = 1;
+  string session_id = 2;
+}
+
+message CreatePortalSessionRequest {
+  string return_path = 1;
+}
+message CreatePortalSessionResponse {
+  string url = 1;
+}
+
+message GetSubscriptionRequest {}
+message GetSubscriptionResponse {
+  BillingSubscription subscription = 1;
+  Plan plan = 2; // effective plan
+}
+
+message ListInvoicesRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+message ListInvoicesResponse {
+  repeated BillingInvoice items = 1;
+  string next_page_token = 2;
+}
+
+// SetPlanRequest is an instance-admin operation (enterprise contracts, comps, support overrides).
+message SetPlanRequest {
+  string org_id = 1;
+  string plan_id = 2;
+  string reason = 3;
+  // Optional negotiated overrides; unset fields keep the catalogue value. Only meaningful for enterprise.
+  optional int64 hosted_minutes_included = 4;
+  optional int64 hosted_overage_micros_per_minute = 5;
+  optional int64 concurrent_jobs_hosted = 6;
+  optional int64 concurrent_jobs_self_hosted = 7;
+  optional int64 log_retention_days = 8;
+  optional int64 artifact_retention_days = 9;
+  optional int64 audit_retention_days = 10;
+  optional int64 hosted_overage_cap_minutes = 11; // spend guard; unset = no cap
+  bool clear_overrides = 12;
+  optional int64 hosted_job_timeout_minutes = 13;
+}
+message SetPlanResponse {
+  BillingSubscription subscription = 1;
+  Plan plan = 2;
+}
+
+service BillingService {
+  rpc GetPlan(GetPlanRequest) returns (GetPlanResponse);
+  rpc ListPlans(ListPlansRequest) returns (ListPlansResponse);
+  rpc GetUsage(GetUsageRequest) returns (GetUsageResponse);
+  rpc CreateCheckoutSession(CreateCheckoutSessionRequest) returns (CreateCheckoutSessionResponse);
+  rpc CreatePortalSession(CreatePortalSessionRequest) returns (CreatePortalSessionResponse);
+  rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse);
+  rpc ListInvoices(ListInvoicesRequest) returns (ListInvoicesResponse);
+  rpc SetPlan(SetPlanRequest) returns (SetPlanResponse);
+  rpc GetAlertSettings(GetAlertSettingsRequest) returns (GetAlertSettingsResponse);
+  rpc UpdateAlertSettings(UpdateAlertSettingsRequest) returns (UpdateAlertSettingsResponse);
+}

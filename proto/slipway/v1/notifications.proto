@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package slipway.v1;
+
+import "google/protobuf/timestamp.proto";
+import "slipway/v1/common.proto";
+
+// Notifications: a per-user inbox (the bell) and per-user, per-organisation preferences about which events reach
+// the user in the app and by email. Rows are written by the notifications worker from domain events; users only read
+// their own inbox and edit their own preferences, so no permission beyond a signed-in session is needed. The org is
+// the principal's active organisation.
+
+// Notification is one inbox entry.
+message Notification {
+  string id = 1;        // ntf_…
+  string event = 2;     // run.failed, run.fixed, deployment.waiting_approval, deployment.finished, runner.offline, billing.usage
+  string event_id = 3;  // the domain event that produced it (evt_…)
+  string title = 4;
+  string body = 5;
+  string href = 6;      // app path to open, empty when there is nothing to open
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp read_at = 8; // unset while unread
+}
+
+message ListNotificationsRequest {
+  PageRequest page = 1;
+  bool unread_only = 2;
+}
+message ListNotificationsResponse {
+  repeated Notification items = 1;
+  PageResponse page = 2;
+  int32 unread = 3; // unread count in the organisation, independent of the page
+}
+
+message MarkNotificationsReadRequest {
+  repeated string ids = 1; // empty with all=true marks every unread notification
+  bool all = 2;
+}
+message MarkNotificationsReadResponse {
+  int32 marked = 1;
+}
+
+// WatchNotifications streams inbox changes: the current unread count on connect, then an update whenever a
+// notification is added or read.
+message WatchNotificationsRequest {}
+message WatchNotificationsResponse {
+  int32 unread = 1;
+  Notification added = 2; // set when a new notification arrived
+}
+
+// NotificationPreference is one event's delivery choice.
+message NotificationPreference {
+  string event = 1;
+  bool in_app = 2;
+  bool email = 3;
+}
+// NotificationEvent describes an event the user can subscribe to.
+message NotificationEvent {
+  string id = 1;
+  string label = 2;
+  string description = 3;
+}
+
+message GetNotificationPreferencesRequest {}
+message GetNotificationPreferencesResponse {
+  repeated NotificationPreference preferences = 1; // one per known event, defaults filled in
+  repeated NotificationEvent events = 2;           // the catalogue, in display order
+}
+message UpdateNotificationPreferencesRequest {
+  repeated NotificationPreference preferences = 1; // events not listed keep their stored (or default) value
+}
+message UpdateNotificationPreferencesResponse {
+  repeated NotificationPreference preferences = 1;
+}
+
+service NotificationService {
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  rpc MarkNotificationsRead(MarkNotificationsReadRequest) returns (MarkNotificationsReadResponse);
+  rpc WatchNotifications(WatchNotificationsRequest) returns (stream WatchNotificationsResponse);
+  rpc GetNotificationPreferences(GetNotificationPreferencesRequest) returns (GetNotificationPreferencesResponse);
+  rpc UpdateNotificationPreferences(UpdateNotificationPreferencesRequest) returns (UpdateNotificationPreferencesResponse);
+}

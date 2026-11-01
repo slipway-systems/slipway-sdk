@@ -1,0 +1,47 @@
+{
+  "name": "@slipway-systems/sdk",
+  "version": "0.2.0",
+  "description": "TypeScript client for the Slipway API, for browsers and Node",
+  "license": "Apache-2.0",
+  "homepage": "https://slipway.systems/docs/api/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/slipway-systems/slipway-sdk.git",
+    "directory": "ts"
+  },
+  "bugs": {
+    "url": "https://github.com/slipway-systems/slipway-sdk/issues"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.16.0",
+    "@connectrpc/connect": "^2.2.0",
+    "@connectrpc/connect-web": "^2.2.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}
