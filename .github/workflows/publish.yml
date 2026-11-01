@@ -48,7 +48,8 @@ jobs:
         run: |
           test "$(node -p 'require("./package.json").version')" = "${TAG#v}"
           test "$(cat ../VERSION)" = "${TAG#v}"
-      # A failed read stops here, so it cannot look like a version that is not yet published.
+      # A failed read stops here, so it cannot look like a version that is not yet published. Plain fields, not --json:
+      # the JSON shape of `npm view <name>` differs between npm versions (npm 12 answers with an array).
       - name: Choose the dist-tag
         id: dist-tag
         working-directory: ts
@@ -57,14 +58,15 @@ jobs:
           set -euo pipefail
           version="${TAG#v}"
           name="$(node -p 'require("./package.json").name')"
-          npm view "$name" --json > "$RUNNER_TEMP/package.json"
-          published="$(jq -r --arg v "$version" '(.versions // []) | index($v) != null' "$RUNNER_TEMP/package.json")"
-          if [ "$published" = true ]; then
+          latest="$(npm view "$name" dist-tags.latest)"
+          if npm view "$name@$version" version > /dev/null 2> "$RUNNER_TEMP/view.err"; then
             echo "::notice::$name@$version is already on npm."
             echo "published=true" >> "$GITHUB_OUTPUT"
             exit 0
+          elif ! grep -q E404 "$RUNNER_TEMP/view.err"; then
+            cat "$RUNNER_TEMP/view.err" >&2
+            exit 1
           fi
-          latest="$(jq -r '."dist-tags".latest // ""' "$RUNNER_TEMP/package.json")"
           tag="$(../scripts/npm-dist-tag.sh "$version" "$latest")"
           echo "$name@$version goes to dist-tag $tag (latest is $latest)"
           { echo "published=false"; echo "tag=$tag"; } >> "$GITHUB_OUTPUT"
