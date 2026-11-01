@@ -80,7 +80,8 @@ jobs:
           fetch() { curl -fsSL --retry 5 --retry-all-errors --retry-delay 10 "$@"; }
           fetch "$download/$asset" -o "$asset"
           fetch "$download/checksums.txt" -o checksums.txt
-          grep -F "  $asset" checksums.txt | sha256sum --check
+          # By whole name: a prefix match also takes the SBOM next to it, which was not downloaded.
+          awk -v asset="$asset" '$2 == asset' checksums.txt | sha256sum --check
           tar -xzf "$asset" slipway
       - name: Run the examples
         env:
