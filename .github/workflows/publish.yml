@@ -2,9 +2,13 @@ name: publish
 
 # npm's trusted publisher for @slipway-systems/sdk names this file, so it must keep this name. There is no npm token:
 # the publish authenticates with this workflow's GitHub OIDC identity, and npm attaches provenance.
+#
+# The release workflow also starts it on the tag (workflow_dispatch with --ref vX.Y.Z): at 0.2.0 the tag pushed by the
+# release App started nothing (#93). Run both ways, the second run finds the version on npm and publishes nothing.
 on:
   push:
     tags: ["v*.*.*"]
+  workflow_dispatch:
 
 concurrency:
   group: publish-${{ github.ref }}
@@ -88,7 +92,8 @@ jobs:
         run: |
           set -euo pipefail
           spec="$(node -p 'const p = require("./package.json"); p.name + "@" + p.version')"
-          for _ in 1 2 3 4 5 6; do
+          # The registry can take over a minute to show a new version's attestation (0.2.0 did).
+          for _ in $(seq 30); do
             url="$(npm view "$spec" dist.attestations.url 2>/dev/null || true)"
             if [ -n "$url" ]; then echo "$spec has attestations at $url"; exit 0; fi
             sleep 10
