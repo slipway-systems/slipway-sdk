@@ -8776,10 +8776,14 @@ func (x *JobAssignment) GetRunAttempt() int32 {
 }
 
 type CancelJob struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Job           *JobRef                `protobuf:"bytes,1,opt,name=job,proto3" json:"job,omitempty"`
-	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
-	Grace         *durationpb.Duration   `protobuf:"bytes,3,opt,name=grace,proto3" json:"grace,omitempty"` // after which the runner should kill the job
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Job    *JobRef                `protobuf:"bytes,1,opt,name=job,proto3" json:"job,omitempty"`
+	Reason string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	Grace  *durationpb.Duration   `protobuf:"bytes,3,opt,name=grace,proto3" json:"grace,omitempty"` // after which the runner should kill the job
+	// The server has already ended this attempt (lease expired or revoked, superseded, timed out, cancellation overdue):
+	// it may be running elsewhere, so the runner stops it without running always()/cancelled() steps or post-job work,
+	// and grace does not apply.
+	AttemptEnded  bool `protobuf:"varint,4,opt,name=attempt_ended,json=attemptEnded,proto3" json:"attempt_ended,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -8833,6 +8837,13 @@ func (x *CancelJob) GetGrace() *durationpb.Duration {
 		return x.Grace
 	}
 	return nil
+}
+
+func (x *CancelJob) GetAttemptEnded() bool {
+	if x != nil {
+		return x.AttemptEnded
+	}
+	return false
 }
 
 type LogAck struct {
@@ -11078,11 +11089,12 @@ const file_slipway_v1_runs_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a:\n" +
 	"\fSecretsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"z\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x9f\x01\n" +
 	"\tCancelJob\x12$\n" +
 	"\x03job\x18\x01 \x01(\v2\x12.slipway.v1.JobRefR\x03job\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\x12/\n" +
-	"\x05grace\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\x05grace\"i\n" +
+	"\x05grace\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\x05grace\x12#\n" +
+	"\rattempt_ended\x18\x04 \x01(\bR\fattemptEnded\"i\n" +
 	"\x06LogAck\x12$\n" +
 	"\x03job\x18\x01 \x01(\v2\x12.slipway.v1.JobRefR\x03job\x12\x1d\n" +
 	"\n" +

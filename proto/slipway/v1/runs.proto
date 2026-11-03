@@ -884,6 +884,10 @@ message CancelJob {
   JobRef job = 1;
   string reason = 2;
   google.protobuf.Duration grace = 3; // after which the runner should kill the job
+  // The server has already ended this attempt (lease expired or revoked, superseded, timed out, cancellation overdue):
+  // it may be running elsewhere, so the runner stops it without running always()/cancelled() steps or post-job work,
+  // and grace does not apply.
+  bool attempt_ended = 4;
 }
 message LogAck {
   JobRef job = 1;
