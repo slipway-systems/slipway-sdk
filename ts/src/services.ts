@@ -2,6 +2,7 @@
 
 import { createClient, type Client, type Transport } from "@connectrpc/connect";
 import { BillingService } from "./gen/slipway/v1/billing_pb.js";
+import { CliLoginService } from "./gen/slipway/v1/cli_login_pb.js";
 import { ApprovalService, DeployService, EnvironmentService, ReleaseService, RunbookService } from "./gen/slipway/v1/deploy_pb.js";
 import { AuditService, IdentityService, ProjectService, RoleService, ServiceAccountService, SsoService, TeamService } from "./gen/slipway/v1/identity_pb.js";
 import { IntegrationService, WebhookService } from "./gen/slipway/v1/integrations_pb.js";
@@ -17,6 +18,7 @@ export interface Services {
   artifact: Client<typeof ArtifactService>;
   audit: Client<typeof AuditService>;
   billing: Client<typeof BillingService>;
+  cliLogin: Client<typeof CliLoginService>;
   deploy: Client<typeof DeployService>;
   environment: Client<typeof EnvironmentService>;
   identity: Client<typeof IdentityService>;
@@ -45,6 +47,7 @@ export function createServices(transport: Transport): Services {
     artifact: createClient(ArtifactService, transport),
     audit: createClient(AuditService, transport),
     billing: createClient(BillingService, transport),
+    cliLogin: createClient(CliLoginService, transport),
     deploy: createClient(DeployService, transport),
     environment: createClient(EnvironmentService, transport),
     identity: createClient(IdentityService, transport),

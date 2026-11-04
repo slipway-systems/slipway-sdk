@@ -311,6 +311,9 @@ message Runner {
   bool compatible = 14;         // within one minor version of the control plane; an incompatible runner gets no jobs
   string server_version = 15;   // what it should run; differs from version when an update is available, empty for development builds
   string update_problem = 16;   // why this runner cannot get that build from the control plane
+  // The labels the runner process reports (its configuration, replaced on every connect). The rest of `labels` were
+  // added through UpdateRunner and survive restarts; a reported label can only be removed in the runner's configuration.
+  repeated string reported_labels = 17;
 }
 
 message RegistrationToken {
@@ -570,6 +573,9 @@ message CreateRegistrationTokenRequest {
 message CreateRegistrationTokenResponse {
   RegistrationToken token = 1;
   string secret = 2; // sreg_… shown once
+  // The runner container image for this control plane's version (ghcr.io/slipway-systems/slipway-runner:<version>,
+  // `latest` on development builds), for the install commands shown with the token.
+  string runner_image = 3;
 }
 message ListRegistrationTokensRequest { string pool_id = 1; }
 message ListRegistrationTokensResponse { repeated RegistrationToken items = 1; }

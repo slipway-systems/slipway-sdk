@@ -1761,6 +1761,7 @@ type Release struct {
 	ReleaseNotes      string                      `protobuf:"bytes,14,opt,name=release_notes,json=releaseNotes,proto3" json:"release_notes,omitempty"`
 	CreatedBy         string                      `protobuf:"bytes,15,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
 	CreatedAt         *timestamppb.Timestamp      `protobuf:"bytes,16,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	CreatedByActor    *Actor                      `protobuf:"bytes,17,opt,name=created_by_actor,json=createdByActor,proto3" json:"created_by_actor,omitempty"` // created_by with its kind and display name, for people to read
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -1903,6 +1904,13 @@ func (x *Release) GetCreatedBy() string {
 func (x *Release) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *Release) GetCreatedByActor() *Actor {
+	if x != nil {
+		return x.CreatedByActor
 	}
 	return nil
 }
@@ -2438,6 +2446,9 @@ type DeploymentStep struct {
 	InfrastructureId string                 `protobuf:"bytes,14,opt,name=infrastructure_id,json=infrastructureId,proto3" json:"infrastructure_id,omitempty"`
 	StartedAt        *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
 	FinishedAt       *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
+	RunId            string                 `protobuf:"bytes,17,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`                         // the run that executes a job step (runner = job); its logs are the step's output
+	JobId            string                 `protobuf:"bytes,18,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`                         // that run's job, for LogService.Tail
+	WaitingReason    string                 `protobuf:"bytes,19,opt,name=waiting_reason,json=waitingReason,proto3" json:"waiting_reason,omitempty"` // why a dispatched job is not running yet (no runner online, no pool, capacity)
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -2582,6 +2593,27 @@ func (x *DeploymentStep) GetFinishedAt() *timestamppb.Timestamp {
 		return x.FinishedAt
 	}
 	return nil
+}
+
+func (x *DeploymentStep) GetRunId() string {
+	if x != nil {
+		return x.RunId
+	}
+	return ""
+}
+
+func (x *DeploymentStep) GetJobId() string {
+	if x != nil {
+		return x.JobId
+	}
+	return ""
+}
+
+func (x *DeploymentStep) GetWaitingReason() string {
+	if x != nil {
+		return x.WaitingReason
+	}
+	return ""
 }
 
 type DeploymentGate struct {
@@ -2802,6 +2834,7 @@ type Approval struct {
 	ServiceName     string `protobuf:"bytes,20,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
 	ReleaseVersion  string `protobuf:"bytes,21,opt,name=release_version,json=releaseVersion,proto3" json:"release_version,omitempty"`
 	EnvironmentName string `protobuf:"bytes,22,opt,name=environment_name,json=environmentName,proto3" json:"environment_name,omitempty"`
+	RequestedByName string `protobuf:"bytes,23,opt,name=requested_by_name,json=requestedByName,proto3" json:"requested_by_name,omitempty"` // display name of requested_by, for people to read
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -2986,6 +3019,13 @@ func (x *Approval) GetReleaseVersion() string {
 func (x *Approval) GetEnvironmentName() string {
 	if x != nil {
 		return x.EnvironmentName
+	}
+	return ""
+}
+
+func (x *Approval) GetRequestedByName() string {
+	if x != nil {
+		return x.RequestedByName
 	}
 	return ""
 }
@@ -3359,6 +3399,7 @@ type Deployment struct {
 	CreatedAt              *timestamppb.Timestamp `protobuf:"bytes,32,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	ServiceName            string                 `protobuf:"bytes,33,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
 	EnvironmentName        string                 `protobuf:"bytes,34,opt,name=environment_name,json=environmentName,proto3" json:"environment_name,omitempty"`
+	OverrideFreeze         bool                   `protobuf:"varint,35,opt,name=override_freeze,json=overrideFreeze,proto3" json:"override_freeze,omitempty"` // created through an active freeze on explicit request
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -3629,6 +3670,13 @@ func (x *Deployment) GetEnvironmentName() string {
 		return x.EnvironmentName
 	}
 	return ""
+}
+
+func (x *Deployment) GetOverrideFreeze() bool {
+	if x != nil {
+		return x.OverrideFreeze
+	}
+	return false
 }
 
 // DeploymentSummary is the compact form used on the environment board.
@@ -4449,6 +4497,8 @@ type RunbookRun struct {
 	StartedAt        *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
 	FinishedAt       *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
 	CreatedAt        *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	RunId            string                 `protobuf:"bytes,16,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"` // the run that executes the runbook's job; its logs are the runbook run's output
+	JobId            string                 `protobuf:"bytes,17,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"` // that run's job, for LogService.Tail
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -4586,6 +4636,20 @@ func (x *RunbookRun) GetCreatedAt() *timestamppb.Timestamp {
 		return x.CreatedAt
 	}
 	return nil
+}
+
+func (x *RunbookRun) GetRunId() string {
+	if x != nil {
+		return x.RunId
+	}
+	return ""
+}
+
+func (x *RunbookRun) GetJobId() string {
+	if x != nil {
+		return x.JobId
+	}
+	return ""
 }
 
 type DoraBucket struct {
@@ -5359,8 +5423,12 @@ type CreateDeploymentRequest struct {
 	JobId               string                 `protobuf:"bytes,12,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
 	TriggeredBy         string                 `protobuf:"bytes,13,opt,name=triggered_by,json=triggeredBy,proto3" json:"triggered_by,omitempty"` // run | promotion | manual (default manual)
 	DisableAutoRollback bool                   `protobuf:"varint,14,opt,name=disable_auto_rollback,json=disableAutoRollback,proto3" json:"disable_auto_rollback,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Deploy through an active freeze that allows emergency overrides: needs deployments.override_freeze and a
+	// reason, and is audited (deployment.freeze_overridden). The permission alone never bypasses a freeze.
+	OverrideFreeze bool   `protobuf:"varint,15,opt,name=override_freeze,json=overrideFreeze,proto3" json:"override_freeze,omitempty"`
+	OverrideReason string `protobuf:"bytes,16,opt,name=override_reason,json=overrideReason,proto3" json:"override_reason,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CreateDeploymentRequest) Reset() {
@@ -5484,6 +5552,20 @@ func (x *CreateDeploymentRequest) GetDisableAutoRollback() bool {
 	return false
 }
 
+func (x *CreateDeploymentRequest) GetOverrideFreeze() bool {
+	if x != nil {
+		return x.OverrideFreeze
+	}
+	return false
+}
+
+func (x *CreateDeploymentRequest) GetOverrideReason() string {
+	if x != nil {
+		return x.OverrideReason
+	}
+	return ""
+}
+
 type CreateDeploymentResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Deployment    *Deployment            `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
@@ -5536,6 +5618,7 @@ type PreviewDeploymentRequest struct {
 	Strategy         string                 `protobuf:"bytes,4,opt,name=strategy,proto3" json:"strategy,omitempty"`
 	StrategyConfig   *structpb.Struct       `protobuf:"bytes,5,opt,name=strategy_config,json=strategyConfig,proto3" json:"strategy_config,omitempty"`
 	Tenant           string                 `protobuf:"bytes,6,opt,name=tenant,proto3" json:"tenant,omitempty"`
+	OverrideFreeze   bool                   `protobuf:"varint,7,opt,name=override_freeze,json=overrideFreeze,proto3" json:"override_freeze,omitempty"` // evaluate the freeze gate as if the caller asked to override it
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -5610,6 +5693,13 @@ func (x *PreviewDeploymentRequest) GetTenant() string {
 		return x.Tenant
 	}
 	return ""
+}
+
+func (x *PreviewDeploymentRequest) GetOverrideFreeze() bool {
+	if x != nil {
+		return x.OverrideFreeze
+	}
+	return false
 }
 
 type PreviewDeploymentResponse struct {
@@ -7531,15 +7621,17 @@ func (x *GetReleaseProgressResponse) GetProgress() *ReleaseProgress {
 }
 
 type PromoteReleaseRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ReleaseId     string                 `protobuf:"bytes,1,opt,name=release_id,json=releaseId,proto3" json:"release_id,omitempty"`
-	EnvironmentId string                 `protobuf:"bytes,2,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"` // empty = the next eligible environment(s) in the lifecycle
-	Strategy      string                 `protobuf:"bytes,3,opt,name=strategy,proto3" json:"strategy,omitempty"`
-	Tenant        string                 `protobuf:"bytes,4,opt,name=tenant,proto3" json:"tenant,omitempty"`
-	Comment       string                 `protobuf:"bytes,5,opt,name=comment,proto3" json:"comment,omitempty"`
-	Force         bool                   `protobuf:"varint,6,opt,name=force,proto3" json:"force,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ReleaseId      string                 `protobuf:"bytes,1,opt,name=release_id,json=releaseId,proto3" json:"release_id,omitempty"`
+	EnvironmentId  string                 `protobuf:"bytes,2,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"` // empty = the next eligible environment(s) in the lifecycle
+	Strategy       string                 `protobuf:"bytes,3,opt,name=strategy,proto3" json:"strategy,omitempty"`
+	Tenant         string                 `protobuf:"bytes,4,opt,name=tenant,proto3" json:"tenant,omitempty"`
+	Comment        string                 `protobuf:"bytes,5,opt,name=comment,proto3" json:"comment,omitempty"`
+	Force          bool                   `protobuf:"varint,6,opt,name=force,proto3" json:"force,omitempty"`
+	OverrideFreeze bool                   `protobuf:"varint,7,opt,name=override_freeze,json=overrideFreeze,proto3" json:"override_freeze,omitempty"` // as CreateDeploymentRequest.override_freeze
+	OverrideReason string                 `protobuf:"bytes,8,opt,name=override_reason,json=overrideReason,proto3" json:"override_reason,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *PromoteReleaseRequest) Reset() {
@@ -7612,6 +7704,20 @@ func (x *PromoteReleaseRequest) GetForce() bool {
 		return x.Force
 	}
 	return false
+}
+
+func (x *PromoteReleaseRequest) GetOverrideFreeze() bool {
+	if x != nil {
+		return x.OverrideFreeze
+	}
+	return false
+}
+
+func (x *PromoteReleaseRequest) GetOverrideReason() string {
+	if x != nil {
+		return x.OverrideReason
+	}
+	return ""
 }
 
 type PromoteReleaseResponse struct {
@@ -8544,7 +8650,7 @@ type CreateEnvironmentRequest struct {
 	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Slug            string                 `protobuf:"bytes,3,opt,name=slug,proto3" json:"slug,omitempty"`
 	Description     string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Order           int32                  `protobuf:"varint,5,opt,name=order,proto3" json:"order,omitempty"`
+	Order           int32                  `protobuf:"varint,5,opt,name=order,proto3" json:"order,omitempty"` // 0 = placed by kind: after the last environment whose kind (dev, test, staging, prod, custom) comes no later
 	Kind            string                 `protobuf:"bytes,6,opt,name=kind,proto3" json:"kind,omitempty"`
 	Url             string                 `protobuf:"bytes,7,opt,name=url,proto3" json:"url,omitempty"`
 	ProtectionRules *ProtectionRules       `protobuf:"bytes,8,opt,name=protection_rules,json=protectionRules,proto3" json:"protection_rules,omitempty"`
@@ -12265,8 +12371,13 @@ type RunRunbookRequest struct {
 	EnvironmentId    string                 `protobuf:"bytes,2,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
 	InfrastructureId string                 `protobuf:"bytes,3,opt,name=infrastructure_id,json=infrastructureId,proto3" json:"infrastructure_id,omitempty"`
 	Parameters       map[string]string      `protobuf:"bytes,4,rep,name=parameters,proto3" json:"parameters,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Run through an active freeze (environments with apply_to_runbooks) that allows emergency overrides: needs
+	// deployments.override_freeze and a reason, and is audited (runbook.freeze_overridden). The permission alone
+	// never bypasses a freeze.
+	OverrideFreeze bool   `protobuf:"varint,5,opt,name=override_freeze,json=overrideFreeze,proto3" json:"override_freeze,omitempty"`
+	OverrideReason string `protobuf:"bytes,6,opt,name=override_reason,json=overrideReason,proto3" json:"override_reason,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *RunRunbookRequest) Reset() {
@@ -12325,6 +12436,20 @@ func (x *RunRunbookRequest) GetParameters() map[string]string {
 		return x.Parameters
 	}
 	return nil
+}
+
+func (x *RunRunbookRequest) GetOverrideFreeze() bool {
+	if x != nil {
+		return x.OverrideFreeze
+	}
+	return false
+}
+
+func (x *RunRunbookRequest) GetOverrideReason() string {
+	if x != nil {
+		return x.OverrideReason
+	}
+	return ""
 }
 
 type RunRunbookResponse struct {
@@ -13547,7 +13672,7 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"secret_ref\x18\x03 \x01(\tR\tsecretRef\x12\x1c\n" +
 	"\tsensitive\x18\x04 \x01(\bR\tsensitive\x12/\n" +
 	"\x05scope\x18\x05 \x01(\v2\x19.slipway.v1.VariableScopeR\x05scope\x12\x19\n" +
-	"\borg_wide\x18\x06 \x01(\bR\aorgWide\"\xed\x05\n" +
+	"\borg_wide\x18\x06 \x01(\bR\aorgWide\"\xaa\x06\n" +
 	"\aRelease\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -13573,7 +13698,8 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\n" +
 	"created_by\x18\x0f \x01(\tR\tcreatedBy\x129\n" +
 	"\n" +
-	"created_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x1aY\n" +
+	"created_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12;\n" +
+	"\x10created_by_actor\x18\x11 \x01(\v2\x11.slipway.v1.ActorR\x0ecreatedByActor\x1aY\n" +
 	"\x0eArtifactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x121\n" +
 	"\x05value\x18\x02 \x01(\v2\x1b.slipway.v1.ReleaseArtifactR\x05value:\x028\x01\"\xed\x01\n" +
@@ -13662,7 +13788,7 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
 	"\bcomplete\x18\x02 \x01(\bR\bcomplete\x12!\n" +
 	"\fauto_promote\x18\x03 \x01(\bR\vautoPromote\x12P\n" +
-	"\fenvironments\x18\x04 \x03(\v2,.slipway.v1.ReleaseProgress.EnvironmentStateR\fenvironments\"\x93\x04\n" +
+	"\fenvironments\x18\x04 \x03(\v2,.slipway.v1.ReleaseProgress.EnvironmentStateR\fenvironments\"\xe8\x04\n" +
 	"\x0eDeploymentStep\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05index\x18\x02 \x01(\x05R\x05index\x12\x12\n" +
@@ -13683,7 +13809,10 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\n" +
 	"started_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12;\n" +
 	"\vfinished_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"finishedAt\"\xaa\x02\n" +
+	"finishedAt\x12\x15\n" +
+	"\x06run_id\x18\x11 \x01(\tR\x05runId\x12\x15\n" +
+	"\x06job_id\x18\x12 \x01(\tR\x05jobId\x12%\n" +
+	"\x0ewaiting_reason\x18\x13 \x01(\tR\rwaitingReason\"\xaa\x02\n" +
 	"\x0eDeploymentGate\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +
@@ -13701,7 +13830,7 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\acomment\x18\x05 \x01(\tR\acomment\x12\x18\n" +
 	"\achannel\x18\x06 \x01(\tR\achannel\x129\n" +
 	"\n" +
-	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x93\a\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xbf\a\n" +
 	"\bApproval\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
 	"\fsubject_kind\x18\x02 \x01(\tR\vsubjectKind\x12\x1d\n" +
@@ -13729,7 +13858,8 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\x15viewer_blocked_reason\x18\x13 \x01(\tR\x13viewerBlockedReason\x12!\n" +
 	"\fservice_name\x18\x14 \x01(\tR\vserviceName\x12'\n" +
 	"\x0frelease_version\x18\x15 \x01(\tR\x0ereleaseVersion\x12)\n" +
-	"\x10environment_name\x18\x16 \x01(\tR\x0fenvironmentName\"\xe4\x02\n" +
+	"\x10environment_name\x18\x16 \x01(\tR\x0fenvironmentName\x12*\n" +
+	"\x11requested_by_name\x18\x17 \x01(\tR\x0frequestedByName\"\xe4\x02\n" +
 	"\x14IntervalMetricResult\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12!\n" +
@@ -13764,7 +13894,7 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12D\n" +
 	"\x10next_interval_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\x0enextIntervalAt\x12;\n" +
 	"\vfinished_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"finishedAt\"\x8a\v\n" +
+	"finishedAt\"\xb3\v\n" +
 	"\n" +
 	"Deployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
@@ -13807,7 +13937,8 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18  \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12!\n" +
 	"\fservice_name\x18! \x01(\tR\vserviceName\x12)\n" +
-	"\x10environment_name\x18\" \x01(\tR\x0fenvironmentName\"\xa6\x03\n" +
+	"\x10environment_name\x18\" \x01(\tR\x0fenvironmentName\x12'\n" +
+	"\x0foverride_freeze\x18# \x01(\bR\x0eoverrideFreeze\"\xa6\x03\n" +
 	"\x11DeploymentSummary\x12#\n" +
 	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\x12\x1d\n" +
 	"\n" +
@@ -13895,7 +14026,7 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xaa\x05\n" +
+	"updated_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xd8\x05\n" +
 	"\n" +
 	"RunbookRun\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
@@ -13921,7 +14052,9 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\vfinished_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"finishedAt\x129\n" +
 	"\n" +
-	"created_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x1a=\n" +
+	"created_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x15\n" +
+	"\x06run_id\x18\x10 \x01(\tR\x05runId\x12\x15\n" +
+	"\x06job_id\x18\x11 \x01(\tR\x05jobId\x1a=\n" +
 	"\x0fParametersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"v\n" +
@@ -14006,7 +14139,7 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\aservice\x18\x01 \x01(\v2\x1d.slipway.v1.DeployableServiceR\aservice\"&\n" +
 	"\x14DeleteServiceRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x17\n" +
-	"\x15DeleteServiceResponse\"\xfe\x03\n" +
+	"\x15DeleteServiceResponse\"\xd0\x04\n" +
 	"\x17CreateDeploymentRequest\x12\x1d\n" +
 	"\n" +
 	"release_id\x18\x01 \x01(\tR\treleaseId\x12%\n" +
@@ -14021,12 +14154,14 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\x06run_id\x18\v \x01(\tR\x05runId\x12\x15\n" +
 	"\x06job_id\x18\f \x01(\tR\x05jobId\x12!\n" +
 	"\ftriggered_by\x18\r \x01(\tR\vtriggeredBy\x122\n" +
-	"\x15disable_auto_rollback\x18\x0e \x01(\bR\x13disableAutoRollbackJ\x04\b\n" +
+	"\x15disable_auto_rollback\x18\x0e \x01(\bR\x13disableAutoRollback\x12'\n" +
+	"\x0foverride_freeze\x18\x0f \x01(\bR\x0eoverrideFreeze\x12'\n" +
+	"\x0foverride_reason\x18\x10 \x01(\tR\x0eoverrideReasonJ\x04\b\n" +
 	"\x10\v\"R\n" +
 	"\x18CreateDeploymentResponse\x126\n" +
 	"\n" +
 	"deployment\x18\x01 \x01(\v2\x16.slipway.v1.DeploymentR\n" +
-	"deployment\"\x83\x02\n" +
+	"deployment\"\xac\x02\n" +
 	"\x18PreviewDeploymentRequest\x12\x1d\n" +
 	"\n" +
 	"release_id\x18\x01 \x01(\tR\treleaseId\x12%\n" +
@@ -14034,7 +14169,8 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\x11infrastructure_id\x18\x03 \x01(\tR\x10infrastructureId\x12\x1a\n" +
 	"\bstrategy\x18\x04 \x01(\tR\bstrategy\x12@\n" +
 	"\x0fstrategy_config\x18\x05 \x01(\v2\x17.google.protobuf.StructR\x0estrategyConfig\x12\x16\n" +
-	"\x06tenant\x18\x06 \x01(\tR\x06tenant\"\xcb\x04\n" +
+	"\x06tenant\x18\x06 \x01(\tR\x06tenant\x12'\n" +
+	"\x0foverride_freeze\x18\a \x01(\bR\x0eoverrideFreeze\"\xcb\x04\n" +
 	"\x19PreviewDeploymentResponse\x12\x1a\n" +
 	"\bstrategy\x18\x01 \x01(\tR\bstrategy\x12+\n" +
 	"\x11infrastructure_id\x18\x02 \x01(\tR\x10infrastructureId\x120\n" +
@@ -14185,7 +14321,7 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\n" +
 	"release_id\x18\x01 \x01(\tR\treleaseId\"U\n" +
 	"\x1aGetReleaseProgressResponse\x127\n" +
-	"\bprogress\x18\x01 \x01(\v2\x1b.slipway.v1.ReleaseProgressR\bprogress\"\xc1\x01\n" +
+	"\bprogress\x18\x01 \x01(\v2\x1b.slipway.v1.ReleaseProgressR\bprogress\"\x93\x02\n" +
 	"\x15PromoteReleaseRequest\x12\x1d\n" +
 	"\n" +
 	"release_id\x18\x01 \x01(\tR\treleaseId\x12%\n" +
@@ -14193,7 +14329,9 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\bstrategy\x18\x03 \x01(\tR\bstrategy\x12\x16\n" +
 	"\x06tenant\x18\x04 \x01(\tR\x06tenant\x12\x18\n" +
 	"\acomment\x18\x05 \x01(\tR\acomment\x12\x14\n" +
-	"\x05force\x18\x06 \x01(\bR\x05force\"R\n" +
+	"\x05force\x18\x06 \x01(\bR\x05force\x12'\n" +
+	"\x0foverride_freeze\x18\a \x01(\bR\x0eoverrideFreeze\x12'\n" +
+	"\x0foverride_reason\x18\b \x01(\tR\x0eoverrideReason\"R\n" +
 	"\x16PromoteReleaseResponse\x128\n" +
 	"\vdeployments\x18\x01 \x03(\v2\x16.slipway.v1.DeploymentR\vdeployments\"\xc0\x01\n" +
 	"\x16CreateLifecycleRequest\x12\x1d\n" +
@@ -14506,7 +14644,7 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\arunbook\x18\x01 \x01(\v2\x13.slipway.v1.RunbookR\arunbook\"&\n" +
 	"\x14DeleteRunbookRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x17\n" +
-	"\x15DeleteRunbookResponse\"\x94\x02\n" +
+	"\x15DeleteRunbookResponse\"\xe6\x02\n" +
 	"\x11RunRunbookRequest\x12\x1d\n" +
 	"\n" +
 	"runbook_id\x18\x01 \x01(\tR\trunbookId\x12%\n" +
@@ -14514,7 +14652,9 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\x11infrastructure_id\x18\x03 \x01(\tR\x10infrastructureId\x12M\n" +
 	"\n" +
 	"parameters\x18\x04 \x03(\v2-.slipway.v1.RunRunbookRequest.ParametersEntryR\n" +
-	"parameters\x1a=\n" +
+	"parameters\x12'\n" +
+	"\x0foverride_freeze\x18\x05 \x01(\bR\x0eoverrideFreeze\x12'\n" +
+	"\x0foverride_reason\x18\x06 \x01(\tR\x0eoverrideReason\x1a=\n" +
 	"\x0fParametersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\">\n" +
@@ -14905,376 +15045,377 @@ var file_slipway_v1_deploy_proto_depIdxs = []int32{
 	15,  // 39: slipway.v1.Release.provenance:type_name -> slipway.v1.ReleaseProvenance
 	212, // 40: slipway.v1.Release.commit_at:type_name -> google.protobuf.Timestamp
 	212, // 41: slipway.v1.Release.created_at:type_name -> google.protobuf.Timestamp
-	213, // 42: slipway.v1.LifecyclePhase.min_soak:type_name -> google.protobuf.Duration
-	18,  // 43: slipway.v1.Lifecycle.phases:type_name -> slipway.v1.LifecyclePhase
-	212, // 44: slipway.v1.Lifecycle.created_at:type_name -> google.protobuf.Timestamp
-	212, // 45: slipway.v1.Lifecycle.updated_at:type_name -> google.protobuf.Timestamp
-	20,  // 46: slipway.v1.ReleaseChannel.version_rule:type_name -> slipway.v1.VersionRule
-	212, // 47: slipway.v1.ReleaseChannel.created_at:type_name -> google.protobuf.Timestamp
-	212, // 48: slipway.v1.ReleaseChannel.updated_at:type_name -> google.protobuf.Timestamp
-	17,  // 49: slipway.v1.ReleaseDiff.from:type_name -> slipway.v1.Release
-	17,  // 50: slipway.v1.ReleaseDiff.to:type_name -> slipway.v1.Release
-	196, // 51: slipway.v1.ReleaseDiff.artifacts:type_name -> slipway.v1.ReleaseDiff.ArtifactChange
-	197, // 52: slipway.v1.ReleaseDiff.variables:type_name -> slipway.v1.ReleaseDiff.VariableChange
-	198, // 53: slipway.v1.ReleaseDiff.commits:type_name -> slipway.v1.ReleaseDiff.Commit
-	17,  // 54: slipway.v1.ReleaseProgress.release:type_name -> slipway.v1.Release
-	19,  // 55: slipway.v1.ReleaseProgress.lifecycle:type_name -> slipway.v1.Lifecycle
-	200, // 56: slipway.v1.ReleaseProgress.phases:type_name -> slipway.v1.ReleaseProgress.Phase
-	214, // 57: slipway.v1.DeploymentStep.params:type_name -> google.protobuf.Struct
-	214, // 58: slipway.v1.DeploymentStep.result:type_name -> google.protobuf.Struct
-	212, // 59: slipway.v1.DeploymentStep.started_at:type_name -> google.protobuf.Timestamp
-	212, // 60: slipway.v1.DeploymentStep.finished_at:type_name -> google.protobuf.Timestamp
-	214, // 61: slipway.v1.DeploymentGate.detail:type_name -> google.protobuf.Struct
-	212, // 62: slipway.v1.DeploymentGate.next_check_at:type_name -> google.protobuf.Timestamp
-	212, // 63: slipway.v1.DeploymentGate.evaluated_at:type_name -> google.protobuf.Timestamp
-	212, // 64: slipway.v1.ApprovalDecision.created_at:type_name -> google.protobuf.Timestamp
-	0,   // 65: slipway.v1.Approval.approvers:type_name -> slipway.v1.Approver
-	212, // 66: slipway.v1.Approval.expires_at:type_name -> google.protobuf.Timestamp
-	212, // 67: slipway.v1.Approval.resolved_at:type_name -> google.protobuf.Timestamp
-	26,  // 68: slipway.v1.Approval.decisions:type_name -> slipway.v1.ApprovalDecision
-	212, // 69: slipway.v1.Approval.created_at:type_name -> google.protobuf.Timestamp
-	212, // 70: slipway.v1.VerificationInterval.at:type_name -> google.protobuf.Timestamp
-	28,  // 71: slipway.v1.VerificationInterval.metrics:type_name -> slipway.v1.IntervalMetricResult
-	214, // 72: slipway.v1.VerificationRun.config:type_name -> google.protobuf.Struct
-	29,  // 73: slipway.v1.VerificationRun.intervals:type_name -> slipway.v1.VerificationInterval
-	212, // 74: slipway.v1.VerificationRun.started_at:type_name -> google.protobuf.Timestamp
-	212, // 75: slipway.v1.VerificationRun.next_interval_at:type_name -> google.protobuf.Timestamp
-	212, // 76: slipway.v1.VerificationRun.finished_at:type_name -> google.protobuf.Timestamp
-	214, // 77: slipway.v1.Deployment.strategy_config:type_name -> google.protobuf.Struct
-	216, // 78: slipway.v1.Deployment.actor:type_name -> slipway.v1.Actor
-	24,  // 79: slipway.v1.Deployment.steps:type_name -> slipway.v1.DeploymentStep
-	25,  // 80: slipway.v1.Deployment.gates:type_name -> slipway.v1.DeploymentGate
-	27,  // 81: slipway.v1.Deployment.approval:type_name -> slipway.v1.Approval
-	30,  // 82: slipway.v1.Deployment.verification_runs:type_name -> slipway.v1.VerificationRun
-	212, // 83: slipway.v1.Deployment.scheduled_for:type_name -> google.protobuf.Timestamp
-	212, // 84: slipway.v1.Deployment.queued_at:type_name -> google.protobuf.Timestamp
-	212, // 85: slipway.v1.Deployment.started_at:type_name -> google.protobuf.Timestamp
-	212, // 86: slipway.v1.Deployment.finished_at:type_name -> google.protobuf.Timestamp
-	212, // 87: slipway.v1.Deployment.created_at:type_name -> google.protobuf.Timestamp
-	212, // 88: slipway.v1.DeploymentSummary.started_at:type_name -> google.protobuf.Timestamp
-	212, // 89: slipway.v1.DeploymentSummary.finished_at:type_name -> google.protobuf.Timestamp
-	32,  // 90: slipway.v1.BoardCell.current:type_name -> slipway.v1.DeploymentSummary
-	32,  // 91: slipway.v1.BoardCell.in_flight:type_name -> slipway.v1.DeploymentSummary
-	32,  // 92: slipway.v1.BoardCell.last_failure:type_name -> slipway.v1.DeploymentSummary
-	7,   // 93: slipway.v1.EnvironmentBoard.environments:type_name -> slipway.v1.Environment
-	6,   // 94: slipway.v1.EnvironmentBoard.services:type_name -> slipway.v1.DeployableService
-	33,  // 95: slipway.v1.EnvironmentBoard.cells:type_name -> slipway.v1.BoardCell
-	12,  // 96: slipway.v1.EnvironmentBoard.active_freezes:type_name -> slipway.v1.FreezeInterval
-	35,  // 97: slipway.v1.DriftItem.fields:type_name -> slipway.v1.DriftFieldDiff
-	36,  // 98: slipway.v1.DriftReport.items:type_name -> slipway.v1.DriftItem
-	212, // 99: slipway.v1.DriftReport.checked_at:type_name -> google.protobuf.Timestamp
-	38,  // 100: slipway.v1.Runbook.parameters:type_name -> slipway.v1.RunbookParameter
-	214, // 101: slipway.v1.Runbook.steps:type_name -> google.protobuf.Struct
-	213, // 102: slipway.v1.Runbook.timeout:type_name -> google.protobuf.Duration
-	212, // 103: slipway.v1.Runbook.created_at:type_name -> google.protobuf.Timestamp
-	212, // 104: slipway.v1.Runbook.updated_at:type_name -> google.protobuf.Timestamp
-	201, // 105: slipway.v1.RunbookRun.parameters:type_name -> slipway.v1.RunbookRun.ParametersEntry
-	214, // 106: slipway.v1.RunbookRun.result:type_name -> google.protobuf.Struct
-	216, // 107: slipway.v1.RunbookRun.actor:type_name -> slipway.v1.Actor
-	212, // 108: slipway.v1.RunbookRun.started_at:type_name -> google.protobuf.Timestamp
-	212, // 109: slipway.v1.RunbookRun.finished_at:type_name -> google.protobuf.Timestamp
-	212, // 110: slipway.v1.RunbookRun.created_at:type_name -> google.protobuf.Timestamp
-	212, // 111: slipway.v1.DoraBucket.bucket:type_name -> google.protobuf.Timestamp
-	202, // 112: slipway.v1.DoraMetrics.deployment_frequency:type_name -> slipway.v1.DoraMetrics.Frequency
-	203, // 113: slipway.v1.DoraMetrics.lead_time:type_name -> slipway.v1.DoraMetrics.LeadTime
-	204, // 114: slipway.v1.DoraMetrics.change_failure_rate:type_name -> slipway.v1.DoraMetrics.ChangeFailure
-	205, // 115: slipway.v1.DoraMetrics.time_to_restore:type_name -> slipway.v1.DoraMetrics.Restore
-	42,  // 116: slipway.v1.DoraMetrics.by_service:type_name -> slipway.v1.DoraServiceMetrics
-	212, // 117: slipway.v1.DoraMetrics.from:type_name -> google.protobuf.Timestamp
-	212, // 118: slipway.v1.DoraMetrics.to:type_name -> google.protobuf.Timestamp
-	214, // 119: slipway.v1.CreateServiceRequest.artifact_spec:type_name -> google.protobuf.Struct
-	214, // 120: slipway.v1.CreateServiceRequest.health_check:type_name -> google.protobuf.Struct
-	206, // 121: slipway.v1.CreateServiceRequest.labels:type_name -> slipway.v1.CreateServiceRequest.LabelsEntry
-	6,   // 122: slipway.v1.CreateServiceResponse.service:type_name -> slipway.v1.DeployableService
-	6,   // 123: slipway.v1.GetServiceResponse.service:type_name -> slipway.v1.DeployableService
-	217, // 124: slipway.v1.ListServicesRequest.page:type_name -> slipway.v1.PageRequest
-	6,   // 125: slipway.v1.ListServicesResponse.items:type_name -> slipway.v1.DeployableService
-	218, // 126: slipway.v1.ListServicesResponse.page:type_name -> slipway.v1.PageResponse
-	6,   // 127: slipway.v1.UpdateServiceRequest.service:type_name -> slipway.v1.DeployableService
-	219, // 128: slipway.v1.UpdateServiceRequest.update_mask:type_name -> google.protobuf.FieldMask
-	6,   // 129: slipway.v1.UpdateServiceResponse.service:type_name -> slipway.v1.DeployableService
-	214, // 130: slipway.v1.CreateDeploymentRequest.strategy_config:type_name -> google.protobuf.Struct
-	212, // 131: slipway.v1.CreateDeploymentRequest.scheduled_for:type_name -> google.protobuf.Timestamp
-	31,  // 132: slipway.v1.CreateDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
-	214, // 133: slipway.v1.PreviewDeploymentRequest.strategy_config:type_name -> google.protobuf.Struct
-	24,  // 134: slipway.v1.PreviewDeploymentResponse.steps:type_name -> slipway.v1.DeploymentStep
-	25,  // 135: slipway.v1.PreviewDeploymentResponse.gates:type_name -> slipway.v1.DeploymentGate
-	0,   // 136: slipway.v1.PreviewDeploymentResponse.approvers:type_name -> slipway.v1.Approver
-	10,  // 137: slipway.v1.PreviewDeploymentResponse.variables:type_name -> slipway.v1.ResolvedVariable
-	17,  // 138: slipway.v1.PreviewDeploymentResponse.release:type_name -> slipway.v1.Release
-	31,  // 139: slipway.v1.PreviewDeploymentResponse.current:type_name -> slipway.v1.Deployment
-	31,  // 140: slipway.v1.GetDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
-	217, // 141: slipway.v1.ListDeploymentsRequest.page:type_name -> slipway.v1.PageRequest
-	31,  // 142: slipway.v1.ListDeploymentsResponse.items:type_name -> slipway.v1.Deployment
-	218, // 143: slipway.v1.ListDeploymentsResponse.page:type_name -> slipway.v1.PageResponse
-	31,  // 144: slipway.v1.CancelDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
-	31,  // 145: slipway.v1.PauseDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
-	31,  // 146: slipway.v1.ResumeDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
-	31,  // 147: slipway.v1.RetryDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
-	214, // 148: slipway.v1.RollbackDeploymentRequest.strategy_config:type_name -> google.protobuf.Struct
-	31,  // 149: slipway.v1.RollbackDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
-	31,  // 150: slipway.v1.WatchDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
-	30,  // 151: slipway.v1.ListVerificationRunsResponse.items:type_name -> slipway.v1.VerificationRun
-	212, // 152: slipway.v1.GetDoraMetricsRequest.from:type_name -> google.protobuf.Timestamp
-	212, // 153: slipway.v1.GetDoraMetricsRequest.to:type_name -> google.protobuf.Timestamp
-	43,  // 154: slipway.v1.GetDoraMetricsResponse.metrics:type_name -> slipway.v1.DoraMetrics
-	207, // 155: slipway.v1.CreateReleaseRequest.artifacts:type_name -> slipway.v1.CreateReleaseRequest.ArtifactsEntry
-	208, // 156: slipway.v1.CreateReleaseRequest.variable_overrides:type_name -> slipway.v1.CreateReleaseRequest.VariableOverridesEntry
-	15,  // 157: slipway.v1.CreateReleaseRequest.provenance:type_name -> slipway.v1.ReleaseProvenance
-	17,  // 158: slipway.v1.CreateReleaseResponse.release:type_name -> slipway.v1.Release
-	31,  // 159: slipway.v1.CreateReleaseResponse.auto_deployments:type_name -> slipway.v1.Deployment
-	17,  // 160: slipway.v1.GetReleaseResponse.release:type_name -> slipway.v1.Release
-	217, // 161: slipway.v1.ListReleasesRequest.page:type_name -> slipway.v1.PageRequest
-	17,  // 162: slipway.v1.ListReleasesResponse.items:type_name -> slipway.v1.Release
-	218, // 163: slipway.v1.ListReleasesResponse.page:type_name -> slipway.v1.PageResponse
-	17,  // 164: slipway.v1.UpdateReleaseResponse.release:type_name -> slipway.v1.Release
-	22,  // 165: slipway.v1.DiffReleasesResponse.diff:type_name -> slipway.v1.ReleaseDiff
-	23,  // 166: slipway.v1.GetReleaseProgressResponse.progress:type_name -> slipway.v1.ReleaseProgress
-	31,  // 167: slipway.v1.PromoteReleaseResponse.deployments:type_name -> slipway.v1.Deployment
-	18,  // 168: slipway.v1.CreateLifecycleRequest.phases:type_name -> slipway.v1.LifecyclePhase
-	19,  // 169: slipway.v1.CreateLifecycleResponse.lifecycle:type_name -> slipway.v1.Lifecycle
-	19,  // 170: slipway.v1.GetLifecycleResponse.lifecycle:type_name -> slipway.v1.Lifecycle
-	19,  // 171: slipway.v1.ListLifecyclesResponse.items:type_name -> slipway.v1.Lifecycle
-	19,  // 172: slipway.v1.UpdateLifecycleRequest.lifecycle:type_name -> slipway.v1.Lifecycle
-	219, // 173: slipway.v1.UpdateLifecycleRequest.update_mask:type_name -> google.protobuf.FieldMask
-	19,  // 174: slipway.v1.UpdateLifecycleResponse.lifecycle:type_name -> slipway.v1.Lifecycle
-	20,  // 175: slipway.v1.CreateChannelRequest.version_rule:type_name -> slipway.v1.VersionRule
-	21,  // 176: slipway.v1.CreateChannelResponse.channel:type_name -> slipway.v1.ReleaseChannel
-	21,  // 177: slipway.v1.ListChannelsResponse.items:type_name -> slipway.v1.ReleaseChannel
-	21,  // 178: slipway.v1.UpdateChannelRequest.channel:type_name -> slipway.v1.ReleaseChannel
-	219, // 179: slipway.v1.UpdateChannelRequest.update_mask:type_name -> google.protobuf.FieldMask
-	21,  // 180: slipway.v1.UpdateChannelResponse.channel:type_name -> slipway.v1.ReleaseChannel
-	4,   // 181: slipway.v1.CreateEnvironmentRequest.protection_rules:type_name -> slipway.v1.ProtectionRules
-	7,   // 182: slipway.v1.CreateEnvironmentResponse.environment:type_name -> slipway.v1.Environment
-	7,   // 183: slipway.v1.GetEnvironmentResponse.environment:type_name -> slipway.v1.Environment
-	7,   // 184: slipway.v1.ListEnvironmentsResponse.items:type_name -> slipway.v1.Environment
-	7,   // 185: slipway.v1.UpdateEnvironmentRequest.environment:type_name -> slipway.v1.Environment
-	219, // 186: slipway.v1.UpdateEnvironmentRequest.update_mask:type_name -> google.protobuf.FieldMask
-	7,   // 187: slipway.v1.UpdateEnvironmentResponse.environment:type_name -> slipway.v1.Environment
-	7,   // 188: slipway.v1.ReorderEnvironmentsResponse.items:type_name -> slipway.v1.Environment
-	34,  // 189: slipway.v1.GetEnvironmentBoardResponse.board:type_name -> slipway.v1.EnvironmentBoard
-	214, // 190: slipway.v1.CreateInfrastructureRequest.config:type_name -> google.protobuf.Struct
-	209, // 191: slipway.v1.CreateInfrastructureRequest.labels:type_name -> slipway.v1.CreateInfrastructureRequest.LabelsEntry
-	213, // 192: slipway.v1.CreateInfrastructureRequest.drift_interval:type_name -> google.protobuf.Duration
-	8,   // 193: slipway.v1.CreateInfrastructureResponse.infrastructure:type_name -> slipway.v1.Infrastructure
-	8,   // 194: slipway.v1.GetInfrastructureResponse.infrastructure:type_name -> slipway.v1.Infrastructure
-	8,   // 195: slipway.v1.ListInfrastructuresResponse.items:type_name -> slipway.v1.Infrastructure
-	8,   // 196: slipway.v1.UpdateInfrastructureRequest.infrastructure:type_name -> slipway.v1.Infrastructure
-	219, // 197: slipway.v1.UpdateInfrastructureRequest.update_mask:type_name -> google.protobuf.FieldMask
-	8,   // 198: slipway.v1.UpdateInfrastructureResponse.infrastructure:type_name -> slipway.v1.Infrastructure
-	214, // 199: slipway.v1.TestInfrastructureResponse.details:type_name -> google.protobuf.Struct
-	5,   // 200: slipway.v1.CreateVariableRequest.scope:type_name -> slipway.v1.VariableScope
-	9,   // 201: slipway.v1.CreateVariableResponse.variable:type_name -> slipway.v1.DeployVariable
-	9,   // 202: slipway.v1.ListVariablesResponse.items:type_name -> slipway.v1.DeployVariable
-	9,   // 203: slipway.v1.UpdateVariableRequest.variable:type_name -> slipway.v1.DeployVariable
-	219, // 204: slipway.v1.UpdateVariableRequest.update_mask:type_name -> google.protobuf.FieldMask
-	9,   // 205: slipway.v1.UpdateVariableResponse.variable:type_name -> slipway.v1.DeployVariable
-	5,   // 206: slipway.v1.PreviewVariablesRequest.scope:type_name -> slipway.v1.VariableScope
-	210, // 207: slipway.v1.PreviewVariablesRequest.overrides:type_name -> slipway.v1.PreviewVariablesRequest.OverridesEntry
-	10,  // 208: slipway.v1.PreviewVariablesResponse.items:type_name -> slipway.v1.ResolvedVariable
-	1,   // 209: slipway.v1.CreateFreezeRequest.window:type_name -> slipway.v1.DeployWindow
-	11,  // 210: slipway.v1.CreateFreezeResponse.freeze:type_name -> slipway.v1.Freeze
-	11,  // 211: slipway.v1.ListFreezesResponse.items:type_name -> slipway.v1.Freeze
-	11,  // 212: slipway.v1.UpdateFreezeRequest.freeze:type_name -> slipway.v1.Freeze
-	219, // 213: slipway.v1.UpdateFreezeRequest.update_mask:type_name -> google.protobuf.FieldMask
-	11,  // 214: slipway.v1.UpdateFreezeResponse.freeze:type_name -> slipway.v1.Freeze
-	212, // 215: slipway.v1.GetFreezeCalendarRequest.from:type_name -> google.protobuf.Timestamp
-	212, // 216: slipway.v1.GetFreezeCalendarRequest.to:type_name -> google.protobuf.Timestamp
-	12,  // 217: slipway.v1.GetFreezeCalendarResponse.items:type_name -> slipway.v1.FreezeInterval
-	37,  // 218: slipway.v1.CheckDriftResponse.report:type_name -> slipway.v1.DriftReport
-	37,  // 219: slipway.v1.CheckDriftResponse.reports:type_name -> slipway.v1.DriftReport
-	37,  // 220: slipway.v1.ListDriftReportsResponse.items:type_name -> slipway.v1.DriftReport
-	217, // 221: slipway.v1.ListApprovalsRequest.page:type_name -> slipway.v1.PageRequest
-	27,  // 222: slipway.v1.ListApprovalsResponse.items:type_name -> slipway.v1.Approval
-	218, // 223: slipway.v1.ListApprovalsResponse.page:type_name -> slipway.v1.PageResponse
-	27,  // 224: slipway.v1.GetApprovalResponse.approval:type_name -> slipway.v1.Approval
-	27,  // 225: slipway.v1.DecideApprovalResponse.approval:type_name -> slipway.v1.Approval
-	31,  // 226: slipway.v1.DecideApprovalResponse.deployment:type_name -> slipway.v1.Deployment
-	27,  // 227: slipway.v1.CancelApprovalResponse.approval:type_name -> slipway.v1.Approval
-	25,  // 228: slipway.v1.EvaluateGatesResponse.gates:type_name -> slipway.v1.DeploymentGate
-	38,  // 229: slipway.v1.CreateRunbookRequest.parameters:type_name -> slipway.v1.RunbookParameter
-	214, // 230: slipway.v1.CreateRunbookRequest.steps:type_name -> google.protobuf.Struct
-	213, // 231: slipway.v1.CreateRunbookRequest.timeout:type_name -> google.protobuf.Duration
-	39,  // 232: slipway.v1.CreateRunbookResponse.runbook:type_name -> slipway.v1.Runbook
-	39,  // 233: slipway.v1.GetRunbookResponse.runbook:type_name -> slipway.v1.Runbook
-	39,  // 234: slipway.v1.ListRunbooksResponse.items:type_name -> slipway.v1.Runbook
-	39,  // 235: slipway.v1.UpdateRunbookRequest.runbook:type_name -> slipway.v1.Runbook
-	219, // 236: slipway.v1.UpdateRunbookRequest.update_mask:type_name -> google.protobuf.FieldMask
-	39,  // 237: slipway.v1.UpdateRunbookResponse.runbook:type_name -> slipway.v1.Runbook
-	211, // 238: slipway.v1.RunRunbookRequest.parameters:type_name -> slipway.v1.RunRunbookRequest.ParametersEntry
-	40,  // 239: slipway.v1.RunRunbookResponse.run:type_name -> slipway.v1.RunbookRun
-	40,  // 240: slipway.v1.GetRunbookRunResponse.run:type_name -> slipway.v1.RunbookRun
-	217, // 241: slipway.v1.ListRunbookRunsRequest.page:type_name -> slipway.v1.PageRequest
-	40,  // 242: slipway.v1.ListRunbookRunsResponse.items:type_name -> slipway.v1.RunbookRun
-	218, // 243: slipway.v1.ListRunbookRunsResponse.page:type_name -> slipway.v1.PageResponse
-	40,  // 244: slipway.v1.CancelRunbookRunResponse.run:type_name -> slipway.v1.RunbookRun
-	13,  // 245: slipway.v1.Release.ArtifactsEntry.value:type_name -> slipway.v1.ReleaseArtifact
-	13,  // 246: slipway.v1.ReleaseDiff.ArtifactChange.from:type_name -> slipway.v1.ReleaseArtifact
-	13,  // 247: slipway.v1.ReleaseDiff.ArtifactChange.to:type_name -> slipway.v1.ReleaseArtifact
-	212, // 248: slipway.v1.ReleaseDiff.Commit.at:type_name -> google.protobuf.Timestamp
-	212, // 249: slipway.v1.ReleaseProgress.EnvironmentState.finished_at:type_name -> google.protobuf.Timestamp
-	212, // 250: slipway.v1.ReleaseProgress.EnvironmentState.auto_promote_at:type_name -> google.protobuf.Timestamp
-	199, // 251: slipway.v1.ReleaseProgress.Phase.environments:type_name -> slipway.v1.ReleaseProgress.EnvironmentState
-	41,  // 252: slipway.v1.DoraMetrics.Frequency.series:type_name -> slipway.v1.DoraBucket
-	213, // 253: slipway.v1.DoraMetrics.LeadTime.p50:type_name -> google.protobuf.Duration
-	213, // 254: slipway.v1.DoraMetrics.LeadTime.p90:type_name -> google.protobuf.Duration
-	213, // 255: slipway.v1.DoraMetrics.LeadTime.mean:type_name -> google.protobuf.Duration
-	213, // 256: slipway.v1.DoraMetrics.Restore.p50:type_name -> google.protobuf.Duration
-	213, // 257: slipway.v1.DoraMetrics.Restore.mean:type_name -> google.protobuf.Duration
-	13,  // 258: slipway.v1.CreateReleaseRequest.ArtifactsEntry.value:type_name -> slipway.v1.ReleaseArtifact
-	44,  // 259: slipway.v1.DeployService.CreateService:input_type -> slipway.v1.CreateServiceRequest
-	46,  // 260: slipway.v1.DeployService.GetService:input_type -> slipway.v1.GetServiceRequest
-	48,  // 261: slipway.v1.DeployService.ListServices:input_type -> slipway.v1.ListServicesRequest
-	50,  // 262: slipway.v1.DeployService.UpdateService:input_type -> slipway.v1.UpdateServiceRequest
-	52,  // 263: slipway.v1.DeployService.DeleteService:input_type -> slipway.v1.DeleteServiceRequest
-	54,  // 264: slipway.v1.DeployService.CreateDeployment:input_type -> slipway.v1.CreateDeploymentRequest
-	56,  // 265: slipway.v1.DeployService.PreviewDeployment:input_type -> slipway.v1.PreviewDeploymentRequest
-	58,  // 266: slipway.v1.DeployService.GetDeployment:input_type -> slipway.v1.GetDeploymentRequest
-	60,  // 267: slipway.v1.DeployService.ListDeployments:input_type -> slipway.v1.ListDeploymentsRequest
-	62,  // 268: slipway.v1.DeployService.CancelDeployment:input_type -> slipway.v1.CancelDeploymentRequest
-	64,  // 269: slipway.v1.DeployService.PauseDeployment:input_type -> slipway.v1.PauseDeploymentRequest
-	66,  // 270: slipway.v1.DeployService.ResumeDeployment:input_type -> slipway.v1.ResumeDeploymentRequest
-	68,  // 271: slipway.v1.DeployService.RetryDeployment:input_type -> slipway.v1.RetryDeploymentRequest
-	70,  // 272: slipway.v1.DeployService.RollbackDeployment:input_type -> slipway.v1.RollbackDeploymentRequest
-	72,  // 273: slipway.v1.DeployService.WatchDeployment:input_type -> slipway.v1.WatchDeploymentRequest
-	74,  // 274: slipway.v1.DeployService.ListVerificationRuns:input_type -> slipway.v1.ListVerificationRunsRequest
-	76,  // 275: slipway.v1.DeployService.GetDoraMetrics:input_type -> slipway.v1.GetDoraMetricsRequest
-	78,  // 276: slipway.v1.ReleaseService.CreateRelease:input_type -> slipway.v1.CreateReleaseRequest
-	80,  // 277: slipway.v1.ReleaseService.GetRelease:input_type -> slipway.v1.GetReleaseRequest
-	82,  // 278: slipway.v1.ReleaseService.ListReleases:input_type -> slipway.v1.ListReleasesRequest
-	84,  // 279: slipway.v1.ReleaseService.UpdateRelease:input_type -> slipway.v1.UpdateReleaseRequest
-	86,  // 280: slipway.v1.ReleaseService.DeleteRelease:input_type -> slipway.v1.DeleteReleaseRequest
-	88,  // 281: slipway.v1.ReleaseService.DiffReleases:input_type -> slipway.v1.DiffReleasesRequest
-	90,  // 282: slipway.v1.ReleaseService.GetReleaseProgress:input_type -> slipway.v1.GetReleaseProgressRequest
-	92,  // 283: slipway.v1.ReleaseService.PromoteRelease:input_type -> slipway.v1.PromoteReleaseRequest
-	94,  // 284: slipway.v1.ReleaseService.CreateLifecycle:input_type -> slipway.v1.CreateLifecycleRequest
-	96,  // 285: slipway.v1.ReleaseService.GetLifecycle:input_type -> slipway.v1.GetLifecycleRequest
-	98,  // 286: slipway.v1.ReleaseService.ListLifecycles:input_type -> slipway.v1.ListLifecyclesRequest
-	100, // 287: slipway.v1.ReleaseService.UpdateLifecycle:input_type -> slipway.v1.UpdateLifecycleRequest
-	102, // 288: slipway.v1.ReleaseService.DeleteLifecycle:input_type -> slipway.v1.DeleteLifecycleRequest
-	104, // 289: slipway.v1.ReleaseService.CreateChannel:input_type -> slipway.v1.CreateChannelRequest
-	106, // 290: slipway.v1.ReleaseService.ListChannels:input_type -> slipway.v1.ListChannelsRequest
-	108, // 291: slipway.v1.ReleaseService.UpdateChannel:input_type -> slipway.v1.UpdateChannelRequest
-	110, // 292: slipway.v1.ReleaseService.DeleteChannel:input_type -> slipway.v1.DeleteChannelRequest
-	112, // 293: slipway.v1.EnvironmentService.CreateEnvironment:input_type -> slipway.v1.CreateEnvironmentRequest
-	114, // 294: slipway.v1.EnvironmentService.GetEnvironment:input_type -> slipway.v1.GetEnvironmentRequest
-	116, // 295: slipway.v1.EnvironmentService.ListEnvironments:input_type -> slipway.v1.ListEnvironmentsRequest
-	118, // 296: slipway.v1.EnvironmentService.UpdateEnvironment:input_type -> slipway.v1.UpdateEnvironmentRequest
-	120, // 297: slipway.v1.EnvironmentService.DeleteEnvironment:input_type -> slipway.v1.DeleteEnvironmentRequest
-	122, // 298: slipway.v1.EnvironmentService.ReorderEnvironments:input_type -> slipway.v1.ReorderEnvironmentsRequest
-	124, // 299: slipway.v1.EnvironmentService.GetEnvironmentBoard:input_type -> slipway.v1.GetEnvironmentBoardRequest
-	126, // 300: slipway.v1.EnvironmentService.CreateInfrastructure:input_type -> slipway.v1.CreateInfrastructureRequest
-	128, // 301: slipway.v1.EnvironmentService.GetInfrastructure:input_type -> slipway.v1.GetInfrastructureRequest
-	130, // 302: slipway.v1.EnvironmentService.ListInfrastructures:input_type -> slipway.v1.ListInfrastructuresRequest
-	132, // 303: slipway.v1.EnvironmentService.UpdateInfrastructure:input_type -> slipway.v1.UpdateInfrastructureRequest
-	134, // 304: slipway.v1.EnvironmentService.DeleteInfrastructure:input_type -> slipway.v1.DeleteInfrastructureRequest
-	136, // 305: slipway.v1.EnvironmentService.TestInfrastructure:input_type -> slipway.v1.TestInfrastructureRequest
-	138, // 306: slipway.v1.EnvironmentService.GetAwsExternalId:input_type -> slipway.v1.GetAwsExternalIdRequest
-	140, // 307: slipway.v1.EnvironmentService.CreateVariable:input_type -> slipway.v1.CreateVariableRequest
-	142, // 308: slipway.v1.EnvironmentService.ListVariables:input_type -> slipway.v1.ListVariablesRequest
-	144, // 309: slipway.v1.EnvironmentService.UpdateVariable:input_type -> slipway.v1.UpdateVariableRequest
-	146, // 310: slipway.v1.EnvironmentService.DeleteVariable:input_type -> slipway.v1.DeleteVariableRequest
-	148, // 311: slipway.v1.EnvironmentService.PreviewVariables:input_type -> slipway.v1.PreviewVariablesRequest
-	150, // 312: slipway.v1.EnvironmentService.CreateFreeze:input_type -> slipway.v1.CreateFreezeRequest
-	152, // 313: slipway.v1.EnvironmentService.ListFreezes:input_type -> slipway.v1.ListFreezesRequest
-	154, // 314: slipway.v1.EnvironmentService.UpdateFreeze:input_type -> slipway.v1.UpdateFreezeRequest
-	156, // 315: slipway.v1.EnvironmentService.DeleteFreeze:input_type -> slipway.v1.DeleteFreezeRequest
-	158, // 316: slipway.v1.EnvironmentService.GetFreezeCalendar:input_type -> slipway.v1.GetFreezeCalendarRequest
-	160, // 317: slipway.v1.EnvironmentService.CheckDrift:input_type -> slipway.v1.CheckDriftRequest
-	162, // 318: slipway.v1.EnvironmentService.ListDriftReports:input_type -> slipway.v1.ListDriftReportsRequest
-	164, // 319: slipway.v1.ApprovalService.ListApprovals:input_type -> slipway.v1.ListApprovalsRequest
-	166, // 320: slipway.v1.ApprovalService.GetApproval:input_type -> slipway.v1.GetApprovalRequest
-	168, // 321: slipway.v1.ApprovalService.DecideApproval:input_type -> slipway.v1.DecideApprovalRequest
-	170, // 322: slipway.v1.ApprovalService.CancelApproval:input_type -> slipway.v1.CancelApprovalRequest
-	172, // 323: slipway.v1.ApprovalService.EvaluateGates:input_type -> slipway.v1.EvaluateGatesRequest
-	174, // 324: slipway.v1.RunbookService.CreateRunbook:input_type -> slipway.v1.CreateRunbookRequest
-	176, // 325: slipway.v1.RunbookService.GetRunbook:input_type -> slipway.v1.GetRunbookRequest
-	178, // 326: slipway.v1.RunbookService.ListRunbooks:input_type -> slipway.v1.ListRunbooksRequest
-	180, // 327: slipway.v1.RunbookService.UpdateRunbook:input_type -> slipway.v1.UpdateRunbookRequest
-	182, // 328: slipway.v1.RunbookService.DeleteRunbook:input_type -> slipway.v1.DeleteRunbookRequest
-	184, // 329: slipway.v1.RunbookService.RunRunbook:input_type -> slipway.v1.RunRunbookRequest
-	186, // 330: slipway.v1.RunbookService.GetRunbookRun:input_type -> slipway.v1.GetRunbookRunRequest
-	188, // 331: slipway.v1.RunbookService.ListRunbookRuns:input_type -> slipway.v1.ListRunbookRunsRequest
-	190, // 332: slipway.v1.RunbookService.CancelRunbookRun:input_type -> slipway.v1.CancelRunbookRunRequest
-	45,  // 333: slipway.v1.DeployService.CreateService:output_type -> slipway.v1.CreateServiceResponse
-	47,  // 334: slipway.v1.DeployService.GetService:output_type -> slipway.v1.GetServiceResponse
-	49,  // 335: slipway.v1.DeployService.ListServices:output_type -> slipway.v1.ListServicesResponse
-	51,  // 336: slipway.v1.DeployService.UpdateService:output_type -> slipway.v1.UpdateServiceResponse
-	53,  // 337: slipway.v1.DeployService.DeleteService:output_type -> slipway.v1.DeleteServiceResponse
-	55,  // 338: slipway.v1.DeployService.CreateDeployment:output_type -> slipway.v1.CreateDeploymentResponse
-	57,  // 339: slipway.v1.DeployService.PreviewDeployment:output_type -> slipway.v1.PreviewDeploymentResponse
-	59,  // 340: slipway.v1.DeployService.GetDeployment:output_type -> slipway.v1.GetDeploymentResponse
-	61,  // 341: slipway.v1.DeployService.ListDeployments:output_type -> slipway.v1.ListDeploymentsResponse
-	63,  // 342: slipway.v1.DeployService.CancelDeployment:output_type -> slipway.v1.CancelDeploymentResponse
-	65,  // 343: slipway.v1.DeployService.PauseDeployment:output_type -> slipway.v1.PauseDeploymentResponse
-	67,  // 344: slipway.v1.DeployService.ResumeDeployment:output_type -> slipway.v1.ResumeDeploymentResponse
-	69,  // 345: slipway.v1.DeployService.RetryDeployment:output_type -> slipway.v1.RetryDeploymentResponse
-	71,  // 346: slipway.v1.DeployService.RollbackDeployment:output_type -> slipway.v1.RollbackDeploymentResponse
-	73,  // 347: slipway.v1.DeployService.WatchDeployment:output_type -> slipway.v1.WatchDeploymentResponse
-	75,  // 348: slipway.v1.DeployService.ListVerificationRuns:output_type -> slipway.v1.ListVerificationRunsResponse
-	77,  // 349: slipway.v1.DeployService.GetDoraMetrics:output_type -> slipway.v1.GetDoraMetricsResponse
-	79,  // 350: slipway.v1.ReleaseService.CreateRelease:output_type -> slipway.v1.CreateReleaseResponse
-	81,  // 351: slipway.v1.ReleaseService.GetRelease:output_type -> slipway.v1.GetReleaseResponse
-	83,  // 352: slipway.v1.ReleaseService.ListReleases:output_type -> slipway.v1.ListReleasesResponse
-	85,  // 353: slipway.v1.ReleaseService.UpdateRelease:output_type -> slipway.v1.UpdateReleaseResponse
-	87,  // 354: slipway.v1.ReleaseService.DeleteRelease:output_type -> slipway.v1.DeleteReleaseResponse
-	89,  // 355: slipway.v1.ReleaseService.DiffReleases:output_type -> slipway.v1.DiffReleasesResponse
-	91,  // 356: slipway.v1.ReleaseService.GetReleaseProgress:output_type -> slipway.v1.GetReleaseProgressResponse
-	93,  // 357: slipway.v1.ReleaseService.PromoteRelease:output_type -> slipway.v1.PromoteReleaseResponse
-	95,  // 358: slipway.v1.ReleaseService.CreateLifecycle:output_type -> slipway.v1.CreateLifecycleResponse
-	97,  // 359: slipway.v1.ReleaseService.GetLifecycle:output_type -> slipway.v1.GetLifecycleResponse
-	99,  // 360: slipway.v1.ReleaseService.ListLifecycles:output_type -> slipway.v1.ListLifecyclesResponse
-	101, // 361: slipway.v1.ReleaseService.UpdateLifecycle:output_type -> slipway.v1.UpdateLifecycleResponse
-	103, // 362: slipway.v1.ReleaseService.DeleteLifecycle:output_type -> slipway.v1.DeleteLifecycleResponse
-	105, // 363: slipway.v1.ReleaseService.CreateChannel:output_type -> slipway.v1.CreateChannelResponse
-	107, // 364: slipway.v1.ReleaseService.ListChannels:output_type -> slipway.v1.ListChannelsResponse
-	109, // 365: slipway.v1.ReleaseService.UpdateChannel:output_type -> slipway.v1.UpdateChannelResponse
-	111, // 366: slipway.v1.ReleaseService.DeleteChannel:output_type -> slipway.v1.DeleteChannelResponse
-	113, // 367: slipway.v1.EnvironmentService.CreateEnvironment:output_type -> slipway.v1.CreateEnvironmentResponse
-	115, // 368: slipway.v1.EnvironmentService.GetEnvironment:output_type -> slipway.v1.GetEnvironmentResponse
-	117, // 369: slipway.v1.EnvironmentService.ListEnvironments:output_type -> slipway.v1.ListEnvironmentsResponse
-	119, // 370: slipway.v1.EnvironmentService.UpdateEnvironment:output_type -> slipway.v1.UpdateEnvironmentResponse
-	121, // 371: slipway.v1.EnvironmentService.DeleteEnvironment:output_type -> slipway.v1.DeleteEnvironmentResponse
-	123, // 372: slipway.v1.EnvironmentService.ReorderEnvironments:output_type -> slipway.v1.ReorderEnvironmentsResponse
-	125, // 373: slipway.v1.EnvironmentService.GetEnvironmentBoard:output_type -> slipway.v1.GetEnvironmentBoardResponse
-	127, // 374: slipway.v1.EnvironmentService.CreateInfrastructure:output_type -> slipway.v1.CreateInfrastructureResponse
-	129, // 375: slipway.v1.EnvironmentService.GetInfrastructure:output_type -> slipway.v1.GetInfrastructureResponse
-	131, // 376: slipway.v1.EnvironmentService.ListInfrastructures:output_type -> slipway.v1.ListInfrastructuresResponse
-	133, // 377: slipway.v1.EnvironmentService.UpdateInfrastructure:output_type -> slipway.v1.UpdateInfrastructureResponse
-	135, // 378: slipway.v1.EnvironmentService.DeleteInfrastructure:output_type -> slipway.v1.DeleteInfrastructureResponse
-	137, // 379: slipway.v1.EnvironmentService.TestInfrastructure:output_type -> slipway.v1.TestInfrastructureResponse
-	139, // 380: slipway.v1.EnvironmentService.GetAwsExternalId:output_type -> slipway.v1.GetAwsExternalIdResponse
-	141, // 381: slipway.v1.EnvironmentService.CreateVariable:output_type -> slipway.v1.CreateVariableResponse
-	143, // 382: slipway.v1.EnvironmentService.ListVariables:output_type -> slipway.v1.ListVariablesResponse
-	145, // 383: slipway.v1.EnvironmentService.UpdateVariable:output_type -> slipway.v1.UpdateVariableResponse
-	147, // 384: slipway.v1.EnvironmentService.DeleteVariable:output_type -> slipway.v1.DeleteVariableResponse
-	149, // 385: slipway.v1.EnvironmentService.PreviewVariables:output_type -> slipway.v1.PreviewVariablesResponse
-	151, // 386: slipway.v1.EnvironmentService.CreateFreeze:output_type -> slipway.v1.CreateFreezeResponse
-	153, // 387: slipway.v1.EnvironmentService.ListFreezes:output_type -> slipway.v1.ListFreezesResponse
-	155, // 388: slipway.v1.EnvironmentService.UpdateFreeze:output_type -> slipway.v1.UpdateFreezeResponse
-	157, // 389: slipway.v1.EnvironmentService.DeleteFreeze:output_type -> slipway.v1.DeleteFreezeResponse
-	159, // 390: slipway.v1.EnvironmentService.GetFreezeCalendar:output_type -> slipway.v1.GetFreezeCalendarResponse
-	161, // 391: slipway.v1.EnvironmentService.CheckDrift:output_type -> slipway.v1.CheckDriftResponse
-	163, // 392: slipway.v1.EnvironmentService.ListDriftReports:output_type -> slipway.v1.ListDriftReportsResponse
-	165, // 393: slipway.v1.ApprovalService.ListApprovals:output_type -> slipway.v1.ListApprovalsResponse
-	167, // 394: slipway.v1.ApprovalService.GetApproval:output_type -> slipway.v1.GetApprovalResponse
-	169, // 395: slipway.v1.ApprovalService.DecideApproval:output_type -> slipway.v1.DecideApprovalResponse
-	171, // 396: slipway.v1.ApprovalService.CancelApproval:output_type -> slipway.v1.CancelApprovalResponse
-	173, // 397: slipway.v1.ApprovalService.EvaluateGates:output_type -> slipway.v1.EvaluateGatesResponse
-	175, // 398: slipway.v1.RunbookService.CreateRunbook:output_type -> slipway.v1.CreateRunbookResponse
-	177, // 399: slipway.v1.RunbookService.GetRunbook:output_type -> slipway.v1.GetRunbookResponse
-	179, // 400: slipway.v1.RunbookService.ListRunbooks:output_type -> slipway.v1.ListRunbooksResponse
-	181, // 401: slipway.v1.RunbookService.UpdateRunbook:output_type -> slipway.v1.UpdateRunbookResponse
-	183, // 402: slipway.v1.RunbookService.DeleteRunbook:output_type -> slipway.v1.DeleteRunbookResponse
-	185, // 403: slipway.v1.RunbookService.RunRunbook:output_type -> slipway.v1.RunRunbookResponse
-	187, // 404: slipway.v1.RunbookService.GetRunbookRun:output_type -> slipway.v1.GetRunbookRunResponse
-	189, // 405: slipway.v1.RunbookService.ListRunbookRuns:output_type -> slipway.v1.ListRunbookRunsResponse
-	191, // 406: slipway.v1.RunbookService.CancelRunbookRun:output_type -> slipway.v1.CancelRunbookRunResponse
-	333, // [333:407] is the sub-list for method output_type
-	259, // [259:333] is the sub-list for method input_type
-	259, // [259:259] is the sub-list for extension type_name
-	259, // [259:259] is the sub-list for extension extendee
-	0,   // [0:259] is the sub-list for field type_name
+	216, // 42: slipway.v1.Release.created_by_actor:type_name -> slipway.v1.Actor
+	213, // 43: slipway.v1.LifecyclePhase.min_soak:type_name -> google.protobuf.Duration
+	18,  // 44: slipway.v1.Lifecycle.phases:type_name -> slipway.v1.LifecyclePhase
+	212, // 45: slipway.v1.Lifecycle.created_at:type_name -> google.protobuf.Timestamp
+	212, // 46: slipway.v1.Lifecycle.updated_at:type_name -> google.protobuf.Timestamp
+	20,  // 47: slipway.v1.ReleaseChannel.version_rule:type_name -> slipway.v1.VersionRule
+	212, // 48: slipway.v1.ReleaseChannel.created_at:type_name -> google.protobuf.Timestamp
+	212, // 49: slipway.v1.ReleaseChannel.updated_at:type_name -> google.protobuf.Timestamp
+	17,  // 50: slipway.v1.ReleaseDiff.from:type_name -> slipway.v1.Release
+	17,  // 51: slipway.v1.ReleaseDiff.to:type_name -> slipway.v1.Release
+	196, // 52: slipway.v1.ReleaseDiff.artifacts:type_name -> slipway.v1.ReleaseDiff.ArtifactChange
+	197, // 53: slipway.v1.ReleaseDiff.variables:type_name -> slipway.v1.ReleaseDiff.VariableChange
+	198, // 54: slipway.v1.ReleaseDiff.commits:type_name -> slipway.v1.ReleaseDiff.Commit
+	17,  // 55: slipway.v1.ReleaseProgress.release:type_name -> slipway.v1.Release
+	19,  // 56: slipway.v1.ReleaseProgress.lifecycle:type_name -> slipway.v1.Lifecycle
+	200, // 57: slipway.v1.ReleaseProgress.phases:type_name -> slipway.v1.ReleaseProgress.Phase
+	214, // 58: slipway.v1.DeploymentStep.params:type_name -> google.protobuf.Struct
+	214, // 59: slipway.v1.DeploymentStep.result:type_name -> google.protobuf.Struct
+	212, // 60: slipway.v1.DeploymentStep.started_at:type_name -> google.protobuf.Timestamp
+	212, // 61: slipway.v1.DeploymentStep.finished_at:type_name -> google.protobuf.Timestamp
+	214, // 62: slipway.v1.DeploymentGate.detail:type_name -> google.protobuf.Struct
+	212, // 63: slipway.v1.DeploymentGate.next_check_at:type_name -> google.protobuf.Timestamp
+	212, // 64: slipway.v1.DeploymentGate.evaluated_at:type_name -> google.protobuf.Timestamp
+	212, // 65: slipway.v1.ApprovalDecision.created_at:type_name -> google.protobuf.Timestamp
+	0,   // 66: slipway.v1.Approval.approvers:type_name -> slipway.v1.Approver
+	212, // 67: slipway.v1.Approval.expires_at:type_name -> google.protobuf.Timestamp
+	212, // 68: slipway.v1.Approval.resolved_at:type_name -> google.protobuf.Timestamp
+	26,  // 69: slipway.v1.Approval.decisions:type_name -> slipway.v1.ApprovalDecision
+	212, // 70: slipway.v1.Approval.created_at:type_name -> google.protobuf.Timestamp
+	212, // 71: slipway.v1.VerificationInterval.at:type_name -> google.protobuf.Timestamp
+	28,  // 72: slipway.v1.VerificationInterval.metrics:type_name -> slipway.v1.IntervalMetricResult
+	214, // 73: slipway.v1.VerificationRun.config:type_name -> google.protobuf.Struct
+	29,  // 74: slipway.v1.VerificationRun.intervals:type_name -> slipway.v1.VerificationInterval
+	212, // 75: slipway.v1.VerificationRun.started_at:type_name -> google.protobuf.Timestamp
+	212, // 76: slipway.v1.VerificationRun.next_interval_at:type_name -> google.protobuf.Timestamp
+	212, // 77: slipway.v1.VerificationRun.finished_at:type_name -> google.protobuf.Timestamp
+	214, // 78: slipway.v1.Deployment.strategy_config:type_name -> google.protobuf.Struct
+	216, // 79: slipway.v1.Deployment.actor:type_name -> slipway.v1.Actor
+	24,  // 80: slipway.v1.Deployment.steps:type_name -> slipway.v1.DeploymentStep
+	25,  // 81: slipway.v1.Deployment.gates:type_name -> slipway.v1.DeploymentGate
+	27,  // 82: slipway.v1.Deployment.approval:type_name -> slipway.v1.Approval
+	30,  // 83: slipway.v1.Deployment.verification_runs:type_name -> slipway.v1.VerificationRun
+	212, // 84: slipway.v1.Deployment.scheduled_for:type_name -> google.protobuf.Timestamp
+	212, // 85: slipway.v1.Deployment.queued_at:type_name -> google.protobuf.Timestamp
+	212, // 86: slipway.v1.Deployment.started_at:type_name -> google.protobuf.Timestamp
+	212, // 87: slipway.v1.Deployment.finished_at:type_name -> google.protobuf.Timestamp
+	212, // 88: slipway.v1.Deployment.created_at:type_name -> google.protobuf.Timestamp
+	212, // 89: slipway.v1.DeploymentSummary.started_at:type_name -> google.protobuf.Timestamp
+	212, // 90: slipway.v1.DeploymentSummary.finished_at:type_name -> google.protobuf.Timestamp
+	32,  // 91: slipway.v1.BoardCell.current:type_name -> slipway.v1.DeploymentSummary
+	32,  // 92: slipway.v1.BoardCell.in_flight:type_name -> slipway.v1.DeploymentSummary
+	32,  // 93: slipway.v1.BoardCell.last_failure:type_name -> slipway.v1.DeploymentSummary
+	7,   // 94: slipway.v1.EnvironmentBoard.environments:type_name -> slipway.v1.Environment
+	6,   // 95: slipway.v1.EnvironmentBoard.services:type_name -> slipway.v1.DeployableService
+	33,  // 96: slipway.v1.EnvironmentBoard.cells:type_name -> slipway.v1.BoardCell
+	12,  // 97: slipway.v1.EnvironmentBoard.active_freezes:type_name -> slipway.v1.FreezeInterval
+	35,  // 98: slipway.v1.DriftItem.fields:type_name -> slipway.v1.DriftFieldDiff
+	36,  // 99: slipway.v1.DriftReport.items:type_name -> slipway.v1.DriftItem
+	212, // 100: slipway.v1.DriftReport.checked_at:type_name -> google.protobuf.Timestamp
+	38,  // 101: slipway.v1.Runbook.parameters:type_name -> slipway.v1.RunbookParameter
+	214, // 102: slipway.v1.Runbook.steps:type_name -> google.protobuf.Struct
+	213, // 103: slipway.v1.Runbook.timeout:type_name -> google.protobuf.Duration
+	212, // 104: slipway.v1.Runbook.created_at:type_name -> google.protobuf.Timestamp
+	212, // 105: slipway.v1.Runbook.updated_at:type_name -> google.protobuf.Timestamp
+	201, // 106: slipway.v1.RunbookRun.parameters:type_name -> slipway.v1.RunbookRun.ParametersEntry
+	214, // 107: slipway.v1.RunbookRun.result:type_name -> google.protobuf.Struct
+	216, // 108: slipway.v1.RunbookRun.actor:type_name -> slipway.v1.Actor
+	212, // 109: slipway.v1.RunbookRun.started_at:type_name -> google.protobuf.Timestamp
+	212, // 110: slipway.v1.RunbookRun.finished_at:type_name -> google.protobuf.Timestamp
+	212, // 111: slipway.v1.RunbookRun.created_at:type_name -> google.protobuf.Timestamp
+	212, // 112: slipway.v1.DoraBucket.bucket:type_name -> google.protobuf.Timestamp
+	202, // 113: slipway.v1.DoraMetrics.deployment_frequency:type_name -> slipway.v1.DoraMetrics.Frequency
+	203, // 114: slipway.v1.DoraMetrics.lead_time:type_name -> slipway.v1.DoraMetrics.LeadTime
+	204, // 115: slipway.v1.DoraMetrics.change_failure_rate:type_name -> slipway.v1.DoraMetrics.ChangeFailure
+	205, // 116: slipway.v1.DoraMetrics.time_to_restore:type_name -> slipway.v1.DoraMetrics.Restore
+	42,  // 117: slipway.v1.DoraMetrics.by_service:type_name -> slipway.v1.DoraServiceMetrics
+	212, // 118: slipway.v1.DoraMetrics.from:type_name -> google.protobuf.Timestamp
+	212, // 119: slipway.v1.DoraMetrics.to:type_name -> google.protobuf.Timestamp
+	214, // 120: slipway.v1.CreateServiceRequest.artifact_spec:type_name -> google.protobuf.Struct
+	214, // 121: slipway.v1.CreateServiceRequest.health_check:type_name -> google.protobuf.Struct
+	206, // 122: slipway.v1.CreateServiceRequest.labels:type_name -> slipway.v1.CreateServiceRequest.LabelsEntry
+	6,   // 123: slipway.v1.CreateServiceResponse.service:type_name -> slipway.v1.DeployableService
+	6,   // 124: slipway.v1.GetServiceResponse.service:type_name -> slipway.v1.DeployableService
+	217, // 125: slipway.v1.ListServicesRequest.page:type_name -> slipway.v1.PageRequest
+	6,   // 126: slipway.v1.ListServicesResponse.items:type_name -> slipway.v1.DeployableService
+	218, // 127: slipway.v1.ListServicesResponse.page:type_name -> slipway.v1.PageResponse
+	6,   // 128: slipway.v1.UpdateServiceRequest.service:type_name -> slipway.v1.DeployableService
+	219, // 129: slipway.v1.UpdateServiceRequest.update_mask:type_name -> google.protobuf.FieldMask
+	6,   // 130: slipway.v1.UpdateServiceResponse.service:type_name -> slipway.v1.DeployableService
+	214, // 131: slipway.v1.CreateDeploymentRequest.strategy_config:type_name -> google.protobuf.Struct
+	212, // 132: slipway.v1.CreateDeploymentRequest.scheduled_for:type_name -> google.protobuf.Timestamp
+	31,  // 133: slipway.v1.CreateDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
+	214, // 134: slipway.v1.PreviewDeploymentRequest.strategy_config:type_name -> google.protobuf.Struct
+	24,  // 135: slipway.v1.PreviewDeploymentResponse.steps:type_name -> slipway.v1.DeploymentStep
+	25,  // 136: slipway.v1.PreviewDeploymentResponse.gates:type_name -> slipway.v1.DeploymentGate
+	0,   // 137: slipway.v1.PreviewDeploymentResponse.approvers:type_name -> slipway.v1.Approver
+	10,  // 138: slipway.v1.PreviewDeploymentResponse.variables:type_name -> slipway.v1.ResolvedVariable
+	17,  // 139: slipway.v1.PreviewDeploymentResponse.release:type_name -> slipway.v1.Release
+	31,  // 140: slipway.v1.PreviewDeploymentResponse.current:type_name -> slipway.v1.Deployment
+	31,  // 141: slipway.v1.GetDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
+	217, // 142: slipway.v1.ListDeploymentsRequest.page:type_name -> slipway.v1.PageRequest
+	31,  // 143: slipway.v1.ListDeploymentsResponse.items:type_name -> slipway.v1.Deployment
+	218, // 144: slipway.v1.ListDeploymentsResponse.page:type_name -> slipway.v1.PageResponse
+	31,  // 145: slipway.v1.CancelDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
+	31,  // 146: slipway.v1.PauseDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
+	31,  // 147: slipway.v1.ResumeDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
+	31,  // 148: slipway.v1.RetryDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
+	214, // 149: slipway.v1.RollbackDeploymentRequest.strategy_config:type_name -> google.protobuf.Struct
+	31,  // 150: slipway.v1.RollbackDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
+	31,  // 151: slipway.v1.WatchDeploymentResponse.deployment:type_name -> slipway.v1.Deployment
+	30,  // 152: slipway.v1.ListVerificationRunsResponse.items:type_name -> slipway.v1.VerificationRun
+	212, // 153: slipway.v1.GetDoraMetricsRequest.from:type_name -> google.protobuf.Timestamp
+	212, // 154: slipway.v1.GetDoraMetricsRequest.to:type_name -> google.protobuf.Timestamp
+	43,  // 155: slipway.v1.GetDoraMetricsResponse.metrics:type_name -> slipway.v1.DoraMetrics
+	207, // 156: slipway.v1.CreateReleaseRequest.artifacts:type_name -> slipway.v1.CreateReleaseRequest.ArtifactsEntry
+	208, // 157: slipway.v1.CreateReleaseRequest.variable_overrides:type_name -> slipway.v1.CreateReleaseRequest.VariableOverridesEntry
+	15,  // 158: slipway.v1.CreateReleaseRequest.provenance:type_name -> slipway.v1.ReleaseProvenance
+	17,  // 159: slipway.v1.CreateReleaseResponse.release:type_name -> slipway.v1.Release
+	31,  // 160: slipway.v1.CreateReleaseResponse.auto_deployments:type_name -> slipway.v1.Deployment
+	17,  // 161: slipway.v1.GetReleaseResponse.release:type_name -> slipway.v1.Release
+	217, // 162: slipway.v1.ListReleasesRequest.page:type_name -> slipway.v1.PageRequest
+	17,  // 163: slipway.v1.ListReleasesResponse.items:type_name -> slipway.v1.Release
+	218, // 164: slipway.v1.ListReleasesResponse.page:type_name -> slipway.v1.PageResponse
+	17,  // 165: slipway.v1.UpdateReleaseResponse.release:type_name -> slipway.v1.Release
+	22,  // 166: slipway.v1.DiffReleasesResponse.diff:type_name -> slipway.v1.ReleaseDiff
+	23,  // 167: slipway.v1.GetReleaseProgressResponse.progress:type_name -> slipway.v1.ReleaseProgress
+	31,  // 168: slipway.v1.PromoteReleaseResponse.deployments:type_name -> slipway.v1.Deployment
+	18,  // 169: slipway.v1.CreateLifecycleRequest.phases:type_name -> slipway.v1.LifecyclePhase
+	19,  // 170: slipway.v1.CreateLifecycleResponse.lifecycle:type_name -> slipway.v1.Lifecycle
+	19,  // 171: slipway.v1.GetLifecycleResponse.lifecycle:type_name -> slipway.v1.Lifecycle
+	19,  // 172: slipway.v1.ListLifecyclesResponse.items:type_name -> slipway.v1.Lifecycle
+	19,  // 173: slipway.v1.UpdateLifecycleRequest.lifecycle:type_name -> slipway.v1.Lifecycle
+	219, // 174: slipway.v1.UpdateLifecycleRequest.update_mask:type_name -> google.protobuf.FieldMask
+	19,  // 175: slipway.v1.UpdateLifecycleResponse.lifecycle:type_name -> slipway.v1.Lifecycle
+	20,  // 176: slipway.v1.CreateChannelRequest.version_rule:type_name -> slipway.v1.VersionRule
+	21,  // 177: slipway.v1.CreateChannelResponse.channel:type_name -> slipway.v1.ReleaseChannel
+	21,  // 178: slipway.v1.ListChannelsResponse.items:type_name -> slipway.v1.ReleaseChannel
+	21,  // 179: slipway.v1.UpdateChannelRequest.channel:type_name -> slipway.v1.ReleaseChannel
+	219, // 180: slipway.v1.UpdateChannelRequest.update_mask:type_name -> google.protobuf.FieldMask
+	21,  // 181: slipway.v1.UpdateChannelResponse.channel:type_name -> slipway.v1.ReleaseChannel
+	4,   // 182: slipway.v1.CreateEnvironmentRequest.protection_rules:type_name -> slipway.v1.ProtectionRules
+	7,   // 183: slipway.v1.CreateEnvironmentResponse.environment:type_name -> slipway.v1.Environment
+	7,   // 184: slipway.v1.GetEnvironmentResponse.environment:type_name -> slipway.v1.Environment
+	7,   // 185: slipway.v1.ListEnvironmentsResponse.items:type_name -> slipway.v1.Environment
+	7,   // 186: slipway.v1.UpdateEnvironmentRequest.environment:type_name -> slipway.v1.Environment
+	219, // 187: slipway.v1.UpdateEnvironmentRequest.update_mask:type_name -> google.protobuf.FieldMask
+	7,   // 188: slipway.v1.UpdateEnvironmentResponse.environment:type_name -> slipway.v1.Environment
+	7,   // 189: slipway.v1.ReorderEnvironmentsResponse.items:type_name -> slipway.v1.Environment
+	34,  // 190: slipway.v1.GetEnvironmentBoardResponse.board:type_name -> slipway.v1.EnvironmentBoard
+	214, // 191: slipway.v1.CreateInfrastructureRequest.config:type_name -> google.protobuf.Struct
+	209, // 192: slipway.v1.CreateInfrastructureRequest.labels:type_name -> slipway.v1.CreateInfrastructureRequest.LabelsEntry
+	213, // 193: slipway.v1.CreateInfrastructureRequest.drift_interval:type_name -> google.protobuf.Duration
+	8,   // 194: slipway.v1.CreateInfrastructureResponse.infrastructure:type_name -> slipway.v1.Infrastructure
+	8,   // 195: slipway.v1.GetInfrastructureResponse.infrastructure:type_name -> slipway.v1.Infrastructure
+	8,   // 196: slipway.v1.ListInfrastructuresResponse.items:type_name -> slipway.v1.Infrastructure
+	8,   // 197: slipway.v1.UpdateInfrastructureRequest.infrastructure:type_name -> slipway.v1.Infrastructure
+	219, // 198: slipway.v1.UpdateInfrastructureRequest.update_mask:type_name -> google.protobuf.FieldMask
+	8,   // 199: slipway.v1.UpdateInfrastructureResponse.infrastructure:type_name -> slipway.v1.Infrastructure
+	214, // 200: slipway.v1.TestInfrastructureResponse.details:type_name -> google.protobuf.Struct
+	5,   // 201: slipway.v1.CreateVariableRequest.scope:type_name -> slipway.v1.VariableScope
+	9,   // 202: slipway.v1.CreateVariableResponse.variable:type_name -> slipway.v1.DeployVariable
+	9,   // 203: slipway.v1.ListVariablesResponse.items:type_name -> slipway.v1.DeployVariable
+	9,   // 204: slipway.v1.UpdateVariableRequest.variable:type_name -> slipway.v1.DeployVariable
+	219, // 205: slipway.v1.UpdateVariableRequest.update_mask:type_name -> google.protobuf.FieldMask
+	9,   // 206: slipway.v1.UpdateVariableResponse.variable:type_name -> slipway.v1.DeployVariable
+	5,   // 207: slipway.v1.PreviewVariablesRequest.scope:type_name -> slipway.v1.VariableScope
+	210, // 208: slipway.v1.PreviewVariablesRequest.overrides:type_name -> slipway.v1.PreviewVariablesRequest.OverridesEntry
+	10,  // 209: slipway.v1.PreviewVariablesResponse.items:type_name -> slipway.v1.ResolvedVariable
+	1,   // 210: slipway.v1.CreateFreezeRequest.window:type_name -> slipway.v1.DeployWindow
+	11,  // 211: slipway.v1.CreateFreezeResponse.freeze:type_name -> slipway.v1.Freeze
+	11,  // 212: slipway.v1.ListFreezesResponse.items:type_name -> slipway.v1.Freeze
+	11,  // 213: slipway.v1.UpdateFreezeRequest.freeze:type_name -> slipway.v1.Freeze
+	219, // 214: slipway.v1.UpdateFreezeRequest.update_mask:type_name -> google.protobuf.FieldMask
+	11,  // 215: slipway.v1.UpdateFreezeResponse.freeze:type_name -> slipway.v1.Freeze
+	212, // 216: slipway.v1.GetFreezeCalendarRequest.from:type_name -> google.protobuf.Timestamp
+	212, // 217: slipway.v1.GetFreezeCalendarRequest.to:type_name -> google.protobuf.Timestamp
+	12,  // 218: slipway.v1.GetFreezeCalendarResponse.items:type_name -> slipway.v1.FreezeInterval
+	37,  // 219: slipway.v1.CheckDriftResponse.report:type_name -> slipway.v1.DriftReport
+	37,  // 220: slipway.v1.CheckDriftResponse.reports:type_name -> slipway.v1.DriftReport
+	37,  // 221: slipway.v1.ListDriftReportsResponse.items:type_name -> slipway.v1.DriftReport
+	217, // 222: slipway.v1.ListApprovalsRequest.page:type_name -> slipway.v1.PageRequest
+	27,  // 223: slipway.v1.ListApprovalsResponse.items:type_name -> slipway.v1.Approval
+	218, // 224: slipway.v1.ListApprovalsResponse.page:type_name -> slipway.v1.PageResponse
+	27,  // 225: slipway.v1.GetApprovalResponse.approval:type_name -> slipway.v1.Approval
+	27,  // 226: slipway.v1.DecideApprovalResponse.approval:type_name -> slipway.v1.Approval
+	31,  // 227: slipway.v1.DecideApprovalResponse.deployment:type_name -> slipway.v1.Deployment
+	27,  // 228: slipway.v1.CancelApprovalResponse.approval:type_name -> slipway.v1.Approval
+	25,  // 229: slipway.v1.EvaluateGatesResponse.gates:type_name -> slipway.v1.DeploymentGate
+	38,  // 230: slipway.v1.CreateRunbookRequest.parameters:type_name -> slipway.v1.RunbookParameter
+	214, // 231: slipway.v1.CreateRunbookRequest.steps:type_name -> google.protobuf.Struct
+	213, // 232: slipway.v1.CreateRunbookRequest.timeout:type_name -> google.protobuf.Duration
+	39,  // 233: slipway.v1.CreateRunbookResponse.runbook:type_name -> slipway.v1.Runbook
+	39,  // 234: slipway.v1.GetRunbookResponse.runbook:type_name -> slipway.v1.Runbook
+	39,  // 235: slipway.v1.ListRunbooksResponse.items:type_name -> slipway.v1.Runbook
+	39,  // 236: slipway.v1.UpdateRunbookRequest.runbook:type_name -> slipway.v1.Runbook
+	219, // 237: slipway.v1.UpdateRunbookRequest.update_mask:type_name -> google.protobuf.FieldMask
+	39,  // 238: slipway.v1.UpdateRunbookResponse.runbook:type_name -> slipway.v1.Runbook
+	211, // 239: slipway.v1.RunRunbookRequest.parameters:type_name -> slipway.v1.RunRunbookRequest.ParametersEntry
+	40,  // 240: slipway.v1.RunRunbookResponse.run:type_name -> slipway.v1.RunbookRun
+	40,  // 241: slipway.v1.GetRunbookRunResponse.run:type_name -> slipway.v1.RunbookRun
+	217, // 242: slipway.v1.ListRunbookRunsRequest.page:type_name -> slipway.v1.PageRequest
+	40,  // 243: slipway.v1.ListRunbookRunsResponse.items:type_name -> slipway.v1.RunbookRun
+	218, // 244: slipway.v1.ListRunbookRunsResponse.page:type_name -> slipway.v1.PageResponse
+	40,  // 245: slipway.v1.CancelRunbookRunResponse.run:type_name -> slipway.v1.RunbookRun
+	13,  // 246: slipway.v1.Release.ArtifactsEntry.value:type_name -> slipway.v1.ReleaseArtifact
+	13,  // 247: slipway.v1.ReleaseDiff.ArtifactChange.from:type_name -> slipway.v1.ReleaseArtifact
+	13,  // 248: slipway.v1.ReleaseDiff.ArtifactChange.to:type_name -> slipway.v1.ReleaseArtifact
+	212, // 249: slipway.v1.ReleaseDiff.Commit.at:type_name -> google.protobuf.Timestamp
+	212, // 250: slipway.v1.ReleaseProgress.EnvironmentState.finished_at:type_name -> google.protobuf.Timestamp
+	212, // 251: slipway.v1.ReleaseProgress.EnvironmentState.auto_promote_at:type_name -> google.protobuf.Timestamp
+	199, // 252: slipway.v1.ReleaseProgress.Phase.environments:type_name -> slipway.v1.ReleaseProgress.EnvironmentState
+	41,  // 253: slipway.v1.DoraMetrics.Frequency.series:type_name -> slipway.v1.DoraBucket
+	213, // 254: slipway.v1.DoraMetrics.LeadTime.p50:type_name -> google.protobuf.Duration
+	213, // 255: slipway.v1.DoraMetrics.LeadTime.p90:type_name -> google.protobuf.Duration
+	213, // 256: slipway.v1.DoraMetrics.LeadTime.mean:type_name -> google.protobuf.Duration
+	213, // 257: slipway.v1.DoraMetrics.Restore.p50:type_name -> google.protobuf.Duration
+	213, // 258: slipway.v1.DoraMetrics.Restore.mean:type_name -> google.protobuf.Duration
+	13,  // 259: slipway.v1.CreateReleaseRequest.ArtifactsEntry.value:type_name -> slipway.v1.ReleaseArtifact
+	44,  // 260: slipway.v1.DeployService.CreateService:input_type -> slipway.v1.CreateServiceRequest
+	46,  // 261: slipway.v1.DeployService.GetService:input_type -> slipway.v1.GetServiceRequest
+	48,  // 262: slipway.v1.DeployService.ListServices:input_type -> slipway.v1.ListServicesRequest
+	50,  // 263: slipway.v1.DeployService.UpdateService:input_type -> slipway.v1.UpdateServiceRequest
+	52,  // 264: slipway.v1.DeployService.DeleteService:input_type -> slipway.v1.DeleteServiceRequest
+	54,  // 265: slipway.v1.DeployService.CreateDeployment:input_type -> slipway.v1.CreateDeploymentRequest
+	56,  // 266: slipway.v1.DeployService.PreviewDeployment:input_type -> slipway.v1.PreviewDeploymentRequest
+	58,  // 267: slipway.v1.DeployService.GetDeployment:input_type -> slipway.v1.GetDeploymentRequest
+	60,  // 268: slipway.v1.DeployService.ListDeployments:input_type -> slipway.v1.ListDeploymentsRequest
+	62,  // 269: slipway.v1.DeployService.CancelDeployment:input_type -> slipway.v1.CancelDeploymentRequest
+	64,  // 270: slipway.v1.DeployService.PauseDeployment:input_type -> slipway.v1.PauseDeploymentRequest
+	66,  // 271: slipway.v1.DeployService.ResumeDeployment:input_type -> slipway.v1.ResumeDeploymentRequest
+	68,  // 272: slipway.v1.DeployService.RetryDeployment:input_type -> slipway.v1.RetryDeploymentRequest
+	70,  // 273: slipway.v1.DeployService.RollbackDeployment:input_type -> slipway.v1.RollbackDeploymentRequest
+	72,  // 274: slipway.v1.DeployService.WatchDeployment:input_type -> slipway.v1.WatchDeploymentRequest
+	74,  // 275: slipway.v1.DeployService.ListVerificationRuns:input_type -> slipway.v1.ListVerificationRunsRequest
+	76,  // 276: slipway.v1.DeployService.GetDoraMetrics:input_type -> slipway.v1.GetDoraMetricsRequest
+	78,  // 277: slipway.v1.ReleaseService.CreateRelease:input_type -> slipway.v1.CreateReleaseRequest
+	80,  // 278: slipway.v1.ReleaseService.GetRelease:input_type -> slipway.v1.GetReleaseRequest
+	82,  // 279: slipway.v1.ReleaseService.ListReleases:input_type -> slipway.v1.ListReleasesRequest
+	84,  // 280: slipway.v1.ReleaseService.UpdateRelease:input_type -> slipway.v1.UpdateReleaseRequest
+	86,  // 281: slipway.v1.ReleaseService.DeleteRelease:input_type -> slipway.v1.DeleteReleaseRequest
+	88,  // 282: slipway.v1.ReleaseService.DiffReleases:input_type -> slipway.v1.DiffReleasesRequest
+	90,  // 283: slipway.v1.ReleaseService.GetReleaseProgress:input_type -> slipway.v1.GetReleaseProgressRequest
+	92,  // 284: slipway.v1.ReleaseService.PromoteRelease:input_type -> slipway.v1.PromoteReleaseRequest
+	94,  // 285: slipway.v1.ReleaseService.CreateLifecycle:input_type -> slipway.v1.CreateLifecycleRequest
+	96,  // 286: slipway.v1.ReleaseService.GetLifecycle:input_type -> slipway.v1.GetLifecycleRequest
+	98,  // 287: slipway.v1.ReleaseService.ListLifecycles:input_type -> slipway.v1.ListLifecyclesRequest
+	100, // 288: slipway.v1.ReleaseService.UpdateLifecycle:input_type -> slipway.v1.UpdateLifecycleRequest
+	102, // 289: slipway.v1.ReleaseService.DeleteLifecycle:input_type -> slipway.v1.DeleteLifecycleRequest
+	104, // 290: slipway.v1.ReleaseService.CreateChannel:input_type -> slipway.v1.CreateChannelRequest
+	106, // 291: slipway.v1.ReleaseService.ListChannels:input_type -> slipway.v1.ListChannelsRequest
+	108, // 292: slipway.v1.ReleaseService.UpdateChannel:input_type -> slipway.v1.UpdateChannelRequest
+	110, // 293: slipway.v1.ReleaseService.DeleteChannel:input_type -> slipway.v1.DeleteChannelRequest
+	112, // 294: slipway.v1.EnvironmentService.CreateEnvironment:input_type -> slipway.v1.CreateEnvironmentRequest
+	114, // 295: slipway.v1.EnvironmentService.GetEnvironment:input_type -> slipway.v1.GetEnvironmentRequest
+	116, // 296: slipway.v1.EnvironmentService.ListEnvironments:input_type -> slipway.v1.ListEnvironmentsRequest
+	118, // 297: slipway.v1.EnvironmentService.UpdateEnvironment:input_type -> slipway.v1.UpdateEnvironmentRequest
+	120, // 298: slipway.v1.EnvironmentService.DeleteEnvironment:input_type -> slipway.v1.DeleteEnvironmentRequest
+	122, // 299: slipway.v1.EnvironmentService.ReorderEnvironments:input_type -> slipway.v1.ReorderEnvironmentsRequest
+	124, // 300: slipway.v1.EnvironmentService.GetEnvironmentBoard:input_type -> slipway.v1.GetEnvironmentBoardRequest
+	126, // 301: slipway.v1.EnvironmentService.CreateInfrastructure:input_type -> slipway.v1.CreateInfrastructureRequest
+	128, // 302: slipway.v1.EnvironmentService.GetInfrastructure:input_type -> slipway.v1.GetInfrastructureRequest
+	130, // 303: slipway.v1.EnvironmentService.ListInfrastructures:input_type -> slipway.v1.ListInfrastructuresRequest
+	132, // 304: slipway.v1.EnvironmentService.UpdateInfrastructure:input_type -> slipway.v1.UpdateInfrastructureRequest
+	134, // 305: slipway.v1.EnvironmentService.DeleteInfrastructure:input_type -> slipway.v1.DeleteInfrastructureRequest
+	136, // 306: slipway.v1.EnvironmentService.TestInfrastructure:input_type -> slipway.v1.TestInfrastructureRequest
+	138, // 307: slipway.v1.EnvironmentService.GetAwsExternalId:input_type -> slipway.v1.GetAwsExternalIdRequest
+	140, // 308: slipway.v1.EnvironmentService.CreateVariable:input_type -> slipway.v1.CreateVariableRequest
+	142, // 309: slipway.v1.EnvironmentService.ListVariables:input_type -> slipway.v1.ListVariablesRequest
+	144, // 310: slipway.v1.EnvironmentService.UpdateVariable:input_type -> slipway.v1.UpdateVariableRequest
+	146, // 311: slipway.v1.EnvironmentService.DeleteVariable:input_type -> slipway.v1.DeleteVariableRequest
+	148, // 312: slipway.v1.EnvironmentService.PreviewVariables:input_type -> slipway.v1.PreviewVariablesRequest
+	150, // 313: slipway.v1.EnvironmentService.CreateFreeze:input_type -> slipway.v1.CreateFreezeRequest
+	152, // 314: slipway.v1.EnvironmentService.ListFreezes:input_type -> slipway.v1.ListFreezesRequest
+	154, // 315: slipway.v1.EnvironmentService.UpdateFreeze:input_type -> slipway.v1.UpdateFreezeRequest
+	156, // 316: slipway.v1.EnvironmentService.DeleteFreeze:input_type -> slipway.v1.DeleteFreezeRequest
+	158, // 317: slipway.v1.EnvironmentService.GetFreezeCalendar:input_type -> slipway.v1.GetFreezeCalendarRequest
+	160, // 318: slipway.v1.EnvironmentService.CheckDrift:input_type -> slipway.v1.CheckDriftRequest
+	162, // 319: slipway.v1.EnvironmentService.ListDriftReports:input_type -> slipway.v1.ListDriftReportsRequest
+	164, // 320: slipway.v1.ApprovalService.ListApprovals:input_type -> slipway.v1.ListApprovalsRequest
+	166, // 321: slipway.v1.ApprovalService.GetApproval:input_type -> slipway.v1.GetApprovalRequest
+	168, // 322: slipway.v1.ApprovalService.DecideApproval:input_type -> slipway.v1.DecideApprovalRequest
+	170, // 323: slipway.v1.ApprovalService.CancelApproval:input_type -> slipway.v1.CancelApprovalRequest
+	172, // 324: slipway.v1.ApprovalService.EvaluateGates:input_type -> slipway.v1.EvaluateGatesRequest
+	174, // 325: slipway.v1.RunbookService.CreateRunbook:input_type -> slipway.v1.CreateRunbookRequest
+	176, // 326: slipway.v1.RunbookService.GetRunbook:input_type -> slipway.v1.GetRunbookRequest
+	178, // 327: slipway.v1.RunbookService.ListRunbooks:input_type -> slipway.v1.ListRunbooksRequest
+	180, // 328: slipway.v1.RunbookService.UpdateRunbook:input_type -> slipway.v1.UpdateRunbookRequest
+	182, // 329: slipway.v1.RunbookService.DeleteRunbook:input_type -> slipway.v1.DeleteRunbookRequest
+	184, // 330: slipway.v1.RunbookService.RunRunbook:input_type -> slipway.v1.RunRunbookRequest
+	186, // 331: slipway.v1.RunbookService.GetRunbookRun:input_type -> slipway.v1.GetRunbookRunRequest
+	188, // 332: slipway.v1.RunbookService.ListRunbookRuns:input_type -> slipway.v1.ListRunbookRunsRequest
+	190, // 333: slipway.v1.RunbookService.CancelRunbookRun:input_type -> slipway.v1.CancelRunbookRunRequest
+	45,  // 334: slipway.v1.DeployService.CreateService:output_type -> slipway.v1.CreateServiceResponse
+	47,  // 335: slipway.v1.DeployService.GetService:output_type -> slipway.v1.GetServiceResponse
+	49,  // 336: slipway.v1.DeployService.ListServices:output_type -> slipway.v1.ListServicesResponse
+	51,  // 337: slipway.v1.DeployService.UpdateService:output_type -> slipway.v1.UpdateServiceResponse
+	53,  // 338: slipway.v1.DeployService.DeleteService:output_type -> slipway.v1.DeleteServiceResponse
+	55,  // 339: slipway.v1.DeployService.CreateDeployment:output_type -> slipway.v1.CreateDeploymentResponse
+	57,  // 340: slipway.v1.DeployService.PreviewDeployment:output_type -> slipway.v1.PreviewDeploymentResponse
+	59,  // 341: slipway.v1.DeployService.GetDeployment:output_type -> slipway.v1.GetDeploymentResponse
+	61,  // 342: slipway.v1.DeployService.ListDeployments:output_type -> slipway.v1.ListDeploymentsResponse
+	63,  // 343: slipway.v1.DeployService.CancelDeployment:output_type -> slipway.v1.CancelDeploymentResponse
+	65,  // 344: slipway.v1.DeployService.PauseDeployment:output_type -> slipway.v1.PauseDeploymentResponse
+	67,  // 345: slipway.v1.DeployService.ResumeDeployment:output_type -> slipway.v1.ResumeDeploymentResponse
+	69,  // 346: slipway.v1.DeployService.RetryDeployment:output_type -> slipway.v1.RetryDeploymentResponse
+	71,  // 347: slipway.v1.DeployService.RollbackDeployment:output_type -> slipway.v1.RollbackDeploymentResponse
+	73,  // 348: slipway.v1.DeployService.WatchDeployment:output_type -> slipway.v1.WatchDeploymentResponse
+	75,  // 349: slipway.v1.DeployService.ListVerificationRuns:output_type -> slipway.v1.ListVerificationRunsResponse
+	77,  // 350: slipway.v1.DeployService.GetDoraMetrics:output_type -> slipway.v1.GetDoraMetricsResponse
+	79,  // 351: slipway.v1.ReleaseService.CreateRelease:output_type -> slipway.v1.CreateReleaseResponse
+	81,  // 352: slipway.v1.ReleaseService.GetRelease:output_type -> slipway.v1.GetReleaseResponse
+	83,  // 353: slipway.v1.ReleaseService.ListReleases:output_type -> slipway.v1.ListReleasesResponse
+	85,  // 354: slipway.v1.ReleaseService.UpdateRelease:output_type -> slipway.v1.UpdateReleaseResponse
+	87,  // 355: slipway.v1.ReleaseService.DeleteRelease:output_type -> slipway.v1.DeleteReleaseResponse
+	89,  // 356: slipway.v1.ReleaseService.DiffReleases:output_type -> slipway.v1.DiffReleasesResponse
+	91,  // 357: slipway.v1.ReleaseService.GetReleaseProgress:output_type -> slipway.v1.GetReleaseProgressResponse
+	93,  // 358: slipway.v1.ReleaseService.PromoteRelease:output_type -> slipway.v1.PromoteReleaseResponse
+	95,  // 359: slipway.v1.ReleaseService.CreateLifecycle:output_type -> slipway.v1.CreateLifecycleResponse
+	97,  // 360: slipway.v1.ReleaseService.GetLifecycle:output_type -> slipway.v1.GetLifecycleResponse
+	99,  // 361: slipway.v1.ReleaseService.ListLifecycles:output_type -> slipway.v1.ListLifecyclesResponse
+	101, // 362: slipway.v1.ReleaseService.UpdateLifecycle:output_type -> slipway.v1.UpdateLifecycleResponse
+	103, // 363: slipway.v1.ReleaseService.DeleteLifecycle:output_type -> slipway.v1.DeleteLifecycleResponse
+	105, // 364: slipway.v1.ReleaseService.CreateChannel:output_type -> slipway.v1.CreateChannelResponse
+	107, // 365: slipway.v1.ReleaseService.ListChannels:output_type -> slipway.v1.ListChannelsResponse
+	109, // 366: slipway.v1.ReleaseService.UpdateChannel:output_type -> slipway.v1.UpdateChannelResponse
+	111, // 367: slipway.v1.ReleaseService.DeleteChannel:output_type -> slipway.v1.DeleteChannelResponse
+	113, // 368: slipway.v1.EnvironmentService.CreateEnvironment:output_type -> slipway.v1.CreateEnvironmentResponse
+	115, // 369: slipway.v1.EnvironmentService.GetEnvironment:output_type -> slipway.v1.GetEnvironmentResponse
+	117, // 370: slipway.v1.EnvironmentService.ListEnvironments:output_type -> slipway.v1.ListEnvironmentsResponse
+	119, // 371: slipway.v1.EnvironmentService.UpdateEnvironment:output_type -> slipway.v1.UpdateEnvironmentResponse
+	121, // 372: slipway.v1.EnvironmentService.DeleteEnvironment:output_type -> slipway.v1.DeleteEnvironmentResponse
+	123, // 373: slipway.v1.EnvironmentService.ReorderEnvironments:output_type -> slipway.v1.ReorderEnvironmentsResponse
+	125, // 374: slipway.v1.EnvironmentService.GetEnvironmentBoard:output_type -> slipway.v1.GetEnvironmentBoardResponse
+	127, // 375: slipway.v1.EnvironmentService.CreateInfrastructure:output_type -> slipway.v1.CreateInfrastructureResponse
+	129, // 376: slipway.v1.EnvironmentService.GetInfrastructure:output_type -> slipway.v1.GetInfrastructureResponse
+	131, // 377: slipway.v1.EnvironmentService.ListInfrastructures:output_type -> slipway.v1.ListInfrastructuresResponse
+	133, // 378: slipway.v1.EnvironmentService.UpdateInfrastructure:output_type -> slipway.v1.UpdateInfrastructureResponse
+	135, // 379: slipway.v1.EnvironmentService.DeleteInfrastructure:output_type -> slipway.v1.DeleteInfrastructureResponse
+	137, // 380: slipway.v1.EnvironmentService.TestInfrastructure:output_type -> slipway.v1.TestInfrastructureResponse
+	139, // 381: slipway.v1.EnvironmentService.GetAwsExternalId:output_type -> slipway.v1.GetAwsExternalIdResponse
+	141, // 382: slipway.v1.EnvironmentService.CreateVariable:output_type -> slipway.v1.CreateVariableResponse
+	143, // 383: slipway.v1.EnvironmentService.ListVariables:output_type -> slipway.v1.ListVariablesResponse
+	145, // 384: slipway.v1.EnvironmentService.UpdateVariable:output_type -> slipway.v1.UpdateVariableResponse
+	147, // 385: slipway.v1.EnvironmentService.DeleteVariable:output_type -> slipway.v1.DeleteVariableResponse
+	149, // 386: slipway.v1.EnvironmentService.PreviewVariables:output_type -> slipway.v1.PreviewVariablesResponse
+	151, // 387: slipway.v1.EnvironmentService.CreateFreeze:output_type -> slipway.v1.CreateFreezeResponse
+	153, // 388: slipway.v1.EnvironmentService.ListFreezes:output_type -> slipway.v1.ListFreezesResponse
+	155, // 389: slipway.v1.EnvironmentService.UpdateFreeze:output_type -> slipway.v1.UpdateFreezeResponse
+	157, // 390: slipway.v1.EnvironmentService.DeleteFreeze:output_type -> slipway.v1.DeleteFreezeResponse
+	159, // 391: slipway.v1.EnvironmentService.GetFreezeCalendar:output_type -> slipway.v1.GetFreezeCalendarResponse
+	161, // 392: slipway.v1.EnvironmentService.CheckDrift:output_type -> slipway.v1.CheckDriftResponse
+	163, // 393: slipway.v1.EnvironmentService.ListDriftReports:output_type -> slipway.v1.ListDriftReportsResponse
+	165, // 394: slipway.v1.ApprovalService.ListApprovals:output_type -> slipway.v1.ListApprovalsResponse
+	167, // 395: slipway.v1.ApprovalService.GetApproval:output_type -> slipway.v1.GetApprovalResponse
+	169, // 396: slipway.v1.ApprovalService.DecideApproval:output_type -> slipway.v1.DecideApprovalResponse
+	171, // 397: slipway.v1.ApprovalService.CancelApproval:output_type -> slipway.v1.CancelApprovalResponse
+	173, // 398: slipway.v1.ApprovalService.EvaluateGates:output_type -> slipway.v1.EvaluateGatesResponse
+	175, // 399: slipway.v1.RunbookService.CreateRunbook:output_type -> slipway.v1.CreateRunbookResponse
+	177, // 400: slipway.v1.RunbookService.GetRunbook:output_type -> slipway.v1.GetRunbookResponse
+	179, // 401: slipway.v1.RunbookService.ListRunbooks:output_type -> slipway.v1.ListRunbooksResponse
+	181, // 402: slipway.v1.RunbookService.UpdateRunbook:output_type -> slipway.v1.UpdateRunbookResponse
+	183, // 403: slipway.v1.RunbookService.DeleteRunbook:output_type -> slipway.v1.DeleteRunbookResponse
+	185, // 404: slipway.v1.RunbookService.RunRunbook:output_type -> slipway.v1.RunRunbookResponse
+	187, // 405: slipway.v1.RunbookService.GetRunbookRun:output_type -> slipway.v1.GetRunbookRunResponse
+	189, // 406: slipway.v1.RunbookService.ListRunbookRuns:output_type -> slipway.v1.ListRunbookRunsResponse
+	191, // 407: slipway.v1.RunbookService.CancelRunbookRun:output_type -> slipway.v1.CancelRunbookRunResponse
+	334, // [334:408] is the sub-list for method output_type
+	260, // [260:334] is the sub-list for method input_type
+	260, // [260:260] is the sub-list for extension type_name
+	260, // [260:260] is the sub-list for extension extendee
+	0,   // [0:260] is the sub-list for field type_name
 }
 
 func init() { file_slipway_v1_deploy_proto_init() }

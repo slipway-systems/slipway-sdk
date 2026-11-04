@@ -141,6 +141,7 @@ message ListPlansRequest {}
 message ListPlansResponse {
   repeated Plan plans = 1;
   string current_plan_id = 2;
+  bool online_billing = 3; // see GetSubscriptionResponse.online_billing
 }
 
 message GetUsageRequest {
@@ -174,6 +175,9 @@ message GetSubscriptionRequest {}
 message GetSubscriptionResponse {
   BillingSubscription subscription = 1;
   Plan plan = 2; // effective plan
+  // online_billing is false when this installation takes no payments (no Stripe configured, typical self-hosting):
+  // plans are then assigned by an instance operator (`slipway billing set-plan`), and checkout and the portal are off.
+  bool online_billing = 3;
 }
 
 message ListInvoicesRequest {

@@ -1343,8 +1343,11 @@ type StartConnectionRequest struct {
 	ClientId          string                 `protobuf:"bytes,8,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`                            // per-connection OAuth app (self-managed instances)
 	ClientSecret      string                 `protobuf:"bytes,9,opt,name=client_secret,json=clientSecret,proto3" json:"client_secret,omitempty"`
 	ReturnTo          string                 `protobuf:"bytes,10,opt,name=return_to,json=returnTo,proto3" json:"return_to,omitempty"` // SPA path to land on after the callback
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// GitHub App: an installation to connect (e.g. one the provider reported without a Slipway state). A hint only: it
+	// is connected when the user's own GitHub authorisation can access it; otherwise the user picks from theirs.
+	InstallationId string `protobuf:"bytes,11,opt,name=installation_id,json=installationId,proto3" json:"installation_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *StartConnectionRequest) Reset() {
@@ -1447,6 +1450,13 @@ func (x *StartConnectionRequest) GetReturnTo() string {
 	return ""
 }
 
+func (x *StartConnectionRequest) GetInstallationId() string {
+	if x != nil {
+		return x.InstallationId
+	}
+	return ""
+}
+
 type StartConnectionResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	AuthorizationUrl string                 `protobuf:"bytes,1,opt,name=authorization_url,json=authorizationUrl,proto3" json:"authorization_url,omitempty"` // set for redirect flows
@@ -1500,7 +1510,8 @@ func (x *StartConnectionResponse) GetConnection() *ScmConnection {
 }
 
 // CompleteConnection finishes a redirect flow. The browser normally lands on /auth/scm/{provider}/callback, which
-// calls this internally; the RPC exists for SPAs that proxy the callback.
+// calls this internally; the RPC exists for SPAs that proxy the callback. Exactly one of connection,
+// authorization_url and installation_ticket is set.
 type CompleteConnectionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Provider      ScmProviderKind        `protobuf:"varint,1,opt,name=provider,proto3,enum=slipway.v1.ScmProviderKind" json:"provider,omitempty"`
@@ -1562,11 +1573,13 @@ func (x *CompleteConnectionRequest) GetParams() map[string]string {
 }
 
 type CompleteConnectionResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Connection    *ScmConnection         `protobuf:"bytes,1,opt,name=connection,proto3" json:"connection,omitempty"`
-	ReturnTo      string                 `protobuf:"bytes,2,opt,name=return_to,json=returnTo,proto3" json:"return_to,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Connection         *ScmConnection         `protobuf:"bytes,1,opt,name=connection,proto3" json:"connection,omitempty"`
+	ReturnTo           string                 `protobuf:"bytes,2,opt,name=return_to,json=returnTo,proto3" json:"return_to,omitempty"`
+	AuthorizationUrl   string                 `protobuf:"bytes,3,opt,name=authorization_url,json=authorizationUrl,proto3" json:"authorization_url,omitempty"`       // continue at the provider (GitHub: authorise to verify a new installation)
+	InstallationTicket string                 `protobuf:"bytes,4,opt,name=installation_ticket,json=installationTicket,proto3" json:"installation_ticket,omitempty"` // pick an installation: ListInstallationChoices / ConnectInstallation
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CompleteConnectionResponse) Reset() {
@@ -1613,6 +1626,365 @@ func (x *CompleteConnectionResponse) GetReturnTo() string {
 	return ""
 }
 
+func (x *CompleteConnectionResponse) GetAuthorizationUrl() string {
+	if x != nil {
+		return x.AuthorizationUrl
+	}
+	return ""
+}
+
+func (x *CompleteConnectionResponse) GetInstallationTicket() string {
+	if x != nil {
+		return x.InstallationTicket
+	}
+	return ""
+}
+
+// A GitHub App installation the user's own GitHub authorisation can access, offered in the installation picker.
+type ScmInstallationChoice struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	InstallationId      string                 `protobuf:"bytes,1,opt,name=installation_id,json=installationId,proto3" json:"installation_id,omitempty"`
+	AccountLogin        string                 `protobuf:"bytes,2,opt,name=account_login,json=accountLogin,proto3" json:"account_login,omitempty"`
+	AccountType         string                 `protobuf:"bytes,3,opt,name=account_type,json=accountType,proto3" json:"account_type,omitempty"`                         // "Organization" | "User"
+	RepositorySelection string                 `protobuf:"bytes,4,opt,name=repository_selection,json=repositorySelection,proto3" json:"repository_selection,omitempty"` // "all" | "selected"
+	Suspended           bool                   `protobuf:"varint,5,opt,name=suspended,proto3" json:"suspended,omitempty"`
+	ConfigureUrl        string                 `protobuf:"bytes,6,opt,name=configure_url,json=configureUrl,proto3" json:"configure_url,omitempty"`                    // GitHub page to change the installation's repositories
+	ConnectionId        string                 `protobuf:"bytes,7,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`                    // this organisation's connection for it, when there is one
+	ConnectedElsewhere  bool                   `protobuf:"varint,8,opt,name=connected_elsewhere,json=connectedElsewhere,proto3" json:"connected_elsewhere,omitempty"` // claimed by another Slipway organisation
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *ScmInstallationChoice) Reset() {
+	*x = ScmInstallationChoice{}
+	mi := &file_slipway_v1_scm_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScmInstallationChoice) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScmInstallationChoice) ProtoMessage() {}
+
+func (x *ScmInstallationChoice) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_scm_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScmInstallationChoice.ProtoReflect.Descriptor instead.
+func (*ScmInstallationChoice) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ScmInstallationChoice) GetInstallationId() string {
+	if x != nil {
+		return x.InstallationId
+	}
+	return ""
+}
+
+func (x *ScmInstallationChoice) GetAccountLogin() string {
+	if x != nil {
+		return x.AccountLogin
+	}
+	return ""
+}
+
+func (x *ScmInstallationChoice) GetAccountType() string {
+	if x != nil {
+		return x.AccountType
+	}
+	return ""
+}
+
+func (x *ScmInstallationChoice) GetRepositorySelection() string {
+	if x != nil {
+		return x.RepositorySelection
+	}
+	return ""
+}
+
+func (x *ScmInstallationChoice) GetSuspended() bool {
+	if x != nil {
+		return x.Suspended
+	}
+	return false
+}
+
+func (x *ScmInstallationChoice) GetConfigureUrl() string {
+	if x != nil {
+		return x.ConfigureUrl
+	}
+	return ""
+}
+
+func (x *ScmInstallationChoice) GetConnectionId() string {
+	if x != nil {
+		return x.ConnectionId
+	}
+	return ""
+}
+
+func (x *ScmInstallationChoice) GetConnectedElsewhere() bool {
+	if x != nil {
+		return x.ConnectedElsewhere
+	}
+	return false
+}
+
+// ListInstallationChoices lists the installations behind a ticket. The callback issues the ticket (?scm_choose=) after
+// the user authorised with GitHub without naming an installation; it is bound to that user and organisation and
+// expires with the flow.
+type ListInstallationChoicesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Provider      ScmProviderKind        `protobuf:"varint,1,opt,name=provider,proto3,enum=slipway.v1.ScmProviderKind" json:"provider,omitempty"`
+	Ticket        string                 `protobuf:"bytes,2,opt,name=ticket,proto3" json:"ticket,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListInstallationChoicesRequest) Reset() {
+	*x = ListInstallationChoicesRequest{}
+	mi := &file_slipway_v1_scm_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListInstallationChoicesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListInstallationChoicesRequest) ProtoMessage() {}
+
+func (x *ListInstallationChoicesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_scm_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListInstallationChoicesRequest.ProtoReflect.Descriptor instead.
+func (*ListInstallationChoicesRequest) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ListInstallationChoicesRequest) GetProvider() ScmProviderKind {
+	if x != nil {
+		return x.Provider
+	}
+	return ScmProviderKind_SCM_PROVIDER_KIND_UNSPECIFIED
+}
+
+func (x *ListInstallationChoicesRequest) GetTicket() string {
+	if x != nil {
+		return x.Ticket
+	}
+	return ""
+}
+
+type ListInstallationChoicesResponse struct {
+	state                 protoimpl.MessageState   `protogen:"open.v1"`
+	Items                 []*ScmInstallationChoice `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	InstallUrl            string                   `protobuf:"bytes,2,opt,name=install_url,json=installUrl,proto3" json:"install_url,omitempty"`                                    // install the app on another account; GitHub brings the user back
+	MissingInstallationId string                   `protobuf:"bytes,3,opt,name=missing_installation_id,json=missingInstallationId,proto3" json:"missing_installation_id,omitempty"` // asked for, but not accessible to the user (e.g. awaiting owner approval)
+	Truncated             bool                     `protobuf:"varint,4,opt,name=truncated,proto3" json:"truncated,omitempty"`                                                       // the user can access more installations than are listed
+	ReturnTo              string                   `protobuf:"bytes,5,opt,name=return_to,json=returnTo,proto3" json:"return_to,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *ListInstallationChoicesResponse) Reset() {
+	*x = ListInstallationChoicesResponse{}
+	mi := &file_slipway_v1_scm_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListInstallationChoicesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListInstallationChoicesResponse) ProtoMessage() {}
+
+func (x *ListInstallationChoicesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_scm_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListInstallationChoicesResponse.ProtoReflect.Descriptor instead.
+func (*ListInstallationChoicesResponse) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ListInstallationChoicesResponse) GetItems() []*ScmInstallationChoice {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListInstallationChoicesResponse) GetInstallUrl() string {
+	if x != nil {
+		return x.InstallUrl
+	}
+	return ""
+}
+
+func (x *ListInstallationChoicesResponse) GetMissingInstallationId() string {
+	if x != nil {
+		return x.MissingInstallationId
+	}
+	return ""
+}
+
+func (x *ListInstallationChoicesResponse) GetTruncated() bool {
+	if x != nil {
+		return x.Truncated
+	}
+	return false
+}
+
+func (x *ListInstallationChoicesResponse) GetReturnTo() string {
+	if x != nil {
+		return x.ReturnTo
+	}
+	return ""
+}
+
+// ConnectInstallation connects one installation of a ticket to the caller's organisation.
+type ConnectInstallationRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Provider       ScmProviderKind        `protobuf:"varint,1,opt,name=provider,proto3,enum=slipway.v1.ScmProviderKind" json:"provider,omitempty"`
+	Ticket         string                 `protobuf:"bytes,2,opt,name=ticket,proto3" json:"ticket,omitempty"`
+	InstallationId string                 `protobuf:"bytes,3,opt,name=installation_id,json=installationId,proto3" json:"installation_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ConnectInstallationRequest) Reset() {
+	*x = ConnectInstallationRequest{}
+	mi := &file_slipway_v1_scm_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConnectInstallationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConnectInstallationRequest) ProtoMessage() {}
+
+func (x *ConnectInstallationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_scm_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConnectInstallationRequest.ProtoReflect.Descriptor instead.
+func (*ConnectInstallationRequest) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ConnectInstallationRequest) GetProvider() ScmProviderKind {
+	if x != nil {
+		return x.Provider
+	}
+	return ScmProviderKind_SCM_PROVIDER_KIND_UNSPECIFIED
+}
+
+func (x *ConnectInstallationRequest) GetTicket() string {
+	if x != nil {
+		return x.Ticket
+	}
+	return ""
+}
+
+func (x *ConnectInstallationRequest) GetInstallationId() string {
+	if x != nil {
+		return x.InstallationId
+	}
+	return ""
+}
+
+type ConnectInstallationResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Connection    *ScmConnection         `protobuf:"bytes,1,opt,name=connection,proto3" json:"connection,omitempty"`
+	ReturnTo      string                 `protobuf:"bytes,2,opt,name=return_to,json=returnTo,proto3" json:"return_to,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConnectInstallationResponse) Reset() {
+	*x = ConnectInstallationResponse{}
+	mi := &file_slipway_v1_scm_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConnectInstallationResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConnectInstallationResponse) ProtoMessage() {}
+
+func (x *ConnectInstallationResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_scm_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConnectInstallationResponse.ProtoReflect.Descriptor instead.
+func (*ConnectInstallationResponse) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ConnectInstallationResponse) GetConnection() *ScmConnection {
+	if x != nil {
+		return x.Connection
+	}
+	return nil
+}
+
+func (x *ConnectInstallationResponse) GetReturnTo() string {
+	if x != nil {
+		return x.ReturnTo
+	}
+	return ""
+}
+
 type ScmServiceListConnectionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Page          *PageRequest           `protobuf:"bytes,1,opt,name=page,proto3" json:"page,omitempty"`
@@ -1622,7 +1994,7 @@ type ScmServiceListConnectionsRequest struct {
 
 func (x *ScmServiceListConnectionsRequest) Reset() {
 	*x = ScmServiceListConnectionsRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[14]
+	mi := &file_slipway_v1_scm_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1634,7 +2006,7 @@ func (x *ScmServiceListConnectionsRequest) String() string {
 func (*ScmServiceListConnectionsRequest) ProtoMessage() {}
 
 func (x *ScmServiceListConnectionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[14]
+	mi := &file_slipway_v1_scm_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1647,7 +2019,7 @@ func (x *ScmServiceListConnectionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScmServiceListConnectionsRequest.ProtoReflect.Descriptor instead.
 func (*ScmServiceListConnectionsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{14}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ScmServiceListConnectionsRequest) GetPage() *PageRequest {
@@ -1667,7 +2039,7 @@ type ScmServiceListConnectionsResponse struct {
 
 func (x *ScmServiceListConnectionsResponse) Reset() {
 	*x = ScmServiceListConnectionsResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[15]
+	mi := &file_slipway_v1_scm_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1679,7 +2051,7 @@ func (x *ScmServiceListConnectionsResponse) String() string {
 func (*ScmServiceListConnectionsResponse) ProtoMessage() {}
 
 func (x *ScmServiceListConnectionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[15]
+	mi := &file_slipway_v1_scm_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1692,7 +2064,7 @@ func (x *ScmServiceListConnectionsResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ScmServiceListConnectionsResponse.ProtoReflect.Descriptor instead.
 func (*ScmServiceListConnectionsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{15}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ScmServiceListConnectionsResponse) GetItems() []*ScmConnection {
@@ -1718,7 +2090,7 @@ type ScmServiceGetConnectionRequest struct {
 
 func (x *ScmServiceGetConnectionRequest) Reset() {
 	*x = ScmServiceGetConnectionRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[16]
+	mi := &file_slipway_v1_scm_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1730,7 +2102,7 @@ func (x *ScmServiceGetConnectionRequest) String() string {
 func (*ScmServiceGetConnectionRequest) ProtoMessage() {}
 
 func (x *ScmServiceGetConnectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[16]
+	mi := &file_slipway_v1_scm_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1743,7 +2115,7 @@ func (x *ScmServiceGetConnectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScmServiceGetConnectionRequest.ProtoReflect.Descriptor instead.
 func (*ScmServiceGetConnectionRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{16}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ScmServiceGetConnectionRequest) GetId() string {
@@ -1762,7 +2134,7 @@ type ScmServiceGetConnectionResponse struct {
 
 func (x *ScmServiceGetConnectionResponse) Reset() {
 	*x = ScmServiceGetConnectionResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[17]
+	mi := &file_slipway_v1_scm_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1774,7 +2146,7 @@ func (x *ScmServiceGetConnectionResponse) String() string {
 func (*ScmServiceGetConnectionResponse) ProtoMessage() {}
 
 func (x *ScmServiceGetConnectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[17]
+	mi := &file_slipway_v1_scm_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1787,7 +2159,7 @@ func (x *ScmServiceGetConnectionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScmServiceGetConnectionResponse.ProtoReflect.Descriptor instead.
 func (*ScmServiceGetConnectionResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{17}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ScmServiceGetConnectionResponse) GetConnection() *ScmConnection {
@@ -1807,7 +2179,7 @@ type ScmServiceDeleteConnectionRequest struct {
 
 func (x *ScmServiceDeleteConnectionRequest) Reset() {
 	*x = ScmServiceDeleteConnectionRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[18]
+	mi := &file_slipway_v1_scm_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1819,7 +2191,7 @@ func (x *ScmServiceDeleteConnectionRequest) String() string {
 func (*ScmServiceDeleteConnectionRequest) ProtoMessage() {}
 
 func (x *ScmServiceDeleteConnectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[18]
+	mi := &file_slipway_v1_scm_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1832,7 +2204,7 @@ func (x *ScmServiceDeleteConnectionRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ScmServiceDeleteConnectionRequest.ProtoReflect.Descriptor instead.
 func (*ScmServiceDeleteConnectionRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{18}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ScmServiceDeleteConnectionRequest) GetId() string {
@@ -1857,7 +2229,7 @@ type ScmServiceDeleteConnectionResponse struct {
 
 func (x *ScmServiceDeleteConnectionResponse) Reset() {
 	*x = ScmServiceDeleteConnectionResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[19]
+	mi := &file_slipway_v1_scm_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1869,7 +2241,7 @@ func (x *ScmServiceDeleteConnectionResponse) String() string {
 func (*ScmServiceDeleteConnectionResponse) ProtoMessage() {}
 
 func (x *ScmServiceDeleteConnectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[19]
+	mi := &file_slipway_v1_scm_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1882,7 +2254,7 @@ func (x *ScmServiceDeleteConnectionResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ScmServiceDeleteConnectionResponse.ProtoReflect.Descriptor instead.
 func (*ScmServiceDeleteConnectionResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{19}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{24}
 }
 
 type ListAvailableReposRequest struct {
@@ -1896,7 +2268,7 @@ type ListAvailableReposRequest struct {
 
 func (x *ListAvailableReposRequest) Reset() {
 	*x = ListAvailableReposRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[20]
+	mi := &file_slipway_v1_scm_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1908,7 +2280,7 @@ func (x *ListAvailableReposRequest) String() string {
 func (*ListAvailableReposRequest) ProtoMessage() {}
 
 func (x *ListAvailableReposRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[20]
+	mi := &file_slipway_v1_scm_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1921,7 +2293,7 @@ func (x *ListAvailableReposRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAvailableReposRequest.ProtoReflect.Descriptor instead.
 func (*ListAvailableReposRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{20}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ListAvailableReposRequest) GetConnectionId() string {
@@ -1955,7 +2327,7 @@ type ListAvailableReposResponse struct {
 
 func (x *ListAvailableReposResponse) Reset() {
 	*x = ListAvailableReposResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[21]
+	mi := &file_slipway_v1_scm_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1967,7 +2339,7 @@ func (x *ListAvailableReposResponse) String() string {
 func (*ListAvailableReposResponse) ProtoMessage() {}
 
 func (x *ListAvailableReposResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[21]
+	mi := &file_slipway_v1_scm_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1980,7 +2352,7 @@ func (x *ListAvailableReposResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAvailableReposResponse.ProtoReflect.Descriptor instead.
 func (*ListAvailableReposResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{21}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ListAvailableReposResponse) GetItems() []*RemoteRepository {
@@ -2010,7 +2382,7 @@ type LinkRepoRequest struct {
 
 func (x *LinkRepoRequest) Reset() {
 	*x = LinkRepoRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[22]
+	mi := &file_slipway_v1_scm_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2022,7 +2394,7 @@ func (x *LinkRepoRequest) String() string {
 func (*LinkRepoRequest) ProtoMessage() {}
 
 func (x *LinkRepoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[22]
+	mi := &file_slipway_v1_scm_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2035,7 +2407,7 @@ func (x *LinkRepoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LinkRepoRequest.ProtoReflect.Descriptor instead.
 func (*LinkRepoRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{22}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *LinkRepoRequest) GetProjectId() string {
@@ -2082,7 +2454,7 @@ type LinkRepoResponse struct {
 
 func (x *LinkRepoResponse) Reset() {
 	*x = LinkRepoResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[23]
+	mi := &file_slipway_v1_scm_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2094,7 +2466,7 @@ func (x *LinkRepoResponse) String() string {
 func (*LinkRepoResponse) ProtoMessage() {}
 
 func (x *LinkRepoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[23]
+	mi := &file_slipway_v1_scm_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2107,7 +2479,7 @@ func (x *LinkRepoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LinkRepoResponse.ProtoReflect.Descriptor instead.
 func (*LinkRepoResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{23}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *LinkRepoResponse) GetRepository() *ScmRepository {
@@ -2127,7 +2499,7 @@ type UnlinkRepoRequest struct {
 
 func (x *UnlinkRepoRequest) Reset() {
 	*x = UnlinkRepoRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[24]
+	mi := &file_slipway_v1_scm_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2139,7 +2511,7 @@ func (x *UnlinkRepoRequest) String() string {
 func (*UnlinkRepoRequest) ProtoMessage() {}
 
 func (x *UnlinkRepoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[24]
+	mi := &file_slipway_v1_scm_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2152,7 +2524,7 @@ func (x *UnlinkRepoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnlinkRepoRequest.ProtoReflect.Descriptor instead.
 func (*UnlinkRepoRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{24}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *UnlinkRepoRequest) GetRepositoryId() string {
@@ -2177,7 +2549,7 @@ type UnlinkRepoResponse struct {
 
 func (x *UnlinkRepoResponse) Reset() {
 	*x = UnlinkRepoResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[25]
+	mi := &file_slipway_v1_scm_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2189,7 +2561,7 @@ func (x *UnlinkRepoResponse) String() string {
 func (*UnlinkRepoResponse) ProtoMessage() {}
 
 func (x *UnlinkRepoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[25]
+	mi := &file_slipway_v1_scm_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2202,7 +2574,7 @@ func (x *UnlinkRepoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnlinkRepoResponse.ProtoReflect.Descriptor instead.
 func (*UnlinkRepoResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{25}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{30}
 }
 
 type ScmServiceListRepositoriesRequest struct {
@@ -2215,7 +2587,7 @@ type ScmServiceListRepositoriesRequest struct {
 
 func (x *ScmServiceListRepositoriesRequest) Reset() {
 	*x = ScmServiceListRepositoriesRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[26]
+	mi := &file_slipway_v1_scm_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2227,7 +2599,7 @@ func (x *ScmServiceListRepositoriesRequest) String() string {
 func (*ScmServiceListRepositoriesRequest) ProtoMessage() {}
 
 func (x *ScmServiceListRepositoriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[26]
+	mi := &file_slipway_v1_scm_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2240,7 +2612,7 @@ func (x *ScmServiceListRepositoriesRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ScmServiceListRepositoriesRequest.ProtoReflect.Descriptor instead.
 func (*ScmServiceListRepositoriesRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{26}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ScmServiceListRepositoriesRequest) GetProjectId() string {
@@ -2266,7 +2638,7 @@ type ScmServiceListRepositoriesResponse struct {
 
 func (x *ScmServiceListRepositoriesResponse) Reset() {
 	*x = ScmServiceListRepositoriesResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[27]
+	mi := &file_slipway_v1_scm_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2278,7 +2650,7 @@ func (x *ScmServiceListRepositoriesResponse) String() string {
 func (*ScmServiceListRepositoriesResponse) ProtoMessage() {}
 
 func (x *ScmServiceListRepositoriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[27]
+	mi := &file_slipway_v1_scm_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2291,7 +2663,7 @@ func (x *ScmServiceListRepositoriesResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ScmServiceListRepositoriesResponse.ProtoReflect.Descriptor instead.
 func (*ScmServiceListRepositoriesResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{27}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ScmServiceListRepositoriesResponse) GetItems() []*ScmRepository {
@@ -2312,7 +2684,7 @@ type ScmServiceListBranchesRequest struct {
 
 func (x *ScmServiceListBranchesRequest) Reset() {
 	*x = ScmServiceListBranchesRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[28]
+	mi := &file_slipway_v1_scm_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2324,7 +2696,7 @@ func (x *ScmServiceListBranchesRequest) String() string {
 func (*ScmServiceListBranchesRequest) ProtoMessage() {}
 
 func (x *ScmServiceListBranchesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[28]
+	mi := &file_slipway_v1_scm_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2337,7 +2709,7 @@ func (x *ScmServiceListBranchesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScmServiceListBranchesRequest.ProtoReflect.Descriptor instead.
 func (*ScmServiceListBranchesRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{28}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *ScmServiceListBranchesRequest) GetRepositoryId() string {
@@ -2371,7 +2743,7 @@ type ScmServiceListBranchesResponse struct {
 
 func (x *ScmServiceListBranchesResponse) Reset() {
 	*x = ScmServiceListBranchesResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[29]
+	mi := &file_slipway_v1_scm_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2383,7 +2755,7 @@ func (x *ScmServiceListBranchesResponse) String() string {
 func (*ScmServiceListBranchesResponse) ProtoMessage() {}
 
 func (x *ScmServiceListBranchesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[29]
+	mi := &file_slipway_v1_scm_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2396,7 +2768,7 @@ func (x *ScmServiceListBranchesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScmServiceListBranchesResponse.ProtoReflect.Descriptor instead.
 func (*ScmServiceListBranchesResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{29}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *ScmServiceListBranchesResponse) GetItems() []*ScmBranch {
@@ -2424,7 +2796,7 @@ type GetFileContentRequest struct {
 
 func (x *GetFileContentRequest) Reset() {
 	*x = GetFileContentRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[30]
+	mi := &file_slipway_v1_scm_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2436,7 +2808,7 @@ func (x *GetFileContentRequest) String() string {
 func (*GetFileContentRequest) ProtoMessage() {}
 
 func (x *GetFileContentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[30]
+	mi := &file_slipway_v1_scm_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2449,7 +2821,7 @@ func (x *GetFileContentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFileContentRequest.ProtoReflect.Descriptor instead.
 func (*GetFileContentRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{30}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *GetFileContentRequest) GetRepositoryId() string {
@@ -2486,7 +2858,7 @@ type GetFileContentResponse struct {
 
 func (x *GetFileContentResponse) Reset() {
 	*x = GetFileContentResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[31]
+	mi := &file_slipway_v1_scm_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2498,7 +2870,7 @@ func (x *GetFileContentResponse) String() string {
 func (*GetFileContentResponse) ProtoMessage() {}
 
 func (x *GetFileContentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[31]
+	mi := &file_slipway_v1_scm_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2511,7 +2883,7 @@ func (x *GetFileContentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFileContentResponse.ProtoReflect.Descriptor instead.
 func (*GetFileContentResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{31}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *GetFileContentResponse) GetPath() string {
@@ -2564,7 +2936,7 @@ type CommitFileRequest struct {
 
 func (x *CommitFileRequest) Reset() {
 	*x = CommitFileRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[32]
+	mi := &file_slipway_v1_scm_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2576,7 +2948,7 @@ func (x *CommitFileRequest) String() string {
 func (*CommitFileRequest) ProtoMessage() {}
 
 func (x *CommitFileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[32]
+	mi := &file_slipway_v1_scm_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2589,7 +2961,7 @@ func (x *CommitFileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitFileRequest.ProtoReflect.Descriptor instead.
 func (*CommitFileRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{32}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *CommitFileRequest) GetRepositoryId() string {
@@ -2637,7 +3009,7 @@ type CommitFileResponse struct {
 
 func (x *CommitFileResponse) Reset() {
 	*x = CommitFileResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[33]
+	mi := &file_slipway_v1_scm_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2649,7 +3021,7 @@ func (x *CommitFileResponse) String() string {
 func (*CommitFileResponse) ProtoMessage() {}
 
 func (x *CommitFileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[33]
+	mi := &file_slipway_v1_scm_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2662,7 +3034,7 @@ func (x *CommitFileResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitFileResponse.ProtoReflect.Descriptor instead.
 func (*CommitFileResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{33}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *CommitFileResponse) GetSha() string {
@@ -2690,7 +3062,7 @@ type ScmServiceListFilesRequest struct {
 
 func (x *ScmServiceListFilesRequest) Reset() {
 	*x = ScmServiceListFilesRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[34]
+	mi := &file_slipway_v1_scm_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2702,7 +3074,7 @@ func (x *ScmServiceListFilesRequest) String() string {
 func (*ScmServiceListFilesRequest) ProtoMessage() {}
 
 func (x *ScmServiceListFilesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[34]
+	mi := &file_slipway_v1_scm_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2715,7 +3087,7 @@ func (x *ScmServiceListFilesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScmServiceListFilesRequest.ProtoReflect.Descriptor instead.
 func (*ScmServiceListFilesRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{34}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *ScmServiceListFilesRequest) GetRepositoryId() string {
@@ -2748,7 +3120,7 @@ type ScmServiceListFilesResponse struct {
 
 func (x *ScmServiceListFilesResponse) Reset() {
 	*x = ScmServiceListFilesResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[35]
+	mi := &file_slipway_v1_scm_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2760,7 +3132,7 @@ func (x *ScmServiceListFilesResponse) String() string {
 func (*ScmServiceListFilesResponse) ProtoMessage() {}
 
 func (x *ScmServiceListFilesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[35]
+	mi := &file_slipway_v1_scm_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2773,7 +3145,7 @@ func (x *ScmServiceListFilesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScmServiceListFilesResponse.ProtoReflect.Descriptor instead.
 func (*ScmServiceListFilesResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{35}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *ScmServiceListFilesResponse) GetItems() []*ScmFileEntry {
@@ -2794,7 +3166,7 @@ type DiscoverPipelineFilesRequest struct {
 
 func (x *DiscoverPipelineFilesRequest) Reset() {
 	*x = DiscoverPipelineFilesRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[36]
+	mi := &file_slipway_v1_scm_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2806,7 +3178,7 @@ func (x *DiscoverPipelineFilesRequest) String() string {
 func (*DiscoverPipelineFilesRequest) ProtoMessage() {}
 
 func (x *DiscoverPipelineFilesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[36]
+	mi := &file_slipway_v1_scm_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2819,7 +3191,7 @@ func (x *DiscoverPipelineFilesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiscoverPipelineFilesRequest.ProtoReflect.Descriptor instead.
 func (*DiscoverPipelineFilesRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{36}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *DiscoverPipelineFilesRequest) GetRepositoryId() string {
@@ -2846,7 +3218,7 @@ type DiscoverPipelineFilesResponse struct {
 
 func (x *DiscoverPipelineFilesResponse) Reset() {
 	*x = DiscoverPipelineFilesResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[37]
+	mi := &file_slipway_v1_scm_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2858,7 +3230,7 @@ func (x *DiscoverPipelineFilesResponse) String() string {
 func (*DiscoverPipelineFilesResponse) ProtoMessage() {}
 
 func (x *DiscoverPipelineFilesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[37]
+	mi := &file_slipway_v1_scm_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2871,7 +3243,7 @@ func (x *DiscoverPipelineFilesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiscoverPipelineFilesResponse.ProtoReflect.Descriptor instead.
 func (*DiscoverPipelineFilesResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{37}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *DiscoverPipelineFilesResponse) GetItems() []*ScmFileEntry {
@@ -2898,7 +3270,7 @@ type ScmServiceSyncWebhookRequest struct {
 
 func (x *ScmServiceSyncWebhookRequest) Reset() {
 	*x = ScmServiceSyncWebhookRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[38]
+	mi := &file_slipway_v1_scm_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2910,7 +3282,7 @@ func (x *ScmServiceSyncWebhookRequest) String() string {
 func (*ScmServiceSyncWebhookRequest) ProtoMessage() {}
 
 func (x *ScmServiceSyncWebhookRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[38]
+	mi := &file_slipway_v1_scm_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2923,7 +3295,7 @@ func (x *ScmServiceSyncWebhookRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScmServiceSyncWebhookRequest.ProtoReflect.Descriptor instead.
 func (*ScmServiceSyncWebhookRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{38}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *ScmServiceSyncWebhookRequest) GetRepositoryId() string {
@@ -2942,7 +3314,7 @@ type ScmServiceSyncWebhookResponse struct {
 
 func (x *ScmServiceSyncWebhookResponse) Reset() {
 	*x = ScmServiceSyncWebhookResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[39]
+	mi := &file_slipway_v1_scm_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2954,7 +3326,7 @@ func (x *ScmServiceSyncWebhookResponse) String() string {
 func (*ScmServiceSyncWebhookResponse) ProtoMessage() {}
 
 func (x *ScmServiceSyncWebhookResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[39]
+	mi := &file_slipway_v1_scm_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2967,7 +3339,7 @@ func (x *ScmServiceSyncWebhookResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScmServiceSyncWebhookResponse.ProtoReflect.Descriptor instead.
 func (*ScmServiceSyncWebhookResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{39}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *ScmServiceSyncWebhookResponse) GetRepository() *ScmRepository {
@@ -2989,7 +3361,7 @@ type ScmServiceListWebhookDeliveriesRequest struct {
 
 func (x *ScmServiceListWebhookDeliveriesRequest) Reset() {
 	*x = ScmServiceListWebhookDeliveriesRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[40]
+	mi := &file_slipway_v1_scm_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3001,7 +3373,7 @@ func (x *ScmServiceListWebhookDeliveriesRequest) String() string {
 func (*ScmServiceListWebhookDeliveriesRequest) ProtoMessage() {}
 
 func (x *ScmServiceListWebhookDeliveriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[40]
+	mi := &file_slipway_v1_scm_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3014,7 +3386,7 @@ func (x *ScmServiceListWebhookDeliveriesRequest) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use ScmServiceListWebhookDeliveriesRequest.ProtoReflect.Descriptor instead.
 func (*ScmServiceListWebhookDeliveriesRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{40}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *ScmServiceListWebhookDeliveriesRequest) GetConnectionId() string {
@@ -3055,7 +3427,7 @@ type ScmServiceListWebhookDeliveriesResponse struct {
 
 func (x *ScmServiceListWebhookDeliveriesResponse) Reset() {
 	*x = ScmServiceListWebhookDeliveriesResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[41]
+	mi := &file_slipway_v1_scm_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3067,7 +3439,7 @@ func (x *ScmServiceListWebhookDeliveriesResponse) String() string {
 func (*ScmServiceListWebhookDeliveriesResponse) ProtoMessage() {}
 
 func (x *ScmServiceListWebhookDeliveriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[41]
+	mi := &file_slipway_v1_scm_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3080,7 +3452,7 @@ func (x *ScmServiceListWebhookDeliveriesResponse) ProtoReflect() protoreflect.Me
 
 // Deprecated: Use ScmServiceListWebhookDeliveriesResponse.ProtoReflect.Descriptor instead.
 func (*ScmServiceListWebhookDeliveriesResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{41}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *ScmServiceListWebhookDeliveriesResponse) GetItems() []*ScmWebhookDelivery {
@@ -3106,7 +3478,7 @@ type ScmServiceGetWebhookDeliveryRequest struct {
 
 func (x *ScmServiceGetWebhookDeliveryRequest) Reset() {
 	*x = ScmServiceGetWebhookDeliveryRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[42]
+	mi := &file_slipway_v1_scm_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3118,7 +3490,7 @@ func (x *ScmServiceGetWebhookDeliveryRequest) String() string {
 func (*ScmServiceGetWebhookDeliveryRequest) ProtoMessage() {}
 
 func (x *ScmServiceGetWebhookDeliveryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[42]
+	mi := &file_slipway_v1_scm_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3131,7 +3503,7 @@ func (x *ScmServiceGetWebhookDeliveryRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use ScmServiceGetWebhookDeliveryRequest.ProtoReflect.Descriptor instead.
 func (*ScmServiceGetWebhookDeliveryRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{42}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *ScmServiceGetWebhookDeliveryRequest) GetId() string {
@@ -3150,7 +3522,7 @@ type ScmServiceGetWebhookDeliveryResponse struct {
 
 func (x *ScmServiceGetWebhookDeliveryResponse) Reset() {
 	*x = ScmServiceGetWebhookDeliveryResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[43]
+	mi := &file_slipway_v1_scm_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3162,7 +3534,7 @@ func (x *ScmServiceGetWebhookDeliveryResponse) String() string {
 func (*ScmServiceGetWebhookDeliveryResponse) ProtoMessage() {}
 
 func (x *ScmServiceGetWebhookDeliveryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[43]
+	mi := &file_slipway_v1_scm_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3175,7 +3547,7 @@ func (x *ScmServiceGetWebhookDeliveryResponse) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use ScmServiceGetWebhookDeliveryResponse.ProtoReflect.Descriptor instead.
 func (*ScmServiceGetWebhookDeliveryResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{43}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *ScmServiceGetWebhookDeliveryResponse) GetDelivery() *ScmWebhookDelivery {
@@ -3194,7 +3566,7 @@ type ScmServiceRedeliverWebhookRequest struct {
 
 func (x *ScmServiceRedeliverWebhookRequest) Reset() {
 	*x = ScmServiceRedeliverWebhookRequest{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[44]
+	mi := &file_slipway_v1_scm_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3206,7 +3578,7 @@ func (x *ScmServiceRedeliverWebhookRequest) String() string {
 func (*ScmServiceRedeliverWebhookRequest) ProtoMessage() {}
 
 func (x *ScmServiceRedeliverWebhookRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[44]
+	mi := &file_slipway_v1_scm_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3219,7 +3591,7 @@ func (x *ScmServiceRedeliverWebhookRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ScmServiceRedeliverWebhookRequest.ProtoReflect.Descriptor instead.
 func (*ScmServiceRedeliverWebhookRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{44}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *ScmServiceRedeliverWebhookRequest) GetId() string {
@@ -3238,7 +3610,7 @@ type ScmServiceRedeliverWebhookResponse struct {
 
 func (x *ScmServiceRedeliverWebhookResponse) Reset() {
 	*x = ScmServiceRedeliverWebhookResponse{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[45]
+	mi := &file_slipway_v1_scm_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3250,7 +3622,7 @@ func (x *ScmServiceRedeliverWebhookResponse) String() string {
 func (*ScmServiceRedeliverWebhookResponse) ProtoMessage() {}
 
 func (x *ScmServiceRedeliverWebhookResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[45]
+	mi := &file_slipway_v1_scm_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3263,7 +3635,7 @@ func (x *ScmServiceRedeliverWebhookResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ScmServiceRedeliverWebhookResponse.ProtoReflect.Descriptor instead.
 func (*ScmServiceRedeliverWebhookResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{45}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *ScmServiceRedeliverWebhookResponse) GetDelivery() *ScmWebhookDelivery {
@@ -3290,7 +3662,7 @@ type ScmStatusEnvelope struct {
 
 func (x *ScmStatusEnvelope) Reset() {
 	*x = ScmStatusEnvelope{}
-	mi := &file_slipway_v1_scm_proto_msgTypes[46]
+	mi := &file_slipway_v1_scm_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3302,7 +3674,7 @@ func (x *ScmStatusEnvelope) String() string {
 func (*ScmStatusEnvelope) ProtoMessage() {}
 
 func (x *ScmStatusEnvelope) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_scm_proto_msgTypes[46]
+	mi := &file_slipway_v1_scm_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3315,7 +3687,7 @@ func (x *ScmStatusEnvelope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScmStatusEnvelope.ProtoReflect.Descriptor instead.
 func (*ScmStatusEnvelope) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{46}
+	return file_slipway_v1_scm_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *ScmStatusEnvelope) GetOrgId() string {
@@ -3480,7 +3852,7 @@ const file_slipway_v1_scm_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\" \n" +
 	"\x1eScmServiceListProvidersRequest\"P\n" +
 	"\x1fScmServiceListProvidersResponse\x12-\n" +
-	"\x05items\x18\x01 \x03(\v2\x17.slipway.v1.ScmProviderR\x05items\"\x8b\x03\n" +
+	"\x05items\x18\x01 \x03(\v2\x17.slipway.v1.ScmProviderR\x05items\"\xb4\x03\n" +
 	"\x16StartConnectionRequest\x127\n" +
 	"\bprovider\x18\x01 \x01(\x0e2\x1b.slipway.v1.ScmProviderKindR\bprovider\x12:\n" +
 	"\vauth_method\x18\x02 \x01(\x0e2\x19.slipway.v1.ScmAuthMethodR\n" +
@@ -3493,7 +3865,8 @@ const file_slipway_v1_scm_proto_rawDesc = "" +
 	"\tclient_id\x18\b \x01(\tR\bclientId\x12#\n" +
 	"\rclient_secret\x18\t \x01(\tR\fclientSecret\x12\x1b\n" +
 	"\treturn_to\x18\n" +
-	" \x01(\tR\breturnTo\"\x81\x01\n" +
+	" \x01(\tR\breturnTo\x12'\n" +
+	"\x0finstallation_id\x18\v \x01(\tR\x0einstallationId\"\x81\x01\n" +
 	"\x17StartConnectionResponse\x12+\n" +
 	"\x11authorization_url\x18\x01 \x01(\tR\x10authorizationUrl\x129\n" +
 	"\n" +
@@ -3505,8 +3878,38 @@ const file_slipway_v1_scm_proto_rawDesc = "" +
 	"\x06params\x18\x03 \x03(\v21.slipway.v1.CompleteConnectionRequest.ParamsEntryR\x06params\x1a9\n" +
 	"\vParamsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"t\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd2\x01\n" +
 	"\x1aCompleteConnectionResponse\x129\n" +
+	"\n" +
+	"connection\x18\x01 \x01(\v2\x19.slipway.v1.ScmConnectionR\n" +
+	"connection\x12\x1b\n" +
+	"\treturn_to\x18\x02 \x01(\tR\breturnTo\x12+\n" +
+	"\x11authorization_url\x18\x03 \x01(\tR\x10authorizationUrl\x12/\n" +
+	"\x13installation_ticket\x18\x04 \x01(\tR\x12installationTicket\"\xd4\x02\n" +
+	"\x15ScmInstallationChoice\x12'\n" +
+	"\x0finstallation_id\x18\x01 \x01(\tR\x0einstallationId\x12#\n" +
+	"\raccount_login\x18\x02 \x01(\tR\faccountLogin\x12!\n" +
+	"\faccount_type\x18\x03 \x01(\tR\vaccountType\x121\n" +
+	"\x14repository_selection\x18\x04 \x01(\tR\x13repositorySelection\x12\x1c\n" +
+	"\tsuspended\x18\x05 \x01(\bR\tsuspended\x12#\n" +
+	"\rconfigure_url\x18\x06 \x01(\tR\fconfigureUrl\x12#\n" +
+	"\rconnection_id\x18\a \x01(\tR\fconnectionId\x12/\n" +
+	"\x13connected_elsewhere\x18\b \x01(\bR\x12connectedElsewhere\"q\n" +
+	"\x1eListInstallationChoicesRequest\x127\n" +
+	"\bprovider\x18\x01 \x01(\x0e2\x1b.slipway.v1.ScmProviderKindR\bprovider\x12\x16\n" +
+	"\x06ticket\x18\x02 \x01(\tR\x06ticket\"\xee\x01\n" +
+	"\x1fListInstallationChoicesResponse\x127\n" +
+	"\x05items\x18\x01 \x03(\v2!.slipway.v1.ScmInstallationChoiceR\x05items\x12\x1f\n" +
+	"\vinstall_url\x18\x02 \x01(\tR\n" +
+	"installUrl\x126\n" +
+	"\x17missing_installation_id\x18\x03 \x01(\tR\x15missingInstallationId\x12\x1c\n" +
+	"\ttruncated\x18\x04 \x01(\bR\ttruncated\x12\x1b\n" +
+	"\treturn_to\x18\x05 \x01(\tR\breturnTo\"\x96\x01\n" +
+	"\x1aConnectInstallationRequest\x127\n" +
+	"\bprovider\x18\x01 \x01(\x0e2\x1b.slipway.v1.ScmProviderKindR\bprovider\x12\x16\n" +
+	"\x06ticket\x18\x02 \x01(\tR\x06ticket\x12'\n" +
+	"\x0finstallation_id\x18\x03 \x01(\tR\x0einstallationId\"u\n" +
+	"\x1bConnectInstallationResponse\x129\n" +
 	"\n" +
 	"connection\x18\x01 \x01(\v2\x19.slipway.v1.ScmConnectionR\n" +
 	"connection\x12\x1b\n" +
@@ -3656,12 +4059,14 @@ const file_slipway_v1_scm_proto_rawDesc = "" +
 	"\x1bSCM_DELIVERY_STATUS_IGNORED\x10\x03\x12!\n" +
 	"\x1dSCM_DELIVERY_STATUS_DUPLICATE\x10\x04\x12\x1e\n" +
 	"\x1aSCM_DELIVERY_STATUS_FAILED\x10\x05\x12 \n" +
-	"\x1cSCM_DELIVERY_STATUS_REJECTED\x10\x062\x9c\x0f\n" +
+	"\x1cSCM_DELIVERY_STATUS_REJECTED\x10\x062\xf8\x10\n" +
 	"\n" +
 	"ScmService\x12h\n" +
 	"\rListProviders\x12*.slipway.v1.ScmServiceListProvidersRequest\x1a+.slipway.v1.ScmServiceListProvidersResponse\x12Z\n" +
 	"\x0fStartConnection\x12\".slipway.v1.StartConnectionRequest\x1a#.slipway.v1.StartConnectionResponse\x12c\n" +
-	"\x12CompleteConnection\x12%.slipway.v1.CompleteConnectionRequest\x1a&.slipway.v1.CompleteConnectionResponse\x12n\n" +
+	"\x12CompleteConnection\x12%.slipway.v1.CompleteConnectionRequest\x1a&.slipway.v1.CompleteConnectionResponse\x12r\n" +
+	"\x17ListInstallationChoices\x12*.slipway.v1.ListInstallationChoicesRequest\x1a+.slipway.v1.ListInstallationChoicesResponse\x12f\n" +
+	"\x13ConnectInstallation\x12&.slipway.v1.ConnectInstallationRequest\x1a'.slipway.v1.ConnectInstallationResponse\x12n\n" +
 	"\x0fListConnections\x12,.slipway.v1.ScmServiceListConnectionsRequest\x1a-.slipway.v1.ScmServiceListConnectionsResponse\x12h\n" +
 	"\rGetConnection\x12*.slipway.v1.ScmServiceGetConnectionRequest\x1a+.slipway.v1.ScmServiceGetConnectionResponse\x12q\n" +
 	"\x10DeleteConnection\x12-.slipway.v1.ScmServiceDeleteConnectionRequest\x1a..slipway.v1.ScmServiceDeleteConnectionResponse\x12c\n" +
@@ -3697,7 +4102,7 @@ func file_slipway_v1_scm_proto_rawDescGZIP() []byte {
 }
 
 var file_slipway_v1_scm_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_slipway_v1_scm_proto_msgTypes = make([]protoimpl.MessageInfo, 49)
+var file_slipway_v1_scm_proto_msgTypes = make([]protoimpl.MessageInfo, 54)
 var file_slipway_v1_scm_proto_goTypes = []any{
 	(ScmProviderKind)(0),                            // 0: slipway.v1.ScmProviderKind
 	(ScmAuthMethod)(0),                              // 1: slipway.v1.ScmAuthMethod
@@ -3718,44 +4123,49 @@ var file_slipway_v1_scm_proto_goTypes = []any{
 	(*StartConnectionResponse)(nil),                 // 16: slipway.v1.StartConnectionResponse
 	(*CompleteConnectionRequest)(nil),               // 17: slipway.v1.CompleteConnectionRequest
 	(*CompleteConnectionResponse)(nil),              // 18: slipway.v1.CompleteConnectionResponse
-	(*ScmServiceListConnectionsRequest)(nil),        // 19: slipway.v1.ScmServiceListConnectionsRequest
-	(*ScmServiceListConnectionsResponse)(nil),       // 20: slipway.v1.ScmServiceListConnectionsResponse
-	(*ScmServiceGetConnectionRequest)(nil),          // 21: slipway.v1.ScmServiceGetConnectionRequest
-	(*ScmServiceGetConnectionResponse)(nil),         // 22: slipway.v1.ScmServiceGetConnectionResponse
-	(*ScmServiceDeleteConnectionRequest)(nil),       // 23: slipway.v1.ScmServiceDeleteConnectionRequest
-	(*ScmServiceDeleteConnectionResponse)(nil),      // 24: slipway.v1.ScmServiceDeleteConnectionResponse
-	(*ListAvailableReposRequest)(nil),               // 25: slipway.v1.ListAvailableReposRequest
-	(*ListAvailableReposResponse)(nil),              // 26: slipway.v1.ListAvailableReposResponse
-	(*LinkRepoRequest)(nil),                         // 27: slipway.v1.LinkRepoRequest
-	(*LinkRepoResponse)(nil),                        // 28: slipway.v1.LinkRepoResponse
-	(*UnlinkRepoRequest)(nil),                       // 29: slipway.v1.UnlinkRepoRequest
-	(*UnlinkRepoResponse)(nil),                      // 30: slipway.v1.UnlinkRepoResponse
-	(*ScmServiceListRepositoriesRequest)(nil),       // 31: slipway.v1.ScmServiceListRepositoriesRequest
-	(*ScmServiceListRepositoriesResponse)(nil),      // 32: slipway.v1.ScmServiceListRepositoriesResponse
-	(*ScmServiceListBranchesRequest)(nil),           // 33: slipway.v1.ScmServiceListBranchesRequest
-	(*ScmServiceListBranchesResponse)(nil),          // 34: slipway.v1.ScmServiceListBranchesResponse
-	(*GetFileContentRequest)(nil),                   // 35: slipway.v1.GetFileContentRequest
-	(*GetFileContentResponse)(nil),                  // 36: slipway.v1.GetFileContentResponse
-	(*CommitFileRequest)(nil),                       // 37: slipway.v1.CommitFileRequest
-	(*CommitFileResponse)(nil),                      // 38: slipway.v1.CommitFileResponse
-	(*ScmServiceListFilesRequest)(nil),              // 39: slipway.v1.ScmServiceListFilesRequest
-	(*ScmServiceListFilesResponse)(nil),             // 40: slipway.v1.ScmServiceListFilesResponse
-	(*DiscoverPipelineFilesRequest)(nil),            // 41: slipway.v1.DiscoverPipelineFilesRequest
-	(*DiscoverPipelineFilesResponse)(nil),           // 42: slipway.v1.DiscoverPipelineFilesResponse
-	(*ScmServiceSyncWebhookRequest)(nil),            // 43: slipway.v1.ScmServiceSyncWebhookRequest
-	(*ScmServiceSyncWebhookResponse)(nil),           // 44: slipway.v1.ScmServiceSyncWebhookResponse
-	(*ScmServiceListWebhookDeliveriesRequest)(nil),  // 45: slipway.v1.ScmServiceListWebhookDeliveriesRequest
-	(*ScmServiceListWebhookDeliveriesResponse)(nil), // 46: slipway.v1.ScmServiceListWebhookDeliveriesResponse
-	(*ScmServiceGetWebhookDeliveryRequest)(nil),     // 47: slipway.v1.ScmServiceGetWebhookDeliveryRequest
-	(*ScmServiceGetWebhookDeliveryResponse)(nil),    // 48: slipway.v1.ScmServiceGetWebhookDeliveryResponse
-	(*ScmServiceRedeliverWebhookRequest)(nil),       // 49: slipway.v1.ScmServiceRedeliverWebhookRequest
-	(*ScmServiceRedeliverWebhookResponse)(nil),      // 50: slipway.v1.ScmServiceRedeliverWebhookResponse
-	(*ScmStatusEnvelope)(nil),                       // 51: slipway.v1.ScmStatusEnvelope
-	nil,                                             // 52: slipway.v1.ScmWebhookDelivery.HeadersEntry
-	nil,                                             // 53: slipway.v1.CompleteConnectionRequest.ParamsEntry
-	(*timestamppb.Timestamp)(nil),                   // 54: google.protobuf.Timestamp
-	(*PageRequest)(nil),                             // 55: slipway.v1.PageRequest
-	(*PageResponse)(nil),                            // 56: slipway.v1.PageResponse
+	(*ScmInstallationChoice)(nil),                   // 19: slipway.v1.ScmInstallationChoice
+	(*ListInstallationChoicesRequest)(nil),          // 20: slipway.v1.ListInstallationChoicesRequest
+	(*ListInstallationChoicesResponse)(nil),         // 21: slipway.v1.ListInstallationChoicesResponse
+	(*ConnectInstallationRequest)(nil),              // 22: slipway.v1.ConnectInstallationRequest
+	(*ConnectInstallationResponse)(nil),             // 23: slipway.v1.ConnectInstallationResponse
+	(*ScmServiceListConnectionsRequest)(nil),        // 24: slipway.v1.ScmServiceListConnectionsRequest
+	(*ScmServiceListConnectionsResponse)(nil),       // 25: slipway.v1.ScmServiceListConnectionsResponse
+	(*ScmServiceGetConnectionRequest)(nil),          // 26: slipway.v1.ScmServiceGetConnectionRequest
+	(*ScmServiceGetConnectionResponse)(nil),         // 27: slipway.v1.ScmServiceGetConnectionResponse
+	(*ScmServiceDeleteConnectionRequest)(nil),       // 28: slipway.v1.ScmServiceDeleteConnectionRequest
+	(*ScmServiceDeleteConnectionResponse)(nil),      // 29: slipway.v1.ScmServiceDeleteConnectionResponse
+	(*ListAvailableReposRequest)(nil),               // 30: slipway.v1.ListAvailableReposRequest
+	(*ListAvailableReposResponse)(nil),              // 31: slipway.v1.ListAvailableReposResponse
+	(*LinkRepoRequest)(nil),                         // 32: slipway.v1.LinkRepoRequest
+	(*LinkRepoResponse)(nil),                        // 33: slipway.v1.LinkRepoResponse
+	(*UnlinkRepoRequest)(nil),                       // 34: slipway.v1.UnlinkRepoRequest
+	(*UnlinkRepoResponse)(nil),                      // 35: slipway.v1.UnlinkRepoResponse
+	(*ScmServiceListRepositoriesRequest)(nil),       // 36: slipway.v1.ScmServiceListRepositoriesRequest
+	(*ScmServiceListRepositoriesResponse)(nil),      // 37: slipway.v1.ScmServiceListRepositoriesResponse
+	(*ScmServiceListBranchesRequest)(nil),           // 38: slipway.v1.ScmServiceListBranchesRequest
+	(*ScmServiceListBranchesResponse)(nil),          // 39: slipway.v1.ScmServiceListBranchesResponse
+	(*GetFileContentRequest)(nil),                   // 40: slipway.v1.GetFileContentRequest
+	(*GetFileContentResponse)(nil),                  // 41: slipway.v1.GetFileContentResponse
+	(*CommitFileRequest)(nil),                       // 42: slipway.v1.CommitFileRequest
+	(*CommitFileResponse)(nil),                      // 43: slipway.v1.CommitFileResponse
+	(*ScmServiceListFilesRequest)(nil),              // 44: slipway.v1.ScmServiceListFilesRequest
+	(*ScmServiceListFilesResponse)(nil),             // 45: slipway.v1.ScmServiceListFilesResponse
+	(*DiscoverPipelineFilesRequest)(nil),            // 46: slipway.v1.DiscoverPipelineFilesRequest
+	(*DiscoverPipelineFilesResponse)(nil),           // 47: slipway.v1.DiscoverPipelineFilesResponse
+	(*ScmServiceSyncWebhookRequest)(nil),            // 48: slipway.v1.ScmServiceSyncWebhookRequest
+	(*ScmServiceSyncWebhookResponse)(nil),           // 49: slipway.v1.ScmServiceSyncWebhookResponse
+	(*ScmServiceListWebhookDeliveriesRequest)(nil),  // 50: slipway.v1.ScmServiceListWebhookDeliveriesRequest
+	(*ScmServiceListWebhookDeliveriesResponse)(nil), // 51: slipway.v1.ScmServiceListWebhookDeliveriesResponse
+	(*ScmServiceGetWebhookDeliveryRequest)(nil),     // 52: slipway.v1.ScmServiceGetWebhookDeliveryRequest
+	(*ScmServiceGetWebhookDeliveryResponse)(nil),    // 53: slipway.v1.ScmServiceGetWebhookDeliveryResponse
+	(*ScmServiceRedeliverWebhookRequest)(nil),       // 54: slipway.v1.ScmServiceRedeliverWebhookRequest
+	(*ScmServiceRedeliverWebhookResponse)(nil),      // 55: slipway.v1.ScmServiceRedeliverWebhookResponse
+	(*ScmStatusEnvelope)(nil),                       // 56: slipway.v1.ScmStatusEnvelope
+	nil,                                             // 57: slipway.v1.ScmWebhookDelivery.HeadersEntry
+	nil,                                             // 58: slipway.v1.CompleteConnectionRequest.ParamsEntry
+	(*timestamppb.Timestamp)(nil),                   // 59: google.protobuf.Timestamp
+	(*PageRequest)(nil),                             // 60: slipway.v1.PageRequest
+	(*PageResponse)(nil),                            // 61: slipway.v1.PageResponse
 }
 var file_slipway_v1_scm_proto_depIdxs = []int32{
 	0,  // 0: slipway.v1.ScmProvider.kind:type_name -> slipway.v1.ScmProviderKind
@@ -3763,89 +4173,97 @@ var file_slipway_v1_scm_proto_depIdxs = []int32{
 	0,  // 2: slipway.v1.ScmConnection.provider:type_name -> slipway.v1.ScmProviderKind
 	1,  // 3: slipway.v1.ScmConnection.auth_method:type_name -> slipway.v1.ScmAuthMethod
 	2,  // 4: slipway.v1.ScmConnection.status:type_name -> slipway.v1.ScmConnectionStatus
-	54, // 5: slipway.v1.ScmConnection.created_at:type_name -> google.protobuf.Timestamp
-	54, // 6: slipway.v1.ScmConnection.updated_at:type_name -> google.protobuf.Timestamp
+	59, // 5: slipway.v1.ScmConnection.created_at:type_name -> google.protobuf.Timestamp
+	59, // 6: slipway.v1.ScmConnection.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 7: slipway.v1.ScmRepository.provider:type_name -> slipway.v1.ScmProviderKind
 	3,  // 8: slipway.v1.ScmRepository.webhook_status:type_name -> slipway.v1.ScmWebhookStatus
-	54, // 9: slipway.v1.ScmRepository.created_at:type_name -> google.protobuf.Timestamp
+	59, // 9: slipway.v1.ScmRepository.created_at:type_name -> google.protobuf.Timestamp
 	8,  // 10: slipway.v1.ScmRepository.pipeline_conflicts:type_name -> slipway.v1.ScmPipelineConflict
 	0,  // 11: slipway.v1.ScmWebhookDelivery.provider:type_name -> slipway.v1.ScmProviderKind
 	4,  // 12: slipway.v1.ScmWebhookDelivery.status:type_name -> slipway.v1.ScmDeliveryStatus
-	52, // 13: slipway.v1.ScmWebhookDelivery.headers:type_name -> slipway.v1.ScmWebhookDelivery.HeadersEntry
-	54, // 14: slipway.v1.ScmWebhookDelivery.received_at:type_name -> google.protobuf.Timestamp
-	54, // 15: slipway.v1.ScmWebhookDelivery.processed_at:type_name -> google.protobuf.Timestamp
+	57, // 13: slipway.v1.ScmWebhookDelivery.headers:type_name -> slipway.v1.ScmWebhookDelivery.HeadersEntry
+	59, // 14: slipway.v1.ScmWebhookDelivery.received_at:type_name -> google.protobuf.Timestamp
+	59, // 15: slipway.v1.ScmWebhookDelivery.processed_at:type_name -> google.protobuf.Timestamp
 	5,  // 16: slipway.v1.ScmServiceListProvidersResponse.items:type_name -> slipway.v1.ScmProvider
 	0,  // 17: slipway.v1.StartConnectionRequest.provider:type_name -> slipway.v1.ScmProviderKind
 	1,  // 18: slipway.v1.StartConnectionRequest.auth_method:type_name -> slipway.v1.ScmAuthMethod
 	6,  // 19: slipway.v1.StartConnectionResponse.connection:type_name -> slipway.v1.ScmConnection
 	0,  // 20: slipway.v1.CompleteConnectionRequest.provider:type_name -> slipway.v1.ScmProviderKind
-	53, // 21: slipway.v1.CompleteConnectionRequest.params:type_name -> slipway.v1.CompleteConnectionRequest.ParamsEntry
+	58, // 21: slipway.v1.CompleteConnectionRequest.params:type_name -> slipway.v1.CompleteConnectionRequest.ParamsEntry
 	6,  // 22: slipway.v1.CompleteConnectionResponse.connection:type_name -> slipway.v1.ScmConnection
-	55, // 23: slipway.v1.ScmServiceListConnectionsRequest.page:type_name -> slipway.v1.PageRequest
-	6,  // 24: slipway.v1.ScmServiceListConnectionsResponse.items:type_name -> slipway.v1.ScmConnection
-	56, // 25: slipway.v1.ScmServiceListConnectionsResponse.page:type_name -> slipway.v1.PageResponse
-	6,  // 26: slipway.v1.ScmServiceGetConnectionResponse.connection:type_name -> slipway.v1.ScmConnection
-	55, // 27: slipway.v1.ListAvailableReposRequest.page:type_name -> slipway.v1.PageRequest
-	9,  // 28: slipway.v1.ListAvailableReposResponse.items:type_name -> slipway.v1.RemoteRepository
-	56, // 29: slipway.v1.ListAvailableReposResponse.page:type_name -> slipway.v1.PageResponse
-	7,  // 30: slipway.v1.LinkRepoResponse.repository:type_name -> slipway.v1.ScmRepository
-	7,  // 31: slipway.v1.ScmServiceListRepositoriesResponse.items:type_name -> slipway.v1.ScmRepository
-	55, // 32: slipway.v1.ScmServiceListBranchesRequest.page:type_name -> slipway.v1.PageRequest
-	10, // 33: slipway.v1.ScmServiceListBranchesResponse.items:type_name -> slipway.v1.ScmBranch
-	56, // 34: slipway.v1.ScmServiceListBranchesResponse.page:type_name -> slipway.v1.PageResponse
-	11, // 35: slipway.v1.ScmServiceListFilesResponse.items:type_name -> slipway.v1.ScmFileEntry
-	11, // 36: slipway.v1.DiscoverPipelineFilesResponse.items:type_name -> slipway.v1.ScmFileEntry
-	7,  // 37: slipway.v1.ScmServiceSyncWebhookResponse.repository:type_name -> slipway.v1.ScmRepository
-	4,  // 38: slipway.v1.ScmServiceListWebhookDeliveriesRequest.status:type_name -> slipway.v1.ScmDeliveryStatus
-	55, // 39: slipway.v1.ScmServiceListWebhookDeliveriesRequest.page:type_name -> slipway.v1.PageRequest
-	12, // 40: slipway.v1.ScmServiceListWebhookDeliveriesResponse.items:type_name -> slipway.v1.ScmWebhookDelivery
-	56, // 41: slipway.v1.ScmServiceListWebhookDeliveriesResponse.page:type_name -> slipway.v1.PageResponse
-	12, // 42: slipway.v1.ScmServiceGetWebhookDeliveryResponse.delivery:type_name -> slipway.v1.ScmWebhookDelivery
-	12, // 43: slipway.v1.ScmServiceRedeliverWebhookResponse.delivery:type_name -> slipway.v1.ScmWebhookDelivery
-	54, // 44: slipway.v1.ScmStatusEnvelope.enqueued_at:type_name -> google.protobuf.Timestamp
-	13, // 45: slipway.v1.ScmService.ListProviders:input_type -> slipway.v1.ScmServiceListProvidersRequest
-	15, // 46: slipway.v1.ScmService.StartConnection:input_type -> slipway.v1.StartConnectionRequest
-	17, // 47: slipway.v1.ScmService.CompleteConnection:input_type -> slipway.v1.CompleteConnectionRequest
-	19, // 48: slipway.v1.ScmService.ListConnections:input_type -> slipway.v1.ScmServiceListConnectionsRequest
-	21, // 49: slipway.v1.ScmService.GetConnection:input_type -> slipway.v1.ScmServiceGetConnectionRequest
-	23, // 50: slipway.v1.ScmService.DeleteConnection:input_type -> slipway.v1.ScmServiceDeleteConnectionRequest
-	25, // 51: slipway.v1.ScmService.ListAvailableRepos:input_type -> slipway.v1.ListAvailableReposRequest
-	27, // 52: slipway.v1.ScmService.LinkRepo:input_type -> slipway.v1.LinkRepoRequest
-	29, // 53: slipway.v1.ScmService.UnlinkRepo:input_type -> slipway.v1.UnlinkRepoRequest
-	43, // 54: slipway.v1.ScmService.SyncWebhook:input_type -> slipway.v1.ScmServiceSyncWebhookRequest
-	31, // 55: slipway.v1.ScmService.ListRepositories:input_type -> slipway.v1.ScmServiceListRepositoriesRequest
-	33, // 56: slipway.v1.ScmService.ListBranches:input_type -> slipway.v1.ScmServiceListBranchesRequest
-	35, // 57: slipway.v1.ScmService.GetFileContent:input_type -> slipway.v1.GetFileContentRequest
-	39, // 58: slipway.v1.ScmService.ListFiles:input_type -> slipway.v1.ScmServiceListFilesRequest
-	37, // 59: slipway.v1.ScmService.CommitFile:input_type -> slipway.v1.CommitFileRequest
-	41, // 60: slipway.v1.ScmService.DiscoverPipelineFiles:input_type -> slipway.v1.DiscoverPipelineFilesRequest
-	45, // 61: slipway.v1.ScmService.ListWebhookDeliveries:input_type -> slipway.v1.ScmServiceListWebhookDeliveriesRequest
-	47, // 62: slipway.v1.ScmService.GetWebhookDelivery:input_type -> slipway.v1.ScmServiceGetWebhookDeliveryRequest
-	49, // 63: slipway.v1.ScmService.RedeliverWebhook:input_type -> slipway.v1.ScmServiceRedeliverWebhookRequest
-	14, // 64: slipway.v1.ScmService.ListProviders:output_type -> slipway.v1.ScmServiceListProvidersResponse
-	16, // 65: slipway.v1.ScmService.StartConnection:output_type -> slipway.v1.StartConnectionResponse
-	18, // 66: slipway.v1.ScmService.CompleteConnection:output_type -> slipway.v1.CompleteConnectionResponse
-	20, // 67: slipway.v1.ScmService.ListConnections:output_type -> slipway.v1.ScmServiceListConnectionsResponse
-	22, // 68: slipway.v1.ScmService.GetConnection:output_type -> slipway.v1.ScmServiceGetConnectionResponse
-	24, // 69: slipway.v1.ScmService.DeleteConnection:output_type -> slipway.v1.ScmServiceDeleteConnectionResponse
-	26, // 70: slipway.v1.ScmService.ListAvailableRepos:output_type -> slipway.v1.ListAvailableReposResponse
-	28, // 71: slipway.v1.ScmService.LinkRepo:output_type -> slipway.v1.LinkRepoResponse
-	30, // 72: slipway.v1.ScmService.UnlinkRepo:output_type -> slipway.v1.UnlinkRepoResponse
-	44, // 73: slipway.v1.ScmService.SyncWebhook:output_type -> slipway.v1.ScmServiceSyncWebhookResponse
-	32, // 74: slipway.v1.ScmService.ListRepositories:output_type -> slipway.v1.ScmServiceListRepositoriesResponse
-	34, // 75: slipway.v1.ScmService.ListBranches:output_type -> slipway.v1.ScmServiceListBranchesResponse
-	36, // 76: slipway.v1.ScmService.GetFileContent:output_type -> slipway.v1.GetFileContentResponse
-	40, // 77: slipway.v1.ScmService.ListFiles:output_type -> slipway.v1.ScmServiceListFilesResponse
-	38, // 78: slipway.v1.ScmService.CommitFile:output_type -> slipway.v1.CommitFileResponse
-	42, // 79: slipway.v1.ScmService.DiscoverPipelineFiles:output_type -> slipway.v1.DiscoverPipelineFilesResponse
-	46, // 80: slipway.v1.ScmService.ListWebhookDeliveries:output_type -> slipway.v1.ScmServiceListWebhookDeliveriesResponse
-	48, // 81: slipway.v1.ScmService.GetWebhookDelivery:output_type -> slipway.v1.ScmServiceGetWebhookDeliveryResponse
-	50, // 82: slipway.v1.ScmService.RedeliverWebhook:output_type -> slipway.v1.ScmServiceRedeliverWebhookResponse
-	64, // [64:83] is the sub-list for method output_type
-	45, // [45:64] is the sub-list for method input_type
-	45, // [45:45] is the sub-list for extension type_name
-	45, // [45:45] is the sub-list for extension extendee
-	0,  // [0:45] is the sub-list for field type_name
+	0,  // 23: slipway.v1.ListInstallationChoicesRequest.provider:type_name -> slipway.v1.ScmProviderKind
+	19, // 24: slipway.v1.ListInstallationChoicesResponse.items:type_name -> slipway.v1.ScmInstallationChoice
+	0,  // 25: slipway.v1.ConnectInstallationRequest.provider:type_name -> slipway.v1.ScmProviderKind
+	6,  // 26: slipway.v1.ConnectInstallationResponse.connection:type_name -> slipway.v1.ScmConnection
+	60, // 27: slipway.v1.ScmServiceListConnectionsRequest.page:type_name -> slipway.v1.PageRequest
+	6,  // 28: slipway.v1.ScmServiceListConnectionsResponse.items:type_name -> slipway.v1.ScmConnection
+	61, // 29: slipway.v1.ScmServiceListConnectionsResponse.page:type_name -> slipway.v1.PageResponse
+	6,  // 30: slipway.v1.ScmServiceGetConnectionResponse.connection:type_name -> slipway.v1.ScmConnection
+	60, // 31: slipway.v1.ListAvailableReposRequest.page:type_name -> slipway.v1.PageRequest
+	9,  // 32: slipway.v1.ListAvailableReposResponse.items:type_name -> slipway.v1.RemoteRepository
+	61, // 33: slipway.v1.ListAvailableReposResponse.page:type_name -> slipway.v1.PageResponse
+	7,  // 34: slipway.v1.LinkRepoResponse.repository:type_name -> slipway.v1.ScmRepository
+	7,  // 35: slipway.v1.ScmServiceListRepositoriesResponse.items:type_name -> slipway.v1.ScmRepository
+	60, // 36: slipway.v1.ScmServiceListBranchesRequest.page:type_name -> slipway.v1.PageRequest
+	10, // 37: slipway.v1.ScmServiceListBranchesResponse.items:type_name -> slipway.v1.ScmBranch
+	61, // 38: slipway.v1.ScmServiceListBranchesResponse.page:type_name -> slipway.v1.PageResponse
+	11, // 39: slipway.v1.ScmServiceListFilesResponse.items:type_name -> slipway.v1.ScmFileEntry
+	11, // 40: slipway.v1.DiscoverPipelineFilesResponse.items:type_name -> slipway.v1.ScmFileEntry
+	7,  // 41: slipway.v1.ScmServiceSyncWebhookResponse.repository:type_name -> slipway.v1.ScmRepository
+	4,  // 42: slipway.v1.ScmServiceListWebhookDeliveriesRequest.status:type_name -> slipway.v1.ScmDeliveryStatus
+	60, // 43: slipway.v1.ScmServiceListWebhookDeliveriesRequest.page:type_name -> slipway.v1.PageRequest
+	12, // 44: slipway.v1.ScmServiceListWebhookDeliveriesResponse.items:type_name -> slipway.v1.ScmWebhookDelivery
+	61, // 45: slipway.v1.ScmServiceListWebhookDeliveriesResponse.page:type_name -> slipway.v1.PageResponse
+	12, // 46: slipway.v1.ScmServiceGetWebhookDeliveryResponse.delivery:type_name -> slipway.v1.ScmWebhookDelivery
+	12, // 47: slipway.v1.ScmServiceRedeliverWebhookResponse.delivery:type_name -> slipway.v1.ScmWebhookDelivery
+	59, // 48: slipway.v1.ScmStatusEnvelope.enqueued_at:type_name -> google.protobuf.Timestamp
+	13, // 49: slipway.v1.ScmService.ListProviders:input_type -> slipway.v1.ScmServiceListProvidersRequest
+	15, // 50: slipway.v1.ScmService.StartConnection:input_type -> slipway.v1.StartConnectionRequest
+	17, // 51: slipway.v1.ScmService.CompleteConnection:input_type -> slipway.v1.CompleteConnectionRequest
+	20, // 52: slipway.v1.ScmService.ListInstallationChoices:input_type -> slipway.v1.ListInstallationChoicesRequest
+	22, // 53: slipway.v1.ScmService.ConnectInstallation:input_type -> slipway.v1.ConnectInstallationRequest
+	24, // 54: slipway.v1.ScmService.ListConnections:input_type -> slipway.v1.ScmServiceListConnectionsRequest
+	26, // 55: slipway.v1.ScmService.GetConnection:input_type -> slipway.v1.ScmServiceGetConnectionRequest
+	28, // 56: slipway.v1.ScmService.DeleteConnection:input_type -> slipway.v1.ScmServiceDeleteConnectionRequest
+	30, // 57: slipway.v1.ScmService.ListAvailableRepos:input_type -> slipway.v1.ListAvailableReposRequest
+	32, // 58: slipway.v1.ScmService.LinkRepo:input_type -> slipway.v1.LinkRepoRequest
+	34, // 59: slipway.v1.ScmService.UnlinkRepo:input_type -> slipway.v1.UnlinkRepoRequest
+	48, // 60: slipway.v1.ScmService.SyncWebhook:input_type -> slipway.v1.ScmServiceSyncWebhookRequest
+	36, // 61: slipway.v1.ScmService.ListRepositories:input_type -> slipway.v1.ScmServiceListRepositoriesRequest
+	38, // 62: slipway.v1.ScmService.ListBranches:input_type -> slipway.v1.ScmServiceListBranchesRequest
+	40, // 63: slipway.v1.ScmService.GetFileContent:input_type -> slipway.v1.GetFileContentRequest
+	44, // 64: slipway.v1.ScmService.ListFiles:input_type -> slipway.v1.ScmServiceListFilesRequest
+	42, // 65: slipway.v1.ScmService.CommitFile:input_type -> slipway.v1.CommitFileRequest
+	46, // 66: slipway.v1.ScmService.DiscoverPipelineFiles:input_type -> slipway.v1.DiscoverPipelineFilesRequest
+	50, // 67: slipway.v1.ScmService.ListWebhookDeliveries:input_type -> slipway.v1.ScmServiceListWebhookDeliveriesRequest
+	52, // 68: slipway.v1.ScmService.GetWebhookDelivery:input_type -> slipway.v1.ScmServiceGetWebhookDeliveryRequest
+	54, // 69: slipway.v1.ScmService.RedeliverWebhook:input_type -> slipway.v1.ScmServiceRedeliverWebhookRequest
+	14, // 70: slipway.v1.ScmService.ListProviders:output_type -> slipway.v1.ScmServiceListProvidersResponse
+	16, // 71: slipway.v1.ScmService.StartConnection:output_type -> slipway.v1.StartConnectionResponse
+	18, // 72: slipway.v1.ScmService.CompleteConnection:output_type -> slipway.v1.CompleteConnectionResponse
+	21, // 73: slipway.v1.ScmService.ListInstallationChoices:output_type -> slipway.v1.ListInstallationChoicesResponse
+	23, // 74: slipway.v1.ScmService.ConnectInstallation:output_type -> slipway.v1.ConnectInstallationResponse
+	25, // 75: slipway.v1.ScmService.ListConnections:output_type -> slipway.v1.ScmServiceListConnectionsResponse
+	27, // 76: slipway.v1.ScmService.GetConnection:output_type -> slipway.v1.ScmServiceGetConnectionResponse
+	29, // 77: slipway.v1.ScmService.DeleteConnection:output_type -> slipway.v1.ScmServiceDeleteConnectionResponse
+	31, // 78: slipway.v1.ScmService.ListAvailableRepos:output_type -> slipway.v1.ListAvailableReposResponse
+	33, // 79: slipway.v1.ScmService.LinkRepo:output_type -> slipway.v1.LinkRepoResponse
+	35, // 80: slipway.v1.ScmService.UnlinkRepo:output_type -> slipway.v1.UnlinkRepoResponse
+	49, // 81: slipway.v1.ScmService.SyncWebhook:output_type -> slipway.v1.ScmServiceSyncWebhookResponse
+	37, // 82: slipway.v1.ScmService.ListRepositories:output_type -> slipway.v1.ScmServiceListRepositoriesResponse
+	39, // 83: slipway.v1.ScmService.ListBranches:output_type -> slipway.v1.ScmServiceListBranchesResponse
+	41, // 84: slipway.v1.ScmService.GetFileContent:output_type -> slipway.v1.GetFileContentResponse
+	45, // 85: slipway.v1.ScmService.ListFiles:output_type -> slipway.v1.ScmServiceListFilesResponse
+	43, // 86: slipway.v1.ScmService.CommitFile:output_type -> slipway.v1.CommitFileResponse
+	47, // 87: slipway.v1.ScmService.DiscoverPipelineFiles:output_type -> slipway.v1.DiscoverPipelineFilesResponse
+	51, // 88: slipway.v1.ScmService.ListWebhookDeliveries:output_type -> slipway.v1.ScmServiceListWebhookDeliveriesResponse
+	53, // 89: slipway.v1.ScmService.GetWebhookDelivery:output_type -> slipway.v1.ScmServiceGetWebhookDeliveryResponse
+	55, // 90: slipway.v1.ScmService.RedeliverWebhook:output_type -> slipway.v1.ScmServiceRedeliverWebhookResponse
+	70, // [70:91] is the sub-list for method output_type
+	49, // [49:70] is the sub-list for method input_type
+	49, // [49:49] is the sub-list for extension type_name
+	49, // [49:49] is the sub-list for extension extendee
+	0,  // [0:49] is the sub-list for field type_name
 }
 
 func init() { file_slipway_v1_scm_proto_init() }
@@ -3860,7 +4278,7 @@ func file_slipway_v1_scm_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_slipway_v1_scm_proto_rawDesc), len(file_slipway_v1_scm_proto_rawDesc)),
 			NumEnums:      5,
-			NumMessages:   49,
+			NumMessages:   54,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

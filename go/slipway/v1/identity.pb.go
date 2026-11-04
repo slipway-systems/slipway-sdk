@@ -877,8 +877,11 @@ type WhoAmIResponse struct {
 	SessionMethod  string                 `protobuf:"bytes,6,opt,name=session_method,json=sessionMethod,proto3" json:"session_method,omitempty"` // password | webauthn | oidc:<provider> | saml:<org> | token
 	MfaVerified    bool                   `protobuf:"varint,7,opt,name=mfa_verified,json=mfaVerified,proto3" json:"mfa_verified,omitempty"`
 	OrgRequiresMfa bool                   `protobuf:"varint,8,opt,name=org_requires_mfa,json=orgRequiresMfa,proto3" json:"org_requires_mfa,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// The current org requires a second factor this session has not verified: every RPC except the enrolment ones is
+	// refused until the caller sets one up (or, when one is already enrolled, signs in again with it).
+	MfaSetupRequired bool `protobuf:"varint,9,opt,name=mfa_setup_required,json=mfaSetupRequired,proto3" json:"mfa_setup_required,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *WhoAmIResponse) Reset() {
@@ -963,6 +966,13 @@ func (x *WhoAmIResponse) GetMfaVerified() bool {
 func (x *WhoAmIResponse) GetOrgRequiresMfa() bool {
 	if x != nil {
 		return x.OrgRequiresMfa
+	}
+	return false
+}
+
+func (x *WhoAmIResponse) GetMfaSetupRequired() bool {
+	if x != nil {
+		return x.MfaSetupRequired
 	}
 	return false
 }
@@ -3051,8 +3061,12 @@ type ListAuthProvidersResponse struct {
 	PasswordEnabled bool                                  `protobuf:"varint,2,opt,name=password_enabled,json=passwordEnabled,proto3" json:"password_enabled,omitempty"`
 	SignupEnabled   bool                                  `protobuf:"varint,3,opt,name=signup_enabled,json=signupEnabled,proto3" json:"signup_enabled,omitempty"`
 	WebauthnEnabled bool                                  `protobuf:"varint,4,opt,name=webauthn_enabled,json=webauthnEnabled,proto3" json:"webauthn_enabled,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// The operator's terms of service and privacy policy (SLIPWAY_TERMS_URL, SLIPWAY_PRIVACY_URL). Sign-up links them
+	// where it asks for consent; empty when the installation publishes none, and then no consent is asked.
+	TermsUrl      string `protobuf:"bytes,5,opt,name=terms_url,json=termsUrl,proto3" json:"terms_url,omitempty"`
+	PrivacyUrl    string `protobuf:"bytes,6,opt,name=privacy_url,json=privacyUrl,proto3" json:"privacy_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListAuthProvidersResponse) Reset() {
@@ -3111,6 +3125,20 @@ func (x *ListAuthProvidersResponse) GetWebauthnEnabled() bool {
 		return x.WebauthnEnabled
 	}
 	return false
+}
+
+func (x *ListAuthProvidersResponse) GetTermsUrl() string {
+	if x != nil {
+		return x.TermsUrl
+	}
+	return ""
+}
+
+func (x *ListAuthProvidersResponse) GetPrivacyUrl() string {
+	if x != nil {
+		return x.PrivacyUrl
+	}
+	return ""
 }
 
 type VerifyEmailRequest struct {
@@ -5210,8 +5238,9 @@ type GetInvitationResponse struct {
 	OrganizationName string                 `protobuf:"bytes,1,opt,name=organization_name,json=organizationName,proto3" json:"organization_name,omitempty"`
 	OrganizationSlug string                 `protobuf:"bytes,2,opt,name=organization_slug,json=organizationSlug,proto3" json:"organization_slug,omitempty"`
 	Email            string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	Role             string                 `protobuf:"bytes,4,opt,name=role,proto3" json:"role,omitempty"`
+	Role             string                 `protobuf:"bytes,4,opt,name=role,proto3" json:"role,omitempty"` // role ID ("developer", "role_…")
 	UserExists       bool                   `protobuf:"varint,5,opt,name=user_exists,json=userExists,proto3" json:"user_exists,omitempty"`
+	RoleName         string                 `protobuf:"bytes,6,opt,name=role_name,json=roleName,proto3" json:"role_name,omitempty"` // the role's display name ("Developer")
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -5279,6 +5308,13 @@ func (x *GetInvitationResponse) GetUserExists() bool {
 		return x.UserExists
 	}
 	return false
+}
+
+func (x *GetInvitationResponse) GetRoleName() string {
+	if x != nil {
+		return x.RoleName
+	}
+	return ""
 }
 
 type AcceptInvitationRequest struct {
@@ -10338,7 +10374,7 @@ const file_slipway_v1_identity_proto_rawDesc = "" +
 	"\n" +
 	"user_agent\x18\n" +
 	" \x01(\tR\tuserAgent\"\x0f\n" +
-	"\rWhoAmIRequest\"\xdb\x02\n" +
+	"\rWhoAmIRequest\"\x89\x03\n" +
 	"\x0eWhoAmIResponse\x12$\n" +
 	"\x04user\x18\x01 \x01(\v2\x10.slipway.v1.UserR\x04user\x12>\n" +
 	"\rorganizations\x18\x02 \x03(\v2\x18.slipway.v1.OrganizationR\rorganizations\x129\n" +
@@ -10348,7 +10384,8 @@ const file_slipway_v1_identity_proto_rawDesc = "" +
 	"\x04role\x18\x05 \x01(\tR\x04role\x12%\n" +
 	"\x0esession_method\x18\x06 \x01(\tR\rsessionMethod\x12!\n" +
 	"\fmfa_verified\x18\a \x01(\bR\vmfaVerified\x12(\n" +
-	"\x10org_requires_mfa\x18\b \x01(\bR\x0eorgRequiresMfa\"G\n" +
+	"\x10org_requires_mfa\x18\b \x01(\bR\x0eorgRequiresMfa\x12,\n" +
+	"\x12mfa_setup_required\x18\t \x01(\bR\x10mfaSetupRequired\"G\n" +
 	"\x18ListOrganizationsRequest\x12+\n" +
 	"\x04page\x18\x01 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\"y\n" +
 	"\x19ListOrganizationsResponse\x12.\n" +
@@ -10466,12 +10503,15 @@ const file_slipway_v1_identity_proto_rawDesc = "" +
 	"\x04user\x18\x01 \x01(\v2\x10.slipway.v1.UserR\x04user\x12<\n" +
 	"\forganization\x18\x02 \x01(\v2\x18.slipway.v1.OrganizationR\forganization\x12+\n" +
 	"\x11verification_sent\x18\x03 \x01(\bR\x10verificationSent\"\x1a\n" +
-	"\x18ListAuthProvidersRequest\"\xd6\x02\n" +
+	"\x18ListAuthProvidersRequest\"\x94\x03\n" +
 	"\x19ListAuthProvidersResponse\x12L\n" +
 	"\tproviders\x18\x01 \x03(\v2..slipway.v1.ListAuthProvidersResponse.ProviderR\tproviders\x12)\n" +
 	"\x10password_enabled\x18\x02 \x01(\bR\x0fpasswordEnabled\x12%\n" +
 	"\x0esignup_enabled\x18\x03 \x01(\bR\rsignupEnabled\x12)\n" +
-	"\x10webauthn_enabled\x18\x04 \x01(\bR\x0fwebauthnEnabled\x1an\n" +
+	"\x10webauthn_enabled\x18\x04 \x01(\bR\x0fwebauthnEnabled\x12\x1b\n" +
+	"\tterms_url\x18\x05 \x01(\tR\btermsUrl\x12\x1f\n" +
+	"\vprivacy_url\x18\x06 \x01(\tR\n" +
+	"privacyUrl\x1an\n" +
 	"\bProvider\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x1b\n" +
@@ -10589,14 +10629,15 @@ const file_slipway_v1_identity_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\",\n" +
 	"\x14GetInvitationRequest\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\"\xbc\x01\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"\xd9\x01\n" +
 	"\x15GetInvitationResponse\x12+\n" +
 	"\x11organization_name\x18\x01 \x01(\tR\x10organizationName\x12+\n" +
 	"\x11organization_slug\x18\x02 \x01(\tR\x10organizationSlug\x12\x14\n" +
 	"\x05email\x18\x03 \x01(\tR\x05email\x12\x12\n" +
 	"\x04role\x18\x04 \x01(\tR\x04role\x12\x1f\n" +
 	"\vuser_exists\x18\x05 \x01(\bR\n" +
-	"userExists\"/\n" +
+	"userExists\x12\x1b\n" +
+	"\trole_name\x18\x06 \x01(\tR\broleName\"/\n" +
 	"\x17AcceptInvitationRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\"X\n" +
 	"\x18AcceptInvitationResponse\x12<\n" +

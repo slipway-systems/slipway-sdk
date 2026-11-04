@@ -110,6 +110,9 @@ message WhoAmIResponse {
   string session_method = 6;       // password | webauthn | oidc:<provider> | saml:<org> | token
   bool mfa_verified = 7;
   bool org_requires_mfa = 8;
+  // The current org requires a second factor this session has not verified: every RPC except the enrolment ones is
+  // refused until the caller sets one up (or, when one is already enrolled, signs in again with it).
+  bool mfa_setup_required = 9;
 }
 
 message ListOrganizationsRequest { PageRequest page = 1; }
@@ -185,6 +188,10 @@ message ListAuthProvidersResponse {
   bool password_enabled = 2;
   bool signup_enabled = 3;
   bool webauthn_enabled = 4;
+  // The operator's terms of service and privacy policy (SLIPWAY_TERMS_URL, SLIPWAY_PRIVACY_URL). Sign-up links them
+  // where it asks for consent; empty when the installation publishes none, and then no consent is asked.
+  string terms_url = 5;
+  string privacy_url = 6;
 }
 
 // ---- Account lifecycle -------------------------------------------------------------------------------------------
@@ -259,7 +266,14 @@ message Invitation {
 }
 // GetInvitation is public: the token is the credential. It reveals only what the invitee needs to decide.
 message GetInvitationRequest { string token = 1; }
-message GetInvitationResponse { string organization_name = 1; string organization_slug = 2; string email = 3; string role = 4; bool user_exists = 5; }
+message GetInvitationResponse {
+  string organization_name = 1;
+  string organization_slug = 2;
+  string email = 3;
+  string role = 4;      // role ID ("developer", "role_…")
+  bool user_exists = 5;
+  string role_name = 6; // the role's display name ("Developer")
+}
 message AcceptInvitationRequest { string token = 1; }
 message AcceptInvitationResponse { Organization organization = 1; }
 message ListInvitationsRequest {}

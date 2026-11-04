@@ -1296,6 +1296,7 @@ type ListPlansResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Plans         []*Plan                `protobuf:"bytes,1,rep,name=plans,proto3" json:"plans,omitempty"`
 	CurrentPlanId string                 `protobuf:"bytes,2,opt,name=current_plan_id,json=currentPlanId,proto3" json:"current_plan_id,omitempty"`
+	OnlineBilling bool                   `protobuf:"varint,3,opt,name=online_billing,json=onlineBilling,proto3" json:"online_billing,omitempty"` // see GetSubscriptionResponse.online_billing
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1342,6 +1343,13 @@ func (x *ListPlansResponse) GetCurrentPlanId() string {
 		return x.CurrentPlanId
 	}
 	return ""
+}
+
+func (x *ListPlansResponse) GetOnlineBilling() bool {
+	if x != nil {
+		return x.OnlineBilling
+	}
+	return false
 }
 
 type GetUsageRequest struct {
@@ -1693,9 +1701,12 @@ func (*GetSubscriptionRequest) Descriptor() ([]byte, []int) {
 }
 
 type GetSubscriptionResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Subscription  *BillingSubscription   `protobuf:"bytes,1,opt,name=subscription,proto3" json:"subscription,omitempty"`
-	Plan          *Plan                  `protobuf:"bytes,2,opt,name=plan,proto3" json:"plan,omitempty"` // effective plan
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Subscription *BillingSubscription   `protobuf:"bytes,1,opt,name=subscription,proto3" json:"subscription,omitempty"`
+	Plan         *Plan                  `protobuf:"bytes,2,opt,name=plan,proto3" json:"plan,omitempty"` // effective plan
+	// online_billing is false when this installation takes no payments (no Stripe configured, typical self-hosting):
+	// plans are then assigned by an instance operator (`slipway billing set-plan`), and checkout and the portal are off.
+	OnlineBilling bool `protobuf:"varint,3,opt,name=online_billing,json=onlineBilling,proto3" json:"online_billing,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1742,6 +1753,13 @@ func (x *GetSubscriptionResponse) GetPlan() *Plan {
 		return x.Plan
 	}
 	return nil
+}
+
+func (x *GetSubscriptionResponse) GetOnlineBilling() bool {
+	if x != nil {
+		return x.OnlineBilling
+	}
+	return false
 }
 
 type ListInvoicesRequest struct {
@@ -2174,10 +2192,11 @@ const file_slipway_v1_billing_proto_rawDesc = "" +
 	"\aplan_id\x18\x01 \x01(\tR\x06planId\"7\n" +
 	"\x0fGetPlanResponse\x12$\n" +
 	"\x04plan\x18\x01 \x01(\v2\x10.slipway.v1.PlanR\x04plan\"\x12\n" +
-	"\x10ListPlansRequest\"c\n" +
+	"\x10ListPlansRequest\"\x8a\x01\n" +
 	"\x11ListPlansResponse\x12&\n" +
 	"\x05plans\x18\x01 \x03(\v2\x10.slipway.v1.PlanR\x05plans\x12&\n" +
-	"\x0fcurrent_plan_id\x18\x02 \x01(\tR\rcurrentPlanId\"8\n" +
+	"\x0fcurrent_plan_id\x18\x02 \x01(\tR\rcurrentPlanId\x12%\n" +
+	"\x0eonline_billing\x18\x03 \x01(\bR\ronlineBilling\"8\n" +
 	"\x0fGetUsageRequest\x12%\n" +
 	"\x0ehistory_months\x18\x01 \x01(\x05R\rhistoryMonths\"\xc1\x01\n" +
 	"\x10GetUsageResponse\x12\x17\n" +
@@ -2200,10 +2219,11 @@ const file_slipway_v1_billing_proto_rawDesc = "" +
 	"returnPath\"/\n" +
 	"\x1bCreatePortalSessionResponse\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\"\x18\n" +
-	"\x16GetSubscriptionRequest\"\x84\x01\n" +
+	"\x16GetSubscriptionRequest\"\xab\x01\n" +
 	"\x17GetSubscriptionResponse\x12C\n" +
 	"\fsubscription\x18\x01 \x01(\v2\x1f.slipway.v1.BillingSubscriptionR\fsubscription\x12$\n" +
-	"\x04plan\x18\x02 \x01(\v2\x10.slipway.v1.PlanR\x04plan\"Q\n" +
+	"\x04plan\x18\x02 \x01(\v2\x10.slipway.v1.PlanR\x04plan\x12%\n" +
+	"\x0eonline_billing\x18\x03 \x01(\bR\ronlineBilling\"Q\n" +
 	"\x13ListInvoicesRequest\x12\x1b\n" +
 	"\tpage_size\x18\x01 \x01(\x05R\bpageSize\x12\x1d\n" +
 	"\n" +

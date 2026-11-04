@@ -31,6 +31,12 @@ const (
 	// ScmServiceCompleteConnectionProcedure is the procedure name of the ScmService's
 	// CompleteConnection RPC.
 	ScmServiceCompleteConnectionProcedure = "/slipway.v1.ScmService/CompleteConnection"
+	// ScmServiceListInstallationChoicesProcedure is the procedure name of the ScmService's
+	// ListInstallationChoices RPC.
+	ScmServiceListInstallationChoicesProcedure = "/slipway.v1.ScmService/ListInstallationChoices"
+	// ScmServiceConnectInstallationProcedure is the procedure name of the ScmService's
+	// ConnectInstallation RPC.
+	ScmServiceConnectInstallationProcedure = "/slipway.v1.ScmService/ConnectInstallation"
 	// ScmServiceListConnectionsProcedure is the procedure name of the ScmService's ListConnections RPC.
 	ScmServiceListConnectionsProcedure = "/slipway.v1.ScmService/ListConnections"
 	// ScmServiceGetConnectionProcedure is the procedure name of the ScmService's GetConnection RPC.
@@ -92,6 +98,20 @@ var (
 			StreamType: connect.StreamTypeUnary,
 			Schema:     v1.File_slipway_v1_scm_proto.Services().ByName("ScmService").Methods().ByName("CompleteConnection"),
 			Procedure:  ScmServiceCompleteConnectionProcedure,
+		}
+	})
+	scmServiceListInstallationChoicesSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_scm_proto.Services().ByName("ScmService").Methods().ByName("ListInstallationChoices"),
+			Procedure:  ScmServiceListInstallationChoicesProcedure,
+		}
+	})
+	scmServiceConnectInstallationSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_scm_proto.Services().ByName("ScmService").Methods().ByName("ConnectInstallation"),
+			Procedure:  ScmServiceConnectInstallationProcedure,
 		}
 	})
 	scmServiceListConnectionsSpec = sync.OnceValue(func() connect.Spec {
@@ -213,6 +233,8 @@ type ScmServiceClient interface {
 	ListProviders(context.Context, *v1.ScmServiceListProvidersRequest) (*v1.ScmServiceListProvidersResponse, error)
 	StartConnection(context.Context, *v1.StartConnectionRequest) (*v1.StartConnectionResponse, error)
 	CompleteConnection(context.Context, *v1.CompleteConnectionRequest) (*v1.CompleteConnectionResponse, error)
+	ListInstallationChoices(context.Context, *v1.ListInstallationChoicesRequest) (*v1.ListInstallationChoicesResponse, error)
+	ConnectInstallation(context.Context, *v1.ConnectInstallationRequest) (*v1.ConnectInstallationResponse, error)
 	ListConnections(context.Context, *v1.ScmServiceListConnectionsRequest) (*v1.ScmServiceListConnectionsResponse, error)
 	GetConnection(context.Context, *v1.ScmServiceGetConnectionRequest) (*v1.ScmServiceGetConnectionResponse, error)
 	DeleteConnection(context.Context, *v1.ScmServiceDeleteConnectionRequest) (*v1.ScmServiceDeleteConnectionResponse, error)
@@ -242,6 +264,8 @@ type ScmServiceHandler interface {
 	ListProviders(context.Context, *v1.ScmServiceListProvidersRequest) (*v1.ScmServiceListProvidersResponse, error)
 	StartConnection(context.Context, *v1.StartConnectionRequest) (*v1.StartConnectionResponse, error)
 	CompleteConnection(context.Context, *v1.CompleteConnectionRequest) (*v1.CompleteConnectionResponse, error)
+	ListInstallationChoices(context.Context, *v1.ListInstallationChoicesRequest) (*v1.ListInstallationChoicesResponse, error)
+	ConnectInstallation(context.Context, *v1.ConnectInstallationRequest) (*v1.ConnectInstallationResponse, error)
 	ListConnections(context.Context, *v1.ScmServiceListConnectionsRequest) (*v1.ScmServiceListConnectionsResponse, error)
 	GetConnection(context.Context, *v1.ScmServiceGetConnectionRequest) (*v1.ScmServiceGetConnectionResponse, error)
 	DeleteConnection(context.Context, *v1.ScmServiceDeleteConnectionRequest) (*v1.ScmServiceDeleteConnectionResponse, error)
@@ -267,6 +291,8 @@ func RegisterScmServiceHandler(server *connect.Server, svc ScmServiceHandler) {
 		connect.Method{Spec: scmServiceListProvidersSpec(), Handler: adapter.listProviders},
 		connect.Method{Spec: scmServiceStartConnectionSpec(), Handler: adapter.startConnection},
 		connect.Method{Spec: scmServiceCompleteConnectionSpec(), Handler: adapter.completeConnection},
+		connect.Method{Spec: scmServiceListInstallationChoicesSpec(), Handler: adapter.listInstallationChoices},
+		connect.Method{Spec: scmServiceConnectInstallationSpec(), Handler: adapter.connectInstallation},
 		connect.Method{Spec: scmServiceListConnectionsSpec(), Handler: adapter.listConnections},
 		connect.Method{Spec: scmServiceGetConnectionSpec(), Handler: adapter.getConnection},
 		connect.Method{Spec: scmServiceDeleteConnectionSpec(), Handler: adapter.deleteConnection},
@@ -299,6 +325,14 @@ func (UnimplementedScmServiceHandler) StartConnection(context.Context, *v1.Start
 
 func (UnimplementedScmServiceHandler) CompleteConnection(context.Context, *v1.CompleteConnectionRequest) (*v1.CompleteConnectionResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.ScmService.CompleteConnection is not implemented")
+}
+
+func (UnimplementedScmServiceHandler) ListInstallationChoices(context.Context, *v1.ListInstallationChoicesRequest) (*v1.ListInstallationChoicesResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.ScmService.ListInstallationChoices is not implemented")
+}
+
+func (UnimplementedScmServiceHandler) ConnectInstallation(context.Context, *v1.ConnectInstallationRequest) (*v1.ConnectInstallationResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.ScmService.ConnectInstallation is not implemented")
 }
 
 func (UnimplementedScmServiceHandler) ListConnections(context.Context, *v1.ScmServiceListConnectionsRequest) (*v1.ScmServiceListConnectionsResponse, error) {
@@ -388,6 +422,22 @@ func (c *scmServiceClient) StartConnection(ctx context.Context, req *v1.StartCon
 func (c *scmServiceClient) CompleteConnection(ctx context.Context, req *v1.CompleteConnectionRequest) (*v1.CompleteConnectionResponse, error) {
 	var res v1.CompleteConnectionResponse
 	if err := c.client.CallUnary(ctx, scmServiceCompleteConnectionSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *scmServiceClient) ListInstallationChoices(ctx context.Context, req *v1.ListInstallationChoicesRequest) (*v1.ListInstallationChoicesResponse, error) {
+	var res v1.ListInstallationChoicesResponse
+	if err := c.client.CallUnary(ctx, scmServiceListInstallationChoicesSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *scmServiceClient) ConnectInstallation(ctx context.Context, req *v1.ConnectInstallationRequest) (*v1.ConnectInstallationResponse, error) {
+	var res v1.ConnectInstallationResponse
+	if err := c.client.CallUnary(ctx, scmServiceConnectInstallationSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -553,6 +603,30 @@ func (h scmServiceHandler) completeConnection(ctx context.Context, _ connect.Spe
 		return err
 	}
 	res, err := h.svc.CompleteConnection(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h scmServiceHandler) listInstallationChoices(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListInstallationChoicesRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListInstallationChoices(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h scmServiceHandler) connectInstallation(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ConnectInstallationRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ConnectInstallation(ctx, &req)
 	if err != nil {
 		return err
 	}

@@ -2270,8 +2270,11 @@ type Runner struct {
 	Compatible    bool                   `protobuf:"varint,14,opt,name=compatible,proto3" json:"compatible,omitempty"`                           // within one minor version of the control plane; an incompatible runner gets no jobs
 	ServerVersion string                 `protobuf:"bytes,15,opt,name=server_version,json=serverVersion,proto3" json:"server_version,omitempty"` // what it should run; differs from version when an update is available, empty for development builds
 	UpdateProblem string                 `protobuf:"bytes,16,opt,name=update_problem,json=updateProblem,proto3" json:"update_problem,omitempty"` // why this runner cannot get that build from the control plane
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// The labels the runner process reports (its configuration, replaced on every connect). The rest of `labels` were
+	// added through UpdateRunner and survive restarts; a reported label can only be removed in the runner's configuration.
+	ReportedLabels []string `protobuf:"bytes,17,rep,name=reported_labels,json=reportedLabels,proto3" json:"reported_labels,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Runner) Reset() {
@@ -2414,6 +2417,13 @@ func (x *Runner) GetUpdateProblem() string {
 		return x.UpdateProblem
 	}
 	return ""
+}
+
+func (x *Runner) GetReportedLabels() []string {
+	if x != nil {
+		return x.ReportedLabels
+	}
+	return nil
 }
 
 type RegistrationToken struct {
@@ -5361,9 +5371,12 @@ func (x *CreateRegistrationTokenRequest) GetMaxUses() int32 {
 }
 
 type CreateRegistrationTokenResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Token         *RegistrationToken     `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	Secret        string                 `protobuf:"bytes,2,opt,name=secret,proto3" json:"secret,omitempty"` // sreg_… shown once
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Token  *RegistrationToken     `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	Secret string                 `protobuf:"bytes,2,opt,name=secret,proto3" json:"secret,omitempty"` // sreg_… shown once
+	// The runner container image for this control plane's version (ghcr.io/slipway-systems/slipway-runner:<version>,
+	// `latest` on development builds), for the install commands shown with the token.
+	RunnerImage   string `protobuf:"bytes,3,opt,name=runner_image,json=runnerImage,proto3" json:"runner_image,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -5408,6 +5421,13 @@ func (x *CreateRegistrationTokenResponse) GetToken() *RegistrationToken {
 func (x *CreateRegistrationTokenResponse) GetSecret() string {
 	if x != nil {
 		return x.Secret
+	}
+	return ""
+}
+
+func (x *CreateRegistrationTokenResponse) GetRunnerImage() string {
+	if x != nil {
+		return x.RunnerImage
 	}
 	return ""
 }
@@ -10592,7 +10612,7 @@ const file_slipway_v1_runs_proto_rawDesc = "" +
 	"jobsQueued\x12!\n" +
 	"\fjobs_running\x18\r \x01(\x05R\vjobsRunning\x129\n" +
 	"\n" +
-	"created_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x81\x04\n" +
+	"created_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xaa\x04\n" +
 	"\x06Runner\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\apool_id\x18\x02 \x01(\tR\x06poolId\x12\x12\n" +
@@ -10615,7 +10635,8 @@ const file_slipway_v1_runs_proto_rawDesc = "" +
 	"compatible\x18\x0e \x01(\bR\n" +
 	"compatible\x12%\n" +
 	"\x0eserver_version\x18\x0f \x01(\tR\rserverVersion\x12%\n" +
-	"\x0eupdate_problem\x18\x10 \x01(\tR\rupdateProblem\"\xb5\x02\n" +
+	"\x0eupdate_problem\x18\x10 \x01(\tR\rupdateProblem\x12'\n" +
+	"\x0freported_labels\x18\x11 \x03(\tR\x0ereportedLabels\"\xb5\x02\n" +
 	"\x11RegistrationToken\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\apool_id\x18\x02 \x01(\tR\x06poolId\x12 \n" +
@@ -10823,10 +10844,11 @@ const file_slipway_v1_runs_proto_rawDesc = "" +
 	"\apool_id\x18\x01 \x01(\tR\x06poolId\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12+\n" +
 	"\x03ttl\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\x03ttl\x12\x19\n" +
-	"\bmax_uses\x18\x04 \x01(\x05R\amaxUses\"n\n" +
+	"\bmax_uses\x18\x04 \x01(\x05R\amaxUses\"\x91\x01\n" +
 	"\x1fCreateRegistrationTokenResponse\x123\n" +
 	"\x05token\x18\x01 \x01(\v2\x1d.slipway.v1.RegistrationTokenR\x05token\x12\x16\n" +
-	"\x06secret\x18\x02 \x01(\tR\x06secret\"8\n" +
+	"\x06secret\x18\x02 \x01(\tR\x06secret\x12!\n" +
+	"\frunner_image\x18\x03 \x01(\tR\vrunnerImage\"8\n" +
 	"\x1dListRegistrationTokensRequest\x12\x17\n" +
 	"\apool_id\x18\x01 \x01(\tR\x06poolId\"U\n" +
 	"\x1eListRegistrationTokensResponse\x123\n" +

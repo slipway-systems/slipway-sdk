@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package slipway.v1;
+
+// CLI browser sign-in (`slipway login`). The CLI shows a one-time user code (ABCD-EFGH), opens
+// {server}/cli/auth?code=…&challenge=…&name=… and polls POST /cli/auth/poll {code, verifier}. The signed-in user
+// checks that the page shows the code the terminal printed and approves; the server then releases an API token for
+// that user and the active organisation, but only to the poller whose verifier hashes (SHA-256, base64url) to the
+// approved challenge, so a code read over someone's shoulder is useless on its own. Approvals expire after ten
+// minutes and are single-use.
+//
+// Both calls need a signed-in browser session: an API token can never approve a login and so mint another token.
+
+// ApproveCliLoginRequest approves the sign-in showing user_code.
+message ApproveCliLoginRequest {
+  string user_code = 1; // ABCD-EFGH, as shown in the terminal and in the page URL
+  string challenge = 2; // base64url(sha256(verifier)), from the page URL
+  string name = 3;      // the token's display name, e.g. "slipway-cli on laptop"
+}
+message ApproveCliLoginResponse {
+  string organization_slug = 1; // the organisation the token acts in
+}
+
+// DenyCliLoginRequest refuses the sign-in showing user_code; the CLI stops waiting and says so.
+message DenyCliLoginRequest {
+  string user_code = 1;
+  string challenge = 2;
+}
+message DenyCliLoginResponse {}
+
+// CliLoginService approves or refuses `slipway login` browser sign-ins (identity domain).
+service CliLoginService {
+  rpc ApproveCliLogin(ApproveCliLoginRequest) returns (ApproveCliLoginResponse);
+  rpc DenyCliLogin(DenyCliLoginRequest) returns (DenyCliLoginResponse);
+}

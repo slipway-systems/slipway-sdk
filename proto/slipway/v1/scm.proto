@@ -179,6 +179,9 @@ message StartConnectionRequest {
   string client_id = 8;                   // per-connection OAuth app (self-managed instances)
   string client_secret = 9;
   string return_to = 10;                  // SPA path to land on after the callback
+  // GitHub App: an installation to connect (e.g. one the provider reported without a Slipway state). A hint only: it
+  // is connected when the user's own GitHub authorisation can access it; otherwise the user picks from theirs.
+  string installation_id = 11;
 }
 message StartConnectionResponse {
   string authorization_url = 1;           // set for redirect flows
@@ -186,13 +189,54 @@ message StartConnectionResponse {
 }
 
 // CompleteConnection finishes a redirect flow. The browser normally lands on /auth/scm/{provider}/callback, which
-// calls this internally; the RPC exists for SPAs that proxy the callback.
+// calls this internally; the RPC exists for SPAs that proxy the callback. Exactly one of connection,
+// authorization_url and installation_ticket is set.
 message CompleteConnectionRequest {
   ScmProviderKind provider = 1;
   string state = 2;
   map<string, string> params = 3;         // code, installation_id, setup_action, error, ...
 }
 message CompleteConnectionResponse {
+  ScmConnection connection = 1;
+  string return_to = 2;
+  string authorization_url = 3;           // continue at the provider (GitHub: authorise to verify a new installation)
+  string installation_ticket = 4;         // pick an installation: ListInstallationChoices / ConnectInstallation
+}
+
+// A GitHub App installation the user's own GitHub authorisation can access, offered in the installation picker.
+message ScmInstallationChoice {
+  string installation_id = 1;
+  string account_login = 2;
+  string account_type = 3;                // "Organization" | "User"
+  string repository_selection = 4;        // "all" | "selected"
+  bool suspended = 5;
+  string configure_url = 6;               // GitHub page to change the installation's repositories
+  string connection_id = 7;               // this organisation's connection for it, when there is one
+  bool connected_elsewhere = 8;           // claimed by another Slipway organisation
+}
+
+// ListInstallationChoices lists the installations behind a ticket. The callback issues the ticket (?scm_choose=) after
+// the user authorised with GitHub without naming an installation; it is bound to that user and organisation and
+// expires with the flow.
+message ListInstallationChoicesRequest {
+  ScmProviderKind provider = 1;
+  string ticket = 2;
+}
+message ListInstallationChoicesResponse {
+  repeated ScmInstallationChoice items = 1;
+  string install_url = 2;                 // install the app on another account; GitHub brings the user back
+  string missing_installation_id = 3;     // asked for, but not accessible to the user (e.g. awaiting owner approval)
+  bool truncated = 4;                     // the user can access more installations than are listed
+  string return_to = 5;
+}
+
+// ConnectInstallation connects one installation of a ticket to the caller's organisation.
+message ConnectInstallationRequest {
+  ScmProviderKind provider = 1;
+  string ticket = 2;
+  string installation_id = 3;
+}
+message ConnectInstallationResponse {
   ScmConnection connection = 1;
   string return_to = 2;
 }
@@ -290,6 +334,8 @@ service ScmService {
   rpc ListProviders(ScmServiceListProvidersRequest) returns (ScmServiceListProvidersResponse);
   rpc StartConnection(StartConnectionRequest) returns (StartConnectionResponse);
   rpc CompleteConnection(CompleteConnectionRequest) returns (CompleteConnectionResponse);
+  rpc ListInstallationChoices(ListInstallationChoicesRequest) returns (ListInstallationChoicesResponse);
+  rpc ConnectInstallation(ConnectInstallationRequest) returns (ConnectInstallationResponse);
   rpc ListConnections(ScmServiceListConnectionsRequest) returns (ScmServiceListConnectionsResponse);
   rpc GetConnection(ScmServiceGetConnectionRequest) returns (ScmServiceGetConnectionResponse);
   rpc DeleteConnection(ScmServiceDeleteConnectionRequest) returns (ScmServiceDeleteConnectionResponse);

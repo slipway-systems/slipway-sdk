@@ -14,6 +14,7 @@ type Client struct {
 	Artifact       slipwayv1connect.ArtifactServiceClient
 	Audit          slipwayv1connect.AuditServiceClient
 	Billing        slipwayv1connect.BillingServiceClient
+	CliLogin       slipwayv1connect.CliLoginServiceClient
 	Deploy         slipwayv1connect.DeployServiceClient
 	Environment    slipwayv1connect.EnvironmentServiceClient
 	Identity       slipwayv1connect.IdentityServiceClient
@@ -42,6 +43,7 @@ func newClient(conn *connect.Client) *Client {
 		Artifact:       slipwayv1connect.NewArtifactServiceClient(conn),
 		Audit:          slipwayv1connect.NewAuditServiceClient(conn),
 		Billing:        slipwayv1connect.NewBillingServiceClient(conn),
+		CliLogin:       slipwayv1connect.NewCliLoginServiceClient(conn),
 		Deploy:         slipwayv1connect.NewDeployServiceClient(conn),
 		Environment:    slipwayv1connect.NewEnvironmentServiceClient(conn),
 		Identity:       slipwayv1connect.NewIdentityServiceClient(conn),

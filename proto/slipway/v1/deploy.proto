@@ -243,6 +243,7 @@ message Release {
   string release_notes = 14;
   string created_by = 15;
   google.protobuf.Timestamp created_at = 16;
+  Actor created_by_actor = 17; // created_by with its kind and display name, for people to read
 }
 
 message LifecyclePhase {
@@ -358,6 +359,9 @@ message DeploymentStep {
   string infrastructure_id = 14;
   google.protobuf.Timestamp started_at = 15;
   google.protobuf.Timestamp finished_at = 16;
+  string run_id = 17;         // the run that executes a job step (runner = job); its logs are the step's output
+  string job_id = 18;         // that run's job, for LogService.Tail
+  string waiting_reason = 19; // why a dispatched job is not running yet (no runner online, no pool, capacity)
 }
 
 message DeploymentGate {
@@ -406,6 +410,7 @@ message Approval {
   string service_name = 20;
   string release_version = 21;
   string environment_name = 22;
+  string requested_by_name = 23; // display name of requested_by, for people to read
 }
 
 message IntervalMetricResult {
@@ -481,6 +486,7 @@ message Deployment {
   google.protobuf.Timestamp created_at = 32;
   string service_name = 33;
   string environment_name = 34;
+  bool override_freeze = 35; // created through an active freeze on explicit request
 }
 
 // DeploymentSummary is the compact form used on the environment board.
@@ -592,6 +598,8 @@ message RunbookRun {
   google.protobuf.Timestamp started_at = 13;
   google.protobuf.Timestamp finished_at = 14;
   google.protobuf.Timestamp created_at = 15;
+  string run_id = 16; // the run that executes the runbook's job; its logs are the runbook run's output
+  string job_id = 17; // that run's job, for LogService.Tail
 }
 
 // ----------------------------------------------------------------------------------------------------------
@@ -720,6 +728,10 @@ message CreateDeploymentRequest {
   reserved 10;
   string triggered_by = 13;     // run | promotion | manual (default manual)
   bool disable_auto_rollback = 14;
+  // Deploy through an active freeze that allows emergency overrides: needs deployments.override_freeze and a
+  // reason, and is audited (deployment.freeze_overridden). The permission alone never bypasses a freeze.
+  bool override_freeze = 15;
+  string override_reason = 16;
 }
 message CreateDeploymentResponse { Deployment deployment = 1; }
 
@@ -730,6 +742,7 @@ message PreviewDeploymentRequest {
   string strategy = 4;
   google.protobuf.Struct strategy_config = 5;
   string tenant = 6;
+  bool override_freeze = 7; // evaluate the freeze gate as if the caller asked to override it
 }
 message PreviewDeploymentResponse {
   string strategy = 1;
@@ -882,6 +895,8 @@ message PromoteReleaseRequest {
   string tenant = 4;
   string comment = 5;
   bool force = 6;
+  bool override_freeze = 7; // as CreateDeploymentRequest.override_freeze
+  string override_reason = 8;
 }
 message PromoteReleaseResponse { repeated Deployment deployments = 1; }
 
@@ -972,7 +987,7 @@ message CreateEnvironmentRequest {
   string name = 2;
   string slug = 3;
   string description = 4;
-  int32 order = 5;
+  int32 order = 5; // 0 = placed by kind: after the last environment whose kind (dev, test, staging, prod, custom) comes no later
   string kind = 6;
   string url = 7;
   ProtectionRules protection_rules = 8;
@@ -1212,6 +1227,11 @@ message RunRunbookRequest {
   string environment_id = 2;
   string infrastructure_id = 3;
   map<string, string> parameters = 4;
+  // Run through an active freeze (environments with apply_to_runbooks) that allows emergency overrides: needs
+  // deployments.override_freeze and a reason, and is audited (runbook.freeze_overridden). The permission alone
+  // never bypasses a freeze.
+  bool override_freeze = 5;
+  string override_reason = 6;
 }
 message RunRunbookResponse { RunbookRun run = 1; }
 message GetRunbookRunRequest { string id = 1; }
