@@ -9,6 +9,7 @@ package slipwayv1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
@@ -880,6 +881,9 @@ type WhoAmIResponse struct {
 	// The current org requires a second factor this session has not verified: every RPC except the enrolment ones is
 	// refused until the caller sets one up (or, when one is already enrolled, signs in again with it).
 	MfaSetupRequired bool `protobuf:"varint,9,opt,name=mfa_setup_required,json=mfaSetupRequired,proto3" json:"mfa_setup_required,omitempty"`
+	// How long a deleted organisation can be restored before its data is erased: the instance's grace period
+	// (SLIPWAY_ORG_DELETION_GRACE, 7 days by default), for the deletion warnings.
+	OrgDeletionGrace *durationpb.Duration `protobuf:"bytes,10,opt,name=org_deletion_grace,json=orgDeletionGrace,proto3" json:"org_deletion_grace,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -975,6 +979,13 @@ func (x *WhoAmIResponse) GetMfaSetupRequired() bool {
 		return x.MfaSetupRequired
 	}
 	return false
+}
+
+func (x *WhoAmIResponse) GetOrgDeletionGrace() *durationpb.Duration {
+	if x != nil {
+		return x.OrgDeletionGrace
+	}
+	return nil
 }
 
 type ListOrganizationsRequest struct {
@@ -1257,6 +1268,8 @@ func (x *GetOrganizationResponse) GetOrganization() *Organization {
 	return nil
 }
 
+// update_mask "slug" changes the organisation's slug (owners: org.delete); the old slug keeps working as a redirect and
+// no other organisation can take it. An empty mask never changes the slug.
 type UpdateOrganizationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Organization  *Organization          `protobuf:"bytes,1,opt,name=organization,proto3" json:"organization,omitempty"`
@@ -1353,6 +1366,122 @@ func (x *UpdateOrganizationResponse) GetOrganization() *Organization {
 	return nil
 }
 
+// DeleteOrganization deletes the active organisation (org.delete). It is disabled at once: sign-ins, API tokens, runners,
+// schedules and webhooks stop and runs in progress are cancelled. Its data is purged after the grace period, during
+// which an operator can restore it. The caller proves who they are like any destructive step: the organisation's slug
+// typed out, the account password (when it has one) and an authenticator code (when it has an authenticator app).
+type DeleteOrganizationRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	OrganizationId  string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"` // must be the active organisation
+	ConfirmSlug     string                 `protobuf:"bytes,2,opt,name=confirm_slug,json=confirmSlug,proto3" json:"confirm_slug,omitempty"`          // the organisation's slug, typed by the caller
+	CurrentPassword string                 `protobuf:"bytes,3,opt,name=current_password,json=currentPassword,proto3" json:"current_password,omitempty"`
+	Code            string                 `protobuf:"bytes,4,opt,name=code,proto3" json:"code,omitempty"` // authenticator or recovery code
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *DeleteOrganizationRequest) Reset() {
+	*x = DeleteOrganizationRequest{}
+	mi := &file_slipway_v1_identity_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteOrganizationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteOrganizationRequest) ProtoMessage() {}
+
+func (x *DeleteOrganizationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_identity_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteOrganizationRequest.ProtoReflect.Descriptor instead.
+func (*DeleteOrganizationRequest) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *DeleteOrganizationRequest) GetOrganizationId() string {
+	if x != nil {
+		return x.OrganizationId
+	}
+	return ""
+}
+
+func (x *DeleteOrganizationRequest) GetConfirmSlug() string {
+	if x != nil {
+		return x.ConfirmSlug
+	}
+	return ""
+}
+
+func (x *DeleteOrganizationRequest) GetCurrentPassword() string {
+	if x != nil {
+		return x.CurrentPassword
+	}
+	return ""
+}
+
+func (x *DeleteOrganizationRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+type DeleteOrganizationResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PurgeAfter    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=purge_after,json=purgeAfter,proto3" json:"purge_after,omitempty"` // when the data is deleted for good
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteOrganizationResponse) Reset() {
+	*x = DeleteOrganizationResponse{}
+	mi := &file_slipway_v1_identity_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteOrganizationResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteOrganizationResponse) ProtoMessage() {}
+
+func (x *DeleteOrganizationResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_identity_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteOrganizationResponse.ProtoReflect.Descriptor instead.
+func (*DeleteOrganizationResponse) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *DeleteOrganizationResponse) GetPurgeAfter() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PurgeAfter
+	}
+	return nil
+}
+
 type ListProjectsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Page          *PageRequest           `protobuf:"bytes,1,opt,name=page,proto3" json:"page,omitempty"`
@@ -1362,7 +1491,7 @@ type ListProjectsRequest struct {
 
 func (x *ListProjectsRequest) Reset() {
 	*x = ListProjectsRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[18]
+	mi := &file_slipway_v1_identity_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1374,7 +1503,7 @@ func (x *ListProjectsRequest) String() string {
 func (*ListProjectsRequest) ProtoMessage() {}
 
 func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[18]
+	mi := &file_slipway_v1_identity_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1387,7 +1516,7 @@ func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsRequest.ProtoReflect.Descriptor instead.
 func (*ListProjectsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{18}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ListProjectsRequest) GetPage() *PageRequest {
@@ -1407,7 +1536,7 @@ type ListProjectsResponse struct {
 
 func (x *ListProjectsResponse) Reset() {
 	*x = ListProjectsResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[19]
+	mi := &file_slipway_v1_identity_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1419,7 +1548,7 @@ func (x *ListProjectsResponse) String() string {
 func (*ListProjectsResponse) ProtoMessage() {}
 
 func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[19]
+	mi := &file_slipway_v1_identity_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1432,7 +1561,7 @@ func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsResponse.ProtoReflect.Descriptor instead.
 func (*ListProjectsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{19}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ListProjectsResponse) GetItems() []*Project {
@@ -1460,7 +1589,7 @@ type CreateProjectRequest struct {
 
 func (x *CreateProjectRequest) Reset() {
 	*x = CreateProjectRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[20]
+	mi := &file_slipway_v1_identity_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1472,7 +1601,7 @@ func (x *CreateProjectRequest) String() string {
 func (*CreateProjectRequest) ProtoMessage() {}
 
 func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[20]
+	mi := &file_slipway_v1_identity_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1485,7 +1614,7 @@ func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateProjectRequest.ProtoReflect.Descriptor instead.
 func (*CreateProjectRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{20}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *CreateProjectRequest) GetSlug() string {
@@ -1518,7 +1647,7 @@ type CreateProjectResponse struct {
 
 func (x *CreateProjectResponse) Reset() {
 	*x = CreateProjectResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[21]
+	mi := &file_slipway_v1_identity_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1530,7 +1659,7 @@ func (x *CreateProjectResponse) String() string {
 func (*CreateProjectResponse) ProtoMessage() {}
 
 func (x *CreateProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[21]
+	mi := &file_slipway_v1_identity_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1543,7 +1672,7 @@ func (x *CreateProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateProjectResponse.ProtoReflect.Descriptor instead.
 func (*CreateProjectResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{21}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *CreateProjectResponse) GetProject() *Project {
@@ -1562,7 +1691,7 @@ type GetProjectRequest struct {
 
 func (x *GetProjectRequest) Reset() {
 	*x = GetProjectRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[22]
+	mi := &file_slipway_v1_identity_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1574,7 +1703,7 @@ func (x *GetProjectRequest) String() string {
 func (*GetProjectRequest) ProtoMessage() {}
 
 func (x *GetProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[22]
+	mi := &file_slipway_v1_identity_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1587,7 +1716,7 @@ func (x *GetProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProjectRequest.ProtoReflect.Descriptor instead.
 func (*GetProjectRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{22}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GetProjectRequest) GetId() string {
@@ -1606,7 +1735,7 @@ type GetProjectResponse struct {
 
 func (x *GetProjectResponse) Reset() {
 	*x = GetProjectResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[23]
+	mi := &file_slipway_v1_identity_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1618,7 +1747,7 @@ func (x *GetProjectResponse) String() string {
 func (*GetProjectResponse) ProtoMessage() {}
 
 func (x *GetProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[23]
+	mi := &file_slipway_v1_identity_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1631,7 +1760,7 @@ func (x *GetProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProjectResponse.ProtoReflect.Descriptor instead.
 func (*GetProjectResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{23}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetProjectResponse) GetProject() *Project {
@@ -1651,7 +1780,7 @@ type UpdateProjectRequest struct {
 
 func (x *UpdateProjectRequest) Reset() {
 	*x = UpdateProjectRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[24]
+	mi := &file_slipway_v1_identity_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1663,7 +1792,7 @@ func (x *UpdateProjectRequest) String() string {
 func (*UpdateProjectRequest) ProtoMessage() {}
 
 func (x *UpdateProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[24]
+	mi := &file_slipway_v1_identity_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1676,7 +1805,7 @@ func (x *UpdateProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProjectRequest.ProtoReflect.Descriptor instead.
 func (*UpdateProjectRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{24}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *UpdateProjectRequest) GetProject() *Project {
@@ -1702,7 +1831,7 @@ type UpdateProjectResponse struct {
 
 func (x *UpdateProjectResponse) Reset() {
 	*x = UpdateProjectResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[25]
+	mi := &file_slipway_v1_identity_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1714,7 +1843,7 @@ func (x *UpdateProjectResponse) String() string {
 func (*UpdateProjectResponse) ProtoMessage() {}
 
 func (x *UpdateProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[25]
+	mi := &file_slipway_v1_identity_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1727,7 +1856,7 @@ func (x *UpdateProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProjectResponse.ProtoReflect.Descriptor instead.
 func (*UpdateProjectResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{25}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *UpdateProjectResponse) GetProject() *Project {
@@ -1746,7 +1875,7 @@ type DeleteProjectRequest struct {
 
 func (x *DeleteProjectRequest) Reset() {
 	*x = DeleteProjectRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[26]
+	mi := &file_slipway_v1_identity_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1758,7 +1887,7 @@ func (x *DeleteProjectRequest) String() string {
 func (*DeleteProjectRequest) ProtoMessage() {}
 
 func (x *DeleteProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[26]
+	mi := &file_slipway_v1_identity_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1771,7 +1900,7 @@ func (x *DeleteProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteProjectRequest.ProtoReflect.Descriptor instead.
 func (*DeleteProjectRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{26}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *DeleteProjectRequest) GetId() string {
@@ -1789,7 +1918,7 @@ type DeleteProjectResponse struct {
 
 func (x *DeleteProjectResponse) Reset() {
 	*x = DeleteProjectResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[27]
+	mi := &file_slipway_v1_identity_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1801,7 +1930,7 @@ func (x *DeleteProjectResponse) String() string {
 func (*DeleteProjectResponse) ProtoMessage() {}
 
 func (x *DeleteProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[27]
+	mi := &file_slipway_v1_identity_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1814,7 +1943,7 @@ func (x *DeleteProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteProjectResponse.ProtoReflect.Descriptor instead.
 func (*DeleteProjectResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{27}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{29}
 }
 
 type ListMembersRequest struct {
@@ -1826,7 +1955,7 @@ type ListMembersRequest struct {
 
 func (x *ListMembersRequest) Reset() {
 	*x = ListMembersRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[28]
+	mi := &file_slipway_v1_identity_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1838,7 +1967,7 @@ func (x *ListMembersRequest) String() string {
 func (*ListMembersRequest) ProtoMessage() {}
 
 func (x *ListMembersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[28]
+	mi := &file_slipway_v1_identity_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1851,7 +1980,7 @@ func (x *ListMembersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMembersRequest.ProtoReflect.Descriptor instead.
 func (*ListMembersRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{28}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *ListMembersRequest) GetPage() *PageRequest {
@@ -1871,7 +2000,7 @@ type ListMembersResponse struct {
 
 func (x *ListMembersResponse) Reset() {
 	*x = ListMembersResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[29]
+	mi := &file_slipway_v1_identity_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1883,7 +2012,7 @@ func (x *ListMembersResponse) String() string {
 func (*ListMembersResponse) ProtoMessage() {}
 
 func (x *ListMembersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[29]
+	mi := &file_slipway_v1_identity_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1896,7 +2025,7 @@ func (x *ListMembersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMembersResponse.ProtoReflect.Descriptor instead.
 func (*ListMembersResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{29}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ListMembersResponse) GetItems() []*Membership {
@@ -1923,7 +2052,7 @@ type InviteMemberRequest struct {
 
 func (x *InviteMemberRequest) Reset() {
 	*x = InviteMemberRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[30]
+	mi := &file_slipway_v1_identity_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1935,7 +2064,7 @@ func (x *InviteMemberRequest) String() string {
 func (*InviteMemberRequest) ProtoMessage() {}
 
 func (x *InviteMemberRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[30]
+	mi := &file_slipway_v1_identity_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1948,7 +2077,7 @@ func (x *InviteMemberRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InviteMemberRequest.ProtoReflect.Descriptor instead.
 func (*InviteMemberRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{30}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *InviteMemberRequest) GetEmail() string {
@@ -1975,7 +2104,7 @@ type InviteMemberResponse struct {
 
 func (x *InviteMemberResponse) Reset() {
 	*x = InviteMemberResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[31]
+	mi := &file_slipway_v1_identity_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1987,7 +2116,7 @@ func (x *InviteMemberResponse) String() string {
 func (*InviteMemberResponse) ProtoMessage() {}
 
 func (x *InviteMemberResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[31]
+	mi := &file_slipway_v1_identity_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2000,7 +2129,7 @@ func (x *InviteMemberResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InviteMemberResponse.ProtoReflect.Descriptor instead.
 func (*InviteMemberResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{31}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *InviteMemberResponse) GetInvitationId() string {
@@ -2027,7 +2156,7 @@ type UpdateMemberRoleRequest struct {
 
 func (x *UpdateMemberRoleRequest) Reset() {
 	*x = UpdateMemberRoleRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[32]
+	mi := &file_slipway_v1_identity_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2039,7 +2168,7 @@ func (x *UpdateMemberRoleRequest) String() string {
 func (*UpdateMemberRoleRequest) ProtoMessage() {}
 
 func (x *UpdateMemberRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[32]
+	mi := &file_slipway_v1_identity_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2052,7 +2181,7 @@ func (x *UpdateMemberRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateMemberRoleRequest.ProtoReflect.Descriptor instead.
 func (*UpdateMemberRoleRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{32}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *UpdateMemberRoleRequest) GetUserId() string {
@@ -2078,7 +2207,7 @@ type UpdateMemberRoleResponse struct {
 
 func (x *UpdateMemberRoleResponse) Reset() {
 	*x = UpdateMemberRoleResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[33]
+	mi := &file_slipway_v1_identity_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2090,7 +2219,7 @@ func (x *UpdateMemberRoleResponse) String() string {
 func (*UpdateMemberRoleResponse) ProtoMessage() {}
 
 func (x *UpdateMemberRoleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[33]
+	mi := &file_slipway_v1_identity_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2103,7 +2232,7 @@ func (x *UpdateMemberRoleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateMemberRoleResponse.ProtoReflect.Descriptor instead.
 func (*UpdateMemberRoleResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{33}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *UpdateMemberRoleResponse) GetMembership() *Membership {
@@ -2122,7 +2251,7 @@ type RemoveMemberRequest struct {
 
 func (x *RemoveMemberRequest) Reset() {
 	*x = RemoveMemberRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[34]
+	mi := &file_slipway_v1_identity_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2134,7 +2263,7 @@ func (x *RemoveMemberRequest) String() string {
 func (*RemoveMemberRequest) ProtoMessage() {}
 
 func (x *RemoveMemberRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[34]
+	mi := &file_slipway_v1_identity_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2147,7 +2276,7 @@ func (x *RemoveMemberRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveMemberRequest.ProtoReflect.Descriptor instead.
 func (*RemoveMemberRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{34}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *RemoveMemberRequest) GetUserId() string {
@@ -2165,7 +2294,7 @@ type RemoveMemberResponse struct {
 
 func (x *RemoveMemberResponse) Reset() {
 	*x = RemoveMemberResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[35]
+	mi := &file_slipway_v1_identity_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2177,7 +2306,7 @@ func (x *RemoveMemberResponse) String() string {
 func (*RemoveMemberResponse) ProtoMessage() {}
 
 func (x *RemoveMemberResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[35]
+	mi := &file_slipway_v1_identity_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2190,7 +2319,7 @@ func (x *RemoveMemberResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveMemberResponse.ProtoReflect.Descriptor instead.
 func (*RemoveMemberResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{35}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{37}
 }
 
 type ListRolesRequest struct {
@@ -2201,7 +2330,7 @@ type ListRolesRequest struct {
 
 func (x *ListRolesRequest) Reset() {
 	*x = ListRolesRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[36]
+	mi := &file_slipway_v1_identity_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2213,7 +2342,7 @@ func (x *ListRolesRequest) String() string {
 func (*ListRolesRequest) ProtoMessage() {}
 
 func (x *ListRolesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[36]
+	mi := &file_slipway_v1_identity_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2226,7 +2355,7 @@ func (x *ListRolesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRolesRequest.ProtoReflect.Descriptor instead.
 func (*ListRolesRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{36}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{38}
 }
 
 type ListRolesResponse struct {
@@ -2238,7 +2367,7 @@ type ListRolesResponse struct {
 
 func (x *ListRolesResponse) Reset() {
 	*x = ListRolesResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[37]
+	mi := &file_slipway_v1_identity_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2250,7 +2379,7 @@ func (x *ListRolesResponse) String() string {
 func (*ListRolesResponse) ProtoMessage() {}
 
 func (x *ListRolesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[37]
+	mi := &file_slipway_v1_identity_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2263,7 +2392,7 @@ func (x *ListRolesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRolesResponse.ProtoReflect.Descriptor instead.
 func (*ListRolesResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{37}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *ListRolesResponse) GetItems() []*Role {
@@ -2283,7 +2412,7 @@ type ListApiTokensRequest struct {
 
 func (x *ListApiTokensRequest) Reset() {
 	*x = ListApiTokensRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[38]
+	mi := &file_slipway_v1_identity_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2295,7 +2424,7 @@ func (x *ListApiTokensRequest) String() string {
 func (*ListApiTokensRequest) ProtoMessage() {}
 
 func (x *ListApiTokensRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[38]
+	mi := &file_slipway_v1_identity_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2308,7 +2437,7 @@ func (x *ListApiTokensRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListApiTokensRequest.ProtoReflect.Descriptor instead.
 func (*ListApiTokensRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{38}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *ListApiTokensRequest) GetPage() *PageRequest {
@@ -2335,7 +2464,7 @@ type ListApiTokensResponse struct {
 
 func (x *ListApiTokensResponse) Reset() {
 	*x = ListApiTokensResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[39]
+	mi := &file_slipway_v1_identity_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2347,7 +2476,7 @@ func (x *ListApiTokensResponse) String() string {
 func (*ListApiTokensResponse) ProtoMessage() {}
 
 func (x *ListApiTokensResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[39]
+	mi := &file_slipway_v1_identity_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2360,7 +2489,7 @@ func (x *ListApiTokensResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListApiTokensResponse.ProtoReflect.Descriptor instead.
 func (*ListApiTokensResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{39}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *ListApiTokensResponse) GetItems() []*ApiToken {
@@ -2388,7 +2517,7 @@ type CreateApiTokenRequest struct {
 
 func (x *CreateApiTokenRequest) Reset() {
 	*x = CreateApiTokenRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[40]
+	mi := &file_slipway_v1_identity_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2400,7 +2529,7 @@ func (x *CreateApiTokenRequest) String() string {
 func (*CreateApiTokenRequest) ProtoMessage() {}
 
 func (x *CreateApiTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[40]
+	mi := &file_slipway_v1_identity_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2413,7 +2542,7 @@ func (x *CreateApiTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateApiTokenRequest.ProtoReflect.Descriptor instead.
 func (*CreateApiTokenRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{40}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *CreateApiTokenRequest) GetName() string {
@@ -2447,7 +2576,7 @@ type CreateApiTokenResponse struct {
 
 func (x *CreateApiTokenResponse) Reset() {
 	*x = CreateApiTokenResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[41]
+	mi := &file_slipway_v1_identity_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2459,7 +2588,7 @@ func (x *CreateApiTokenResponse) String() string {
 func (*CreateApiTokenResponse) ProtoMessage() {}
 
 func (x *CreateApiTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[41]
+	mi := &file_slipway_v1_identity_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2472,7 +2601,7 @@ func (x *CreateApiTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateApiTokenResponse.ProtoReflect.Descriptor instead.
 func (*CreateApiTokenResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{41}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *CreateApiTokenResponse) GetToken() *ApiToken {
@@ -2498,7 +2627,7 @@ type RevokeApiTokenRequest struct {
 
 func (x *RevokeApiTokenRequest) Reset() {
 	*x = RevokeApiTokenRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[42]
+	mi := &file_slipway_v1_identity_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2510,7 +2639,7 @@ func (x *RevokeApiTokenRequest) String() string {
 func (*RevokeApiTokenRequest) ProtoMessage() {}
 
 func (x *RevokeApiTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[42]
+	mi := &file_slipway_v1_identity_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2523,7 +2652,7 @@ func (x *RevokeApiTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeApiTokenRequest.ProtoReflect.Descriptor instead.
 func (*RevokeApiTokenRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{42}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *RevokeApiTokenRequest) GetId() string {
@@ -2541,7 +2670,7 @@ type RevokeApiTokenResponse struct {
 
 func (x *RevokeApiTokenResponse) Reset() {
 	*x = RevokeApiTokenResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[43]
+	mi := &file_slipway_v1_identity_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2553,7 +2682,7 @@ func (x *RevokeApiTokenResponse) String() string {
 func (*RevokeApiTokenResponse) ProtoMessage() {}
 
 func (x *RevokeApiTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[43]
+	mi := &file_slipway_v1_identity_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2566,7 +2695,7 @@ func (x *RevokeApiTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeApiTokenResponse.ProtoReflect.Descriptor instead.
 func (*RevokeApiTokenResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{43}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{45}
 }
 
 // ListAuditEventsRequest.page.filter accepts: actor_id == "…" && action.startsWith("deployment.") && at >= "RFC3339" && at < "RFC3339".
@@ -2579,7 +2708,7 @@ type ListAuditEventsRequest struct {
 
 func (x *ListAuditEventsRequest) Reset() {
 	*x = ListAuditEventsRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[44]
+	mi := &file_slipway_v1_identity_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2591,7 +2720,7 @@ func (x *ListAuditEventsRequest) String() string {
 func (*ListAuditEventsRequest) ProtoMessage() {}
 
 func (x *ListAuditEventsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[44]
+	mi := &file_slipway_v1_identity_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2604,7 +2733,7 @@ func (x *ListAuditEventsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAuditEventsRequest.ProtoReflect.Descriptor instead.
 func (*ListAuditEventsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{44}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *ListAuditEventsRequest) GetPage() *PageRequest {
@@ -2624,7 +2753,7 @@ type ListAuditEventsResponse struct {
 
 func (x *ListAuditEventsResponse) Reset() {
 	*x = ListAuditEventsResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[45]
+	mi := &file_slipway_v1_identity_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2636,7 +2765,7 @@ func (x *ListAuditEventsResponse) String() string {
 func (*ListAuditEventsResponse) ProtoMessage() {}
 
 func (x *ListAuditEventsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[45]
+	mi := &file_slipway_v1_identity_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2649,7 +2778,7 @@ func (x *ListAuditEventsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAuditEventsResponse.ProtoReflect.Descriptor instead.
 func (*ListAuditEventsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{45}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *ListAuditEventsResponse) GetItems() []*AuditEvent {
@@ -2678,7 +2807,7 @@ type LoginRequest struct {
 
 func (x *LoginRequest) Reset() {
 	*x = LoginRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[46]
+	mi := &file_slipway_v1_identity_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2690,7 +2819,7 @@ func (x *LoginRequest) String() string {
 func (*LoginRequest) ProtoMessage() {}
 
 func (x *LoginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[46]
+	mi := &file_slipway_v1_identity_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2703,7 +2832,7 @@ func (x *LoginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
 func (*LoginRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{46}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *LoginRequest) GetEmail() string {
@@ -2740,7 +2869,7 @@ type LoginResponse struct {
 
 func (x *LoginResponse) Reset() {
 	*x = LoginResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[47]
+	mi := &file_slipway_v1_identity_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2752,7 +2881,7 @@ func (x *LoginResponse) String() string {
 func (*LoginResponse) ProtoMessage() {}
 
 func (x *LoginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[47]
+	mi := &file_slipway_v1_identity_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2765,7 +2894,7 @@ func (x *LoginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
 func (*LoginResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{47}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *LoginResponse) GetUser() *User {
@@ -2811,7 +2940,7 @@ type LogoutRequest struct {
 
 func (x *LogoutRequest) Reset() {
 	*x = LogoutRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[48]
+	mi := &file_slipway_v1_identity_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2823,7 +2952,7 @@ func (x *LogoutRequest) String() string {
 func (*LogoutRequest) ProtoMessage() {}
 
 func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[48]
+	mi := &file_slipway_v1_identity_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2836,7 +2965,7 @@ func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogoutRequest.ProtoReflect.Descriptor instead.
 func (*LogoutRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{48}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{50}
 }
 
 type LogoutResponse struct {
@@ -2847,7 +2976,7 @@ type LogoutResponse struct {
 
 func (x *LogoutResponse) Reset() {
 	*x = LogoutResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[49]
+	mi := &file_slipway_v1_identity_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2859,7 +2988,7 @@ func (x *LogoutResponse) String() string {
 func (*LogoutResponse) ProtoMessage() {}
 
 func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[49]
+	mi := &file_slipway_v1_identity_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2872,7 +3001,7 @@ func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogoutResponse.ProtoReflect.Descriptor instead.
 func (*LogoutResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{49}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{51}
 }
 
 type SignupRequest struct {
@@ -2889,7 +3018,7 @@ type SignupRequest struct {
 
 func (x *SignupRequest) Reset() {
 	*x = SignupRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[50]
+	mi := &file_slipway_v1_identity_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2901,7 +3030,7 @@ func (x *SignupRequest) String() string {
 func (*SignupRequest) ProtoMessage() {}
 
 func (x *SignupRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[50]
+	mi := &file_slipway_v1_identity_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2914,7 +3043,7 @@ func (x *SignupRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignupRequest.ProtoReflect.Descriptor instead.
 func (*SignupRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{50}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *SignupRequest) GetEmail() string {
@@ -2959,6 +3088,11 @@ func (x *SignupRequest) GetInvitationToken() string {
 	return ""
 }
 
+// On an instance that sends email, an open sign-up (no invitation_token) creates nothing yet: it emails a
+// confirmation link and answers with only verification_sent, the same answer whether or not the address already has
+// an account (that account's owner is emailed instead). The account, its organisation and a session are created when
+// the link is opened (VerifyEmail). With an invitation, or on an instance without a mail transport, the account is
+// created at once: user and organization are set and the response starts a session.
 type SignupResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	User             *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
@@ -2970,7 +3104,7 @@ type SignupResponse struct {
 
 func (x *SignupResponse) Reset() {
 	*x = SignupResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[51]
+	mi := &file_slipway_v1_identity_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2982,7 +3116,7 @@ func (x *SignupResponse) String() string {
 func (*SignupResponse) ProtoMessage() {}
 
 func (x *SignupResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[51]
+	mi := &file_slipway_v1_identity_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2995,7 +3129,7 @@ func (x *SignupResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignupResponse.ProtoReflect.Descriptor instead.
 func (*SignupResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{51}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *SignupResponse) GetUser() *User {
@@ -3027,7 +3161,7 @@ type ListAuthProvidersRequest struct {
 
 func (x *ListAuthProvidersRequest) Reset() {
 	*x = ListAuthProvidersRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[52]
+	mi := &file_slipway_v1_identity_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3039,7 +3173,7 @@ func (x *ListAuthProvidersRequest) String() string {
 func (*ListAuthProvidersRequest) ProtoMessage() {}
 
 func (x *ListAuthProvidersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[52]
+	mi := &file_slipway_v1_identity_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3052,7 +3186,7 @@ func (x *ListAuthProvidersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAuthProvidersRequest.ProtoReflect.Descriptor instead.
 func (*ListAuthProvidersRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{52}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{54}
 }
 
 type ListAuthProvidersResponse struct {
@@ -3071,7 +3205,7 @@ type ListAuthProvidersResponse struct {
 
 func (x *ListAuthProvidersResponse) Reset() {
 	*x = ListAuthProvidersResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[53]
+	mi := &file_slipway_v1_identity_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3083,7 +3217,7 @@ func (x *ListAuthProvidersResponse) String() string {
 func (*ListAuthProvidersResponse) ProtoMessage() {}
 
 func (x *ListAuthProvidersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[53]
+	mi := &file_slipway_v1_identity_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3096,7 +3230,7 @@ func (x *ListAuthProvidersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAuthProvidersResponse.ProtoReflect.Descriptor instead.
 func (*ListAuthProvidersResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{53}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *ListAuthProvidersResponse) GetProviders() []*ListAuthProvidersResponse_Provider {
@@ -3150,7 +3284,7 @@ type VerifyEmailRequest struct {
 
 func (x *VerifyEmailRequest) Reset() {
 	*x = VerifyEmailRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[54]
+	mi := &file_slipway_v1_identity_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3162,7 +3296,7 @@ func (x *VerifyEmailRequest) String() string {
 func (*VerifyEmailRequest) ProtoMessage() {}
 
 func (x *VerifyEmailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[54]
+	mi := &file_slipway_v1_identity_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3175,7 +3309,7 @@ func (x *VerifyEmailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyEmailRequest.ProtoReflect.Descriptor instead.
 func (*VerifyEmailRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{54}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *VerifyEmailRequest) GetToken() string {
@@ -3186,15 +3320,19 @@ func (x *VerifyEmailRequest) GetToken() string {
 }
 
 type VerifyEmailResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	User  *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	// Set when the link confirmed an open sign-up: the account and this organisation were just created, and the
+	// response started a session for them (signed_in).
+	Organization  *Organization `protobuf:"bytes,2,opt,name=organization,proto3" json:"organization,omitempty"`
+	SignedIn      bool          `protobuf:"varint,3,opt,name=signed_in,json=signedIn,proto3" json:"signed_in,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *VerifyEmailResponse) Reset() {
 	*x = VerifyEmailResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[55]
+	mi := &file_slipway_v1_identity_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3206,7 +3344,7 @@ func (x *VerifyEmailResponse) String() string {
 func (*VerifyEmailResponse) ProtoMessage() {}
 
 func (x *VerifyEmailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[55]
+	mi := &file_slipway_v1_identity_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3219,7 +3357,7 @@ func (x *VerifyEmailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyEmailResponse.ProtoReflect.Descriptor instead.
 func (*VerifyEmailResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{55}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *VerifyEmailResponse) GetUser() *User {
@@ -3227,6 +3365,20 @@ func (x *VerifyEmailResponse) GetUser() *User {
 		return x.User
 	}
 	return nil
+}
+
+func (x *VerifyEmailResponse) GetOrganization() *Organization {
+	if x != nil {
+		return x.Organization
+	}
+	return nil
+}
+
+func (x *VerifyEmailResponse) GetSignedIn() bool {
+	if x != nil {
+		return x.SignedIn
+	}
+	return false
 }
 
 type ResendVerificationRequest struct {
@@ -3237,7 +3389,7 @@ type ResendVerificationRequest struct {
 
 func (x *ResendVerificationRequest) Reset() {
 	*x = ResendVerificationRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[56]
+	mi := &file_slipway_v1_identity_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3249,7 +3401,7 @@ func (x *ResendVerificationRequest) String() string {
 func (*ResendVerificationRequest) ProtoMessage() {}
 
 func (x *ResendVerificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[56]
+	mi := &file_slipway_v1_identity_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3262,7 +3414,7 @@ func (x *ResendVerificationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResendVerificationRequest.ProtoReflect.Descriptor instead.
 func (*ResendVerificationRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{56}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{58}
 }
 
 type ResendVerificationResponse struct {
@@ -3273,7 +3425,7 @@ type ResendVerificationResponse struct {
 
 func (x *ResendVerificationResponse) Reset() {
 	*x = ResendVerificationResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[57]
+	mi := &file_slipway_v1_identity_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3285,7 +3437,7 @@ func (x *ResendVerificationResponse) String() string {
 func (*ResendVerificationResponse) ProtoMessage() {}
 
 func (x *ResendVerificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[57]
+	mi := &file_slipway_v1_identity_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3298,7 +3450,7 @@ func (x *ResendVerificationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResendVerificationResponse.ProtoReflect.Descriptor instead.
 func (*ResendVerificationResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{57}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{59}
 }
 
 type RequestPasswordResetRequest struct {
@@ -3310,7 +3462,7 @@ type RequestPasswordResetRequest struct {
 
 func (x *RequestPasswordResetRequest) Reset() {
 	*x = RequestPasswordResetRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[58]
+	mi := &file_slipway_v1_identity_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3322,7 +3474,7 @@ func (x *RequestPasswordResetRequest) String() string {
 func (*RequestPasswordResetRequest) ProtoMessage() {}
 
 func (x *RequestPasswordResetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[58]
+	mi := &file_slipway_v1_identity_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3335,7 +3487,7 @@ func (x *RequestPasswordResetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestPasswordResetRequest.ProtoReflect.Descriptor instead.
 func (*RequestPasswordResetRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{58}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *RequestPasswordResetRequest) GetEmail() string {
@@ -3353,7 +3505,7 @@ type RequestPasswordResetResponse struct {
 
 func (x *RequestPasswordResetResponse) Reset() {
 	*x = RequestPasswordResetResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[59]
+	mi := &file_slipway_v1_identity_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3365,7 +3517,7 @@ func (x *RequestPasswordResetResponse) String() string {
 func (*RequestPasswordResetResponse) ProtoMessage() {}
 
 func (x *RequestPasswordResetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[59]
+	mi := &file_slipway_v1_identity_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3378,7 +3530,7 @@ func (x *RequestPasswordResetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestPasswordResetResponse.ProtoReflect.Descriptor instead.
 func (*RequestPasswordResetResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{59}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{61}
 }
 
 type ResetPasswordRequest struct {
@@ -3391,7 +3543,7 @@ type ResetPasswordRequest struct {
 
 func (x *ResetPasswordRequest) Reset() {
 	*x = ResetPasswordRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[60]
+	mi := &file_slipway_v1_identity_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3403,7 +3555,7 @@ func (x *ResetPasswordRequest) String() string {
 func (*ResetPasswordRequest) ProtoMessage() {}
 
 func (x *ResetPasswordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[60]
+	mi := &file_slipway_v1_identity_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3416,7 +3568,7 @@ func (x *ResetPasswordRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResetPasswordRequest.ProtoReflect.Descriptor instead.
 func (*ResetPasswordRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{60}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *ResetPasswordRequest) GetToken() string {
@@ -3441,7 +3593,7 @@ type ResetPasswordResponse struct {
 
 func (x *ResetPasswordResponse) Reset() {
 	*x = ResetPasswordResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[61]
+	mi := &file_slipway_v1_identity_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3453,7 +3605,7 @@ func (x *ResetPasswordResponse) String() string {
 func (*ResetPasswordResponse) ProtoMessage() {}
 
 func (x *ResetPasswordResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[61]
+	mi := &file_slipway_v1_identity_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3466,7 +3618,7 @@ func (x *ResetPasswordResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResetPasswordResponse.ProtoReflect.Descriptor instead.
 func (*ResetPasswordResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{61}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{63}
 }
 
 type ChangePasswordRequest struct {
@@ -3479,7 +3631,7 @@ type ChangePasswordRequest struct {
 
 func (x *ChangePasswordRequest) Reset() {
 	*x = ChangePasswordRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[62]
+	mi := &file_slipway_v1_identity_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3491,7 +3643,7 @@ func (x *ChangePasswordRequest) String() string {
 func (*ChangePasswordRequest) ProtoMessage() {}
 
 func (x *ChangePasswordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[62]
+	mi := &file_slipway_v1_identity_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3504,7 +3656,7 @@ func (x *ChangePasswordRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangePasswordRequest.ProtoReflect.Descriptor instead.
 func (*ChangePasswordRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{62}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *ChangePasswordRequest) GetCurrentPassword() string {
@@ -3529,7 +3681,7 @@ type ChangePasswordResponse struct {
 
 func (x *ChangePasswordResponse) Reset() {
 	*x = ChangePasswordResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[63]
+	mi := &file_slipway_v1_identity_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3541,7 +3693,7 @@ func (x *ChangePasswordResponse) String() string {
 func (*ChangePasswordResponse) ProtoMessage() {}
 
 func (x *ChangePasswordResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[63]
+	mi := &file_slipway_v1_identity_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3554,7 +3706,7 @@ func (x *ChangePasswordResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangePasswordResponse.ProtoReflect.Descriptor instead.
 func (*ChangePasswordResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{63}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{65}
 }
 
 type UpdateProfileRequest struct {
@@ -3567,7 +3719,7 @@ type UpdateProfileRequest struct {
 
 func (x *UpdateProfileRequest) Reset() {
 	*x = UpdateProfileRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[64]
+	mi := &file_slipway_v1_identity_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3579,7 +3731,7 @@ func (x *UpdateProfileRequest) String() string {
 func (*UpdateProfileRequest) ProtoMessage() {}
 
 func (x *UpdateProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[64]
+	mi := &file_slipway_v1_identity_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3592,7 +3744,7 @@ func (x *UpdateProfileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProfileRequest.ProtoReflect.Descriptor instead.
 func (*UpdateProfileRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{64}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *UpdateProfileRequest) GetUser() *User {
@@ -3618,7 +3770,7 @@ type UpdateProfileResponse struct {
 
 func (x *UpdateProfileResponse) Reset() {
 	*x = UpdateProfileResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[65]
+	mi := &file_slipway_v1_identity_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3630,7 +3782,7 @@ func (x *UpdateProfileResponse) String() string {
 func (*UpdateProfileResponse) ProtoMessage() {}
 
 func (x *UpdateProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[65]
+	mi := &file_slipway_v1_identity_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3643,7 +3795,7 @@ func (x *UpdateProfileResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProfileResponse.ProtoReflect.Descriptor instead.
 func (*UpdateProfileResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{65}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *UpdateProfileResponse) GetUser() *User {
@@ -3661,7 +3813,7 @@ type SignOutEverywhereRequest struct {
 
 func (x *SignOutEverywhereRequest) Reset() {
 	*x = SignOutEverywhereRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[66]
+	mi := &file_slipway_v1_identity_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3673,7 +3825,7 @@ func (x *SignOutEverywhereRequest) String() string {
 func (*SignOutEverywhereRequest) ProtoMessage() {}
 
 func (x *SignOutEverywhereRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[66]
+	mi := &file_slipway_v1_identity_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3686,7 +3838,7 @@ func (x *SignOutEverywhereRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignOutEverywhereRequest.ProtoReflect.Descriptor instead.
 func (*SignOutEverywhereRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{66}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{68}
 }
 
 type SignOutEverywhereResponse struct {
@@ -3697,7 +3849,7 @@ type SignOutEverywhereResponse struct {
 
 func (x *SignOutEverywhereResponse) Reset() {
 	*x = SignOutEverywhereResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[67]
+	mi := &file_slipway_v1_identity_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3709,7 +3861,7 @@ func (x *SignOutEverywhereResponse) String() string {
 func (*SignOutEverywhereResponse) ProtoMessage() {}
 
 func (x *SignOutEverywhereResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[67]
+	mi := &file_slipway_v1_identity_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3722,7 +3874,105 @@ func (x *SignOutEverywhereResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignOutEverywhereResponse.ProtoReflect.Descriptor instead.
 func (*SignOutEverywhereResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{67}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{69}
+}
+
+// DeleteAccount closes the caller's own account: it leaves every organisation, its sessions and API tokens end and its
+// address and name are erased. Refused while the caller is the only owner of an organisation.
+type DeleteAccountRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ConfirmEmail    string                 `protobuf:"bytes,1,opt,name=confirm_email,json=confirmEmail,proto3" json:"confirm_email,omitempty"` // the account's address, typed by the caller
+	CurrentPassword string                 `protobuf:"bytes,2,opt,name=current_password,json=currentPassword,proto3" json:"current_password,omitempty"`
+	Code            string                 `protobuf:"bytes,3,opt,name=code,proto3" json:"code,omitempty"` // authenticator or recovery code
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *DeleteAccountRequest) Reset() {
+	*x = DeleteAccountRequest{}
+	mi := &file_slipway_v1_identity_proto_msgTypes[70]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAccountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAccountRequest) ProtoMessage() {}
+
+func (x *DeleteAccountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_identity_proto_msgTypes[70]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAccountRequest.ProtoReflect.Descriptor instead.
+func (*DeleteAccountRequest) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{70}
+}
+
+func (x *DeleteAccountRequest) GetConfirmEmail() string {
+	if x != nil {
+		return x.ConfirmEmail
+	}
+	return ""
+}
+
+func (x *DeleteAccountRequest) GetCurrentPassword() string {
+	if x != nil {
+		return x.CurrentPassword
+	}
+	return ""
+}
+
+func (x *DeleteAccountRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+type DeleteAccountResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteAccountResponse) Reset() {
+	*x = DeleteAccountResponse{}
+	mi := &file_slipway_v1_identity_proto_msgTypes[71]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAccountResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAccountResponse) ProtoMessage() {}
+
+func (x *DeleteAccountResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_identity_proto_msgTypes[71]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAccountResponse.ProtoReflect.Descriptor instead.
+func (*DeleteAccountResponse) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{71}
 }
 
 type SwitchOrganizationRequest struct {
@@ -3734,7 +3984,7 @@ type SwitchOrganizationRequest struct {
 
 func (x *SwitchOrganizationRequest) Reset() {
 	*x = SwitchOrganizationRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[68]
+	mi := &file_slipway_v1_identity_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3746,7 +3996,7 @@ func (x *SwitchOrganizationRequest) String() string {
 func (*SwitchOrganizationRequest) ProtoMessage() {}
 
 func (x *SwitchOrganizationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[68]
+	mi := &file_slipway_v1_identity_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3759,7 +4009,7 @@ func (x *SwitchOrganizationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SwitchOrganizationRequest.ProtoReflect.Descriptor instead.
 func (*SwitchOrganizationRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{68}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *SwitchOrganizationRequest) GetOrganizationId() string {
@@ -3778,7 +4028,7 @@ type SwitchOrganizationResponse struct {
 
 func (x *SwitchOrganizationResponse) Reset() {
 	*x = SwitchOrganizationResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[69]
+	mi := &file_slipway_v1_identity_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3790,7 +4040,7 @@ func (x *SwitchOrganizationResponse) String() string {
 func (*SwitchOrganizationResponse) ProtoMessage() {}
 
 func (x *SwitchOrganizationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[69]
+	mi := &file_slipway_v1_identity_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3803,7 +4053,7 @@ func (x *SwitchOrganizationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SwitchOrganizationResponse.ProtoReflect.Descriptor instead.
 func (*SwitchOrganizationResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{69}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *SwitchOrganizationResponse) GetOrganization() *Organization {
@@ -3824,7 +4074,7 @@ type LinkedIdentity struct {
 
 func (x *LinkedIdentity) Reset() {
 	*x = LinkedIdentity{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[70]
+	mi := &file_slipway_v1_identity_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3836,7 +4086,7 @@ func (x *LinkedIdentity) String() string {
 func (*LinkedIdentity) ProtoMessage() {}
 
 func (x *LinkedIdentity) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[70]
+	mi := &file_slipway_v1_identity_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3849,7 +4099,7 @@ func (x *LinkedIdentity) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LinkedIdentity.ProtoReflect.Descriptor instead.
 func (*LinkedIdentity) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{70}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *LinkedIdentity) GetId() string {
@@ -3881,7 +4131,7 @@ type ListLinkedIdentitiesRequest struct {
 
 func (x *ListLinkedIdentitiesRequest) Reset() {
 	*x = ListLinkedIdentitiesRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[71]
+	mi := &file_slipway_v1_identity_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3893,7 +4143,7 @@ func (x *ListLinkedIdentitiesRequest) String() string {
 func (*ListLinkedIdentitiesRequest) ProtoMessage() {}
 
 func (x *ListLinkedIdentitiesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[71]
+	mi := &file_slipway_v1_identity_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3906,7 +4156,7 @@ func (x *ListLinkedIdentitiesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListLinkedIdentitiesRequest.ProtoReflect.Descriptor instead.
 func (*ListLinkedIdentitiesRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{71}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{75}
 }
 
 type ListLinkedIdentitiesResponse struct {
@@ -3918,7 +4168,7 @@ type ListLinkedIdentitiesResponse struct {
 
 func (x *ListLinkedIdentitiesResponse) Reset() {
 	*x = ListLinkedIdentitiesResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[72]
+	mi := &file_slipway_v1_identity_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3930,7 +4180,7 @@ func (x *ListLinkedIdentitiesResponse) String() string {
 func (*ListLinkedIdentitiesResponse) ProtoMessage() {}
 
 func (x *ListLinkedIdentitiesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[72]
+	mi := &file_slipway_v1_identity_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3943,7 +4193,7 @@ func (x *ListLinkedIdentitiesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListLinkedIdentitiesResponse.ProtoReflect.Descriptor instead.
 func (*ListLinkedIdentitiesResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{72}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *ListLinkedIdentitiesResponse) GetItems() []*LinkedIdentity {
@@ -3962,7 +4212,7 @@ type UnlinkIdentityRequest struct {
 
 func (x *UnlinkIdentityRequest) Reset() {
 	*x = UnlinkIdentityRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[73]
+	mi := &file_slipway_v1_identity_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3974,7 +4224,7 @@ func (x *UnlinkIdentityRequest) String() string {
 func (*UnlinkIdentityRequest) ProtoMessage() {}
 
 func (x *UnlinkIdentityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[73]
+	mi := &file_slipway_v1_identity_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3987,7 +4237,7 @@ func (x *UnlinkIdentityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnlinkIdentityRequest.ProtoReflect.Descriptor instead.
 func (*UnlinkIdentityRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{73}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *UnlinkIdentityRequest) GetId() string {
@@ -4005,7 +4255,7 @@ type UnlinkIdentityResponse struct {
 
 func (x *UnlinkIdentityResponse) Reset() {
 	*x = UnlinkIdentityResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[74]
+	mi := &file_slipway_v1_identity_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4017,7 +4267,7 @@ func (x *UnlinkIdentityResponse) String() string {
 func (*UnlinkIdentityResponse) ProtoMessage() {}
 
 func (x *UnlinkIdentityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[74]
+	mi := &file_slipway_v1_identity_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4030,7 +4280,7 @@ func (x *UnlinkIdentityResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnlinkIdentityResponse.ProtoReflect.Descriptor instead.
 func (*UnlinkIdentityResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{74}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{78}
 }
 
 type GetMfaStatusRequest struct {
@@ -4041,7 +4291,7 @@ type GetMfaStatusRequest struct {
 
 func (x *GetMfaStatusRequest) Reset() {
 	*x = GetMfaStatusRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[75]
+	mi := &file_slipway_v1_identity_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4053,7 +4303,7 @@ func (x *GetMfaStatusRequest) String() string {
 func (*GetMfaStatusRequest) ProtoMessage() {}
 
 func (x *GetMfaStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[75]
+	mi := &file_slipway_v1_identity_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4066,7 +4316,7 @@ func (x *GetMfaStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMfaStatusRequest.ProtoReflect.Descriptor instead.
 func (*GetMfaStatusRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{75}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{79}
 }
 
 type GetMfaStatusResponse struct {
@@ -4081,7 +4331,7 @@ type GetMfaStatusResponse struct {
 
 func (x *GetMfaStatusResponse) Reset() {
 	*x = GetMfaStatusResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[76]
+	mi := &file_slipway_v1_identity_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4093,7 +4343,7 @@ func (x *GetMfaStatusResponse) String() string {
 func (*GetMfaStatusResponse) ProtoMessage() {}
 
 func (x *GetMfaStatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[76]
+	mi := &file_slipway_v1_identity_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4106,7 +4356,7 @@ func (x *GetMfaStatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMfaStatusResponse.ProtoReflect.Descriptor instead.
 func (*GetMfaStatusResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{76}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *GetMfaStatusResponse) GetTotpEnabled() bool {
@@ -4145,7 +4395,7 @@ type BeginTotpEnrollmentRequest struct {
 
 func (x *BeginTotpEnrollmentRequest) Reset() {
 	*x = BeginTotpEnrollmentRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[77]
+	mi := &file_slipway_v1_identity_proto_msgTypes[81]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4157,7 +4407,7 @@ func (x *BeginTotpEnrollmentRequest) String() string {
 func (*BeginTotpEnrollmentRequest) ProtoMessage() {}
 
 func (x *BeginTotpEnrollmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[77]
+	mi := &file_slipway_v1_identity_proto_msgTypes[81]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4170,7 +4420,7 @@ func (x *BeginTotpEnrollmentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeginTotpEnrollmentRequest.ProtoReflect.Descriptor instead.
 func (*BeginTotpEnrollmentRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{77}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{81}
 }
 
 type BeginTotpEnrollmentResponse struct {
@@ -4183,7 +4433,7 @@ type BeginTotpEnrollmentResponse struct {
 
 func (x *BeginTotpEnrollmentResponse) Reset() {
 	*x = BeginTotpEnrollmentResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[78]
+	mi := &file_slipway_v1_identity_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4195,7 +4445,7 @@ func (x *BeginTotpEnrollmentResponse) String() string {
 func (*BeginTotpEnrollmentResponse) ProtoMessage() {}
 
 func (x *BeginTotpEnrollmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[78]
+	mi := &file_slipway_v1_identity_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4208,7 +4458,7 @@ func (x *BeginTotpEnrollmentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeginTotpEnrollmentResponse.ProtoReflect.Descriptor instead.
 func (*BeginTotpEnrollmentResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{78}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{82}
 }
 
 func (x *BeginTotpEnrollmentResponse) GetSecret() string {
@@ -4234,7 +4484,7 @@ type ConfirmTotpEnrollmentRequest struct {
 
 func (x *ConfirmTotpEnrollmentRequest) Reset() {
 	*x = ConfirmTotpEnrollmentRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[79]
+	mi := &file_slipway_v1_identity_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4246,7 +4496,7 @@ func (x *ConfirmTotpEnrollmentRequest) String() string {
 func (*ConfirmTotpEnrollmentRequest) ProtoMessage() {}
 
 func (x *ConfirmTotpEnrollmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[79]
+	mi := &file_slipway_v1_identity_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4259,7 +4509,7 @@ func (x *ConfirmTotpEnrollmentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmTotpEnrollmentRequest.ProtoReflect.Descriptor instead.
 func (*ConfirmTotpEnrollmentRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{79}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{83}
 }
 
 func (x *ConfirmTotpEnrollmentRequest) GetCode() string {
@@ -4278,7 +4528,7 @@ type ConfirmTotpEnrollmentResponse struct {
 
 func (x *ConfirmTotpEnrollmentResponse) Reset() {
 	*x = ConfirmTotpEnrollmentResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[80]
+	mi := &file_slipway_v1_identity_proto_msgTypes[84]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4290,7 +4540,7 @@ func (x *ConfirmTotpEnrollmentResponse) String() string {
 func (*ConfirmTotpEnrollmentResponse) ProtoMessage() {}
 
 func (x *ConfirmTotpEnrollmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[80]
+	mi := &file_slipway_v1_identity_proto_msgTypes[84]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4303,7 +4553,7 @@ func (x *ConfirmTotpEnrollmentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmTotpEnrollmentResponse.ProtoReflect.Descriptor instead.
 func (*ConfirmTotpEnrollmentResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{80}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{84}
 }
 
 func (x *ConfirmTotpEnrollmentResponse) GetRecoveryCodes() []string {
@@ -4322,7 +4572,7 @@ type RegenerateRecoveryCodesRequest struct {
 
 func (x *RegenerateRecoveryCodesRequest) Reset() {
 	*x = RegenerateRecoveryCodesRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[81]
+	mi := &file_slipway_v1_identity_proto_msgTypes[85]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4334,7 +4584,7 @@ func (x *RegenerateRecoveryCodesRequest) String() string {
 func (*RegenerateRecoveryCodesRequest) ProtoMessage() {}
 
 func (x *RegenerateRecoveryCodesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[81]
+	mi := &file_slipway_v1_identity_proto_msgTypes[85]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4347,7 +4597,7 @@ func (x *RegenerateRecoveryCodesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegenerateRecoveryCodesRequest.ProtoReflect.Descriptor instead.
 func (*RegenerateRecoveryCodesRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{81}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{85}
 }
 
 func (x *RegenerateRecoveryCodesRequest) GetCode() string {
@@ -4366,7 +4616,7 @@ type RegenerateRecoveryCodesResponse struct {
 
 func (x *RegenerateRecoveryCodesResponse) Reset() {
 	*x = RegenerateRecoveryCodesResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[82]
+	mi := &file_slipway_v1_identity_proto_msgTypes[86]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4378,7 +4628,7 @@ func (x *RegenerateRecoveryCodesResponse) String() string {
 func (*RegenerateRecoveryCodesResponse) ProtoMessage() {}
 
 func (x *RegenerateRecoveryCodesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[82]
+	mi := &file_slipway_v1_identity_proto_msgTypes[86]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4391,7 +4641,7 @@ func (x *RegenerateRecoveryCodesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegenerateRecoveryCodesResponse.ProtoReflect.Descriptor instead.
 func (*RegenerateRecoveryCodesResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{82}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{86}
 }
 
 func (x *RegenerateRecoveryCodesResponse) GetRecoveryCodes() []string {
@@ -4411,7 +4661,7 @@ type DisableMfaRequest struct {
 
 func (x *DisableMfaRequest) Reset() {
 	*x = DisableMfaRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[83]
+	mi := &file_slipway_v1_identity_proto_msgTypes[87]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4423,7 +4673,7 @@ func (x *DisableMfaRequest) String() string {
 func (*DisableMfaRequest) ProtoMessage() {}
 
 func (x *DisableMfaRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[83]
+	mi := &file_slipway_v1_identity_proto_msgTypes[87]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4436,7 +4686,7 @@ func (x *DisableMfaRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DisableMfaRequest.ProtoReflect.Descriptor instead.
 func (*DisableMfaRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{83}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{87}
 }
 
 func (x *DisableMfaRequest) GetPassword() string {
@@ -4461,7 +4711,7 @@ type DisableMfaResponse struct {
 
 func (x *DisableMfaResponse) Reset() {
 	*x = DisableMfaResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[84]
+	mi := &file_slipway_v1_identity_proto_msgTypes[88]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4473,7 +4723,7 @@ func (x *DisableMfaResponse) String() string {
 func (*DisableMfaResponse) ProtoMessage() {}
 
 func (x *DisableMfaResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[84]
+	mi := &file_slipway_v1_identity_proto_msgTypes[88]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4486,7 +4736,7 @@ func (x *DisableMfaResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DisableMfaResponse.ProtoReflect.Descriptor instead.
 func (*DisableMfaResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{84}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{88}
 }
 
 type WebAuthnCredential struct {
@@ -4501,7 +4751,7 @@ type WebAuthnCredential struct {
 
 func (x *WebAuthnCredential) Reset() {
 	*x = WebAuthnCredential{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[85]
+	mi := &file_slipway_v1_identity_proto_msgTypes[89]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4513,7 +4763,7 @@ func (x *WebAuthnCredential) String() string {
 func (*WebAuthnCredential) ProtoMessage() {}
 
 func (x *WebAuthnCredential) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[85]
+	mi := &file_slipway_v1_identity_proto_msgTypes[89]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4526,7 +4776,7 @@ func (x *WebAuthnCredential) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WebAuthnCredential.ProtoReflect.Descriptor instead.
 func (*WebAuthnCredential) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{85}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{89}
 }
 
 func (x *WebAuthnCredential) GetId() string {
@@ -4565,7 +4815,7 @@ type ListWebAuthnCredentialsRequest struct {
 
 func (x *ListWebAuthnCredentialsRequest) Reset() {
 	*x = ListWebAuthnCredentialsRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[86]
+	mi := &file_slipway_v1_identity_proto_msgTypes[90]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4577,7 +4827,7 @@ func (x *ListWebAuthnCredentialsRequest) String() string {
 func (*ListWebAuthnCredentialsRequest) ProtoMessage() {}
 
 func (x *ListWebAuthnCredentialsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[86]
+	mi := &file_slipway_v1_identity_proto_msgTypes[90]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4590,7 +4840,7 @@ func (x *ListWebAuthnCredentialsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWebAuthnCredentialsRequest.ProtoReflect.Descriptor instead.
 func (*ListWebAuthnCredentialsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{86}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{90}
 }
 
 type ListWebAuthnCredentialsResponse struct {
@@ -4602,7 +4852,7 @@ type ListWebAuthnCredentialsResponse struct {
 
 func (x *ListWebAuthnCredentialsResponse) Reset() {
 	*x = ListWebAuthnCredentialsResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[87]
+	mi := &file_slipway_v1_identity_proto_msgTypes[91]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4614,7 +4864,7 @@ func (x *ListWebAuthnCredentialsResponse) String() string {
 func (*ListWebAuthnCredentialsResponse) ProtoMessage() {}
 
 func (x *ListWebAuthnCredentialsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[87]
+	mi := &file_slipway_v1_identity_proto_msgTypes[91]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4627,7 +4877,7 @@ func (x *ListWebAuthnCredentialsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWebAuthnCredentialsResponse.ProtoReflect.Descriptor instead.
 func (*ListWebAuthnCredentialsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{87}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{91}
 }
 
 func (x *ListWebAuthnCredentialsResponse) GetItems() []*WebAuthnCredential {
@@ -4646,7 +4896,7 @@ type BeginWebAuthnRegistrationRequest struct {
 
 func (x *BeginWebAuthnRegistrationRequest) Reset() {
 	*x = BeginWebAuthnRegistrationRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[88]
+	mi := &file_slipway_v1_identity_proto_msgTypes[92]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4658,7 +4908,7 @@ func (x *BeginWebAuthnRegistrationRequest) String() string {
 func (*BeginWebAuthnRegistrationRequest) ProtoMessage() {}
 
 func (x *BeginWebAuthnRegistrationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[88]
+	mi := &file_slipway_v1_identity_proto_msgTypes[92]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4671,7 +4921,7 @@ func (x *BeginWebAuthnRegistrationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeginWebAuthnRegistrationRequest.ProtoReflect.Descriptor instead.
 func (*BeginWebAuthnRegistrationRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{88}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{92}
 }
 
 func (x *BeginWebAuthnRegistrationRequest) GetName() string {
@@ -4691,7 +4941,7 @@ type BeginWebAuthnRegistrationResponse struct {
 
 func (x *BeginWebAuthnRegistrationResponse) Reset() {
 	*x = BeginWebAuthnRegistrationResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[89]
+	mi := &file_slipway_v1_identity_proto_msgTypes[93]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4703,7 +4953,7 @@ func (x *BeginWebAuthnRegistrationResponse) String() string {
 func (*BeginWebAuthnRegistrationResponse) ProtoMessage() {}
 
 func (x *BeginWebAuthnRegistrationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[89]
+	mi := &file_slipway_v1_identity_proto_msgTypes[93]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4716,7 +4966,7 @@ func (x *BeginWebAuthnRegistrationResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use BeginWebAuthnRegistrationResponse.ProtoReflect.Descriptor instead.
 func (*BeginWebAuthnRegistrationResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{89}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{93}
 }
 
 func (x *BeginWebAuthnRegistrationResponse) GetOptionsJson() string {
@@ -4736,7 +4986,7 @@ type FinishWebAuthnRegistrationRequest struct {
 
 func (x *FinishWebAuthnRegistrationRequest) Reset() {
 	*x = FinishWebAuthnRegistrationRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[90]
+	mi := &file_slipway_v1_identity_proto_msgTypes[94]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4748,7 +4998,7 @@ func (x *FinishWebAuthnRegistrationRequest) String() string {
 func (*FinishWebAuthnRegistrationRequest) ProtoMessage() {}
 
 func (x *FinishWebAuthnRegistrationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[90]
+	mi := &file_slipway_v1_identity_proto_msgTypes[94]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4761,7 +5011,7 @@ func (x *FinishWebAuthnRegistrationRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use FinishWebAuthnRegistrationRequest.ProtoReflect.Descriptor instead.
 func (*FinishWebAuthnRegistrationRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{90}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{94}
 }
 
 func (x *FinishWebAuthnRegistrationRequest) GetCredentialJson() string {
@@ -4781,7 +5031,7 @@ type FinishWebAuthnRegistrationResponse struct {
 
 func (x *FinishWebAuthnRegistrationResponse) Reset() {
 	*x = FinishWebAuthnRegistrationResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[91]
+	mi := &file_slipway_v1_identity_proto_msgTypes[95]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4793,7 +5043,7 @@ func (x *FinishWebAuthnRegistrationResponse) String() string {
 func (*FinishWebAuthnRegistrationResponse) ProtoMessage() {}
 
 func (x *FinishWebAuthnRegistrationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[91]
+	mi := &file_slipway_v1_identity_proto_msgTypes[95]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4806,7 +5056,7 @@ func (x *FinishWebAuthnRegistrationResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use FinishWebAuthnRegistrationResponse.ProtoReflect.Descriptor instead.
 func (*FinishWebAuthnRegistrationResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{91}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{95}
 }
 
 func (x *FinishWebAuthnRegistrationResponse) GetCredential() *WebAuthnCredential {
@@ -4832,7 +5082,7 @@ type DeleteWebAuthnCredentialRequest struct {
 
 func (x *DeleteWebAuthnCredentialRequest) Reset() {
 	*x = DeleteWebAuthnCredentialRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[92]
+	mi := &file_slipway_v1_identity_proto_msgTypes[96]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4844,7 +5094,7 @@ func (x *DeleteWebAuthnCredentialRequest) String() string {
 func (*DeleteWebAuthnCredentialRequest) ProtoMessage() {}
 
 func (x *DeleteWebAuthnCredentialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[92]
+	mi := &file_slipway_v1_identity_proto_msgTypes[96]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4857,7 +5107,7 @@ func (x *DeleteWebAuthnCredentialRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteWebAuthnCredentialRequest.ProtoReflect.Descriptor instead.
 func (*DeleteWebAuthnCredentialRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{92}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{96}
 }
 
 func (x *DeleteWebAuthnCredentialRequest) GetId() string {
@@ -4875,7 +5125,7 @@ type DeleteWebAuthnCredentialResponse struct {
 
 func (x *DeleteWebAuthnCredentialResponse) Reset() {
 	*x = DeleteWebAuthnCredentialResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[93]
+	mi := &file_slipway_v1_identity_proto_msgTypes[97]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4887,7 +5137,7 @@ func (x *DeleteWebAuthnCredentialResponse) String() string {
 func (*DeleteWebAuthnCredentialResponse) ProtoMessage() {}
 
 func (x *DeleteWebAuthnCredentialResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[93]
+	mi := &file_slipway_v1_identity_proto_msgTypes[97]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4900,7 +5150,7 @@ func (x *DeleteWebAuthnCredentialResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteWebAuthnCredentialResponse.ProtoReflect.Descriptor instead.
 func (*DeleteWebAuthnCredentialResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{93}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{97}
 }
 
 // Empty mfa_token starts a passwordless passkey login; otherwise it is the second factor of a password login.
@@ -4913,7 +5163,7 @@ type BeginWebAuthnLoginRequest struct {
 
 func (x *BeginWebAuthnLoginRequest) Reset() {
 	*x = BeginWebAuthnLoginRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[94]
+	mi := &file_slipway_v1_identity_proto_msgTypes[98]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4925,7 +5175,7 @@ func (x *BeginWebAuthnLoginRequest) String() string {
 func (*BeginWebAuthnLoginRequest) ProtoMessage() {}
 
 func (x *BeginWebAuthnLoginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[94]
+	mi := &file_slipway_v1_identity_proto_msgTypes[98]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4938,7 +5188,7 @@ func (x *BeginWebAuthnLoginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeginWebAuthnLoginRequest.ProtoReflect.Descriptor instead.
 func (*BeginWebAuthnLoginRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{94}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{98}
 }
 
 func (x *BeginWebAuthnLoginRequest) GetMfaToken() string {
@@ -4958,7 +5208,7 @@ type BeginWebAuthnLoginResponse struct {
 
 func (x *BeginWebAuthnLoginResponse) Reset() {
 	*x = BeginWebAuthnLoginResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[95]
+	mi := &file_slipway_v1_identity_proto_msgTypes[99]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4970,7 +5220,7 @@ func (x *BeginWebAuthnLoginResponse) String() string {
 func (*BeginWebAuthnLoginResponse) ProtoMessage() {}
 
 func (x *BeginWebAuthnLoginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[95]
+	mi := &file_slipway_v1_identity_proto_msgTypes[99]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4983,7 +5233,7 @@ func (x *BeginWebAuthnLoginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeginWebAuthnLoginResponse.ProtoReflect.Descriptor instead.
 func (*BeginWebAuthnLoginResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{95}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{99}
 }
 
 func (x *BeginWebAuthnLoginResponse) GetCeremonyId() string {
@@ -5010,7 +5260,7 @@ type FinishWebAuthnLoginRequest struct {
 
 func (x *FinishWebAuthnLoginRequest) Reset() {
 	*x = FinishWebAuthnLoginRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[96]
+	mi := &file_slipway_v1_identity_proto_msgTypes[100]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5022,7 +5272,7 @@ func (x *FinishWebAuthnLoginRequest) String() string {
 func (*FinishWebAuthnLoginRequest) ProtoMessage() {}
 
 func (x *FinishWebAuthnLoginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[96]
+	mi := &file_slipway_v1_identity_proto_msgTypes[100]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5035,7 +5285,7 @@ func (x *FinishWebAuthnLoginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinishWebAuthnLoginRequest.ProtoReflect.Descriptor instead.
 func (*FinishWebAuthnLoginRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{96}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{100}
 }
 
 func (x *FinishWebAuthnLoginRequest) GetCeremonyId() string {
@@ -5062,7 +5312,7 @@ type FinishWebAuthnLoginResponse struct {
 
 func (x *FinishWebAuthnLoginResponse) Reset() {
 	*x = FinishWebAuthnLoginResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[97]
+	mi := &file_slipway_v1_identity_proto_msgTypes[101]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5074,7 +5324,7 @@ func (x *FinishWebAuthnLoginResponse) String() string {
 func (*FinishWebAuthnLoginResponse) ProtoMessage() {}
 
 func (x *FinishWebAuthnLoginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[97]
+	mi := &file_slipway_v1_identity_proto_msgTypes[101]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5087,7 +5337,7 @@ func (x *FinishWebAuthnLoginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinishWebAuthnLoginResponse.ProtoReflect.Descriptor instead.
 func (*FinishWebAuthnLoginResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{97}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{101}
 }
 
 func (x *FinishWebAuthnLoginResponse) GetUser() *User {
@@ -5118,7 +5368,7 @@ type Invitation struct {
 
 func (x *Invitation) Reset() {
 	*x = Invitation{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[98]
+	mi := &file_slipway_v1_identity_proto_msgTypes[102]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5130,7 +5380,7 @@ func (x *Invitation) String() string {
 func (*Invitation) ProtoMessage() {}
 
 func (x *Invitation) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[98]
+	mi := &file_slipway_v1_identity_proto_msgTypes[102]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5143,7 +5393,7 @@ func (x *Invitation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Invitation.ProtoReflect.Descriptor instead.
 func (*Invitation) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{98}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{102}
 }
 
 func (x *Invitation) GetId() string {
@@ -5198,7 +5448,7 @@ type GetInvitationRequest struct {
 
 func (x *GetInvitationRequest) Reset() {
 	*x = GetInvitationRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[99]
+	mi := &file_slipway_v1_identity_proto_msgTypes[103]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5210,7 +5460,7 @@ func (x *GetInvitationRequest) String() string {
 func (*GetInvitationRequest) ProtoMessage() {}
 
 func (x *GetInvitationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[99]
+	mi := &file_slipway_v1_identity_proto_msgTypes[103]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5223,7 +5473,7 @@ func (x *GetInvitationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetInvitationRequest.ProtoReflect.Descriptor instead.
 func (*GetInvitationRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{99}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{103}
 }
 
 func (x *GetInvitationRequest) GetToken() string {
@@ -5247,7 +5497,7 @@ type GetInvitationResponse struct {
 
 func (x *GetInvitationResponse) Reset() {
 	*x = GetInvitationResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[100]
+	mi := &file_slipway_v1_identity_proto_msgTypes[104]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5259,7 +5509,7 @@ func (x *GetInvitationResponse) String() string {
 func (*GetInvitationResponse) ProtoMessage() {}
 
 func (x *GetInvitationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[100]
+	mi := &file_slipway_v1_identity_proto_msgTypes[104]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5272,7 +5522,7 @@ func (x *GetInvitationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetInvitationResponse.ProtoReflect.Descriptor instead.
 func (*GetInvitationResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{100}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{104}
 }
 
 func (x *GetInvitationResponse) GetOrganizationName() string {
@@ -5326,7 +5576,7 @@ type AcceptInvitationRequest struct {
 
 func (x *AcceptInvitationRequest) Reset() {
 	*x = AcceptInvitationRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[101]
+	mi := &file_slipway_v1_identity_proto_msgTypes[105]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5338,7 +5588,7 @@ func (x *AcceptInvitationRequest) String() string {
 func (*AcceptInvitationRequest) ProtoMessage() {}
 
 func (x *AcceptInvitationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[101]
+	mi := &file_slipway_v1_identity_proto_msgTypes[105]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5351,7 +5601,7 @@ func (x *AcceptInvitationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AcceptInvitationRequest.ProtoReflect.Descriptor instead.
 func (*AcceptInvitationRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{101}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{105}
 }
 
 func (x *AcceptInvitationRequest) GetToken() string {
@@ -5370,7 +5620,7 @@ type AcceptInvitationResponse struct {
 
 func (x *AcceptInvitationResponse) Reset() {
 	*x = AcceptInvitationResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[102]
+	mi := &file_slipway_v1_identity_proto_msgTypes[106]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5382,7 +5632,7 @@ func (x *AcceptInvitationResponse) String() string {
 func (*AcceptInvitationResponse) ProtoMessage() {}
 
 func (x *AcceptInvitationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[102]
+	mi := &file_slipway_v1_identity_proto_msgTypes[106]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5395,7 +5645,7 @@ func (x *AcceptInvitationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AcceptInvitationResponse.ProtoReflect.Descriptor instead.
 func (*AcceptInvitationResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{102}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{106}
 }
 
 func (x *AcceptInvitationResponse) GetOrganization() *Organization {
@@ -5413,7 +5663,7 @@ type ListInvitationsRequest struct {
 
 func (x *ListInvitationsRequest) Reset() {
 	*x = ListInvitationsRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[103]
+	mi := &file_slipway_v1_identity_proto_msgTypes[107]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5425,7 +5675,7 @@ func (x *ListInvitationsRequest) String() string {
 func (*ListInvitationsRequest) ProtoMessage() {}
 
 func (x *ListInvitationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[103]
+	mi := &file_slipway_v1_identity_proto_msgTypes[107]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5438,7 +5688,7 @@ func (x *ListInvitationsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListInvitationsRequest.ProtoReflect.Descriptor instead.
 func (*ListInvitationsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{103}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{107}
 }
 
 type ListInvitationsResponse struct {
@@ -5450,7 +5700,7 @@ type ListInvitationsResponse struct {
 
 func (x *ListInvitationsResponse) Reset() {
 	*x = ListInvitationsResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[104]
+	mi := &file_slipway_v1_identity_proto_msgTypes[108]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5462,7 +5712,7 @@ func (x *ListInvitationsResponse) String() string {
 func (*ListInvitationsResponse) ProtoMessage() {}
 
 func (x *ListInvitationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[104]
+	mi := &file_slipway_v1_identity_proto_msgTypes[108]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5475,7 +5725,7 @@ func (x *ListInvitationsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListInvitationsResponse.ProtoReflect.Descriptor instead.
 func (*ListInvitationsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{104}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{108}
 }
 
 func (x *ListInvitationsResponse) GetItems() []*Invitation {
@@ -5494,7 +5744,7 @@ type RevokeInvitationRequest struct {
 
 func (x *RevokeInvitationRequest) Reset() {
 	*x = RevokeInvitationRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[105]
+	mi := &file_slipway_v1_identity_proto_msgTypes[109]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5506,7 +5756,7 @@ func (x *RevokeInvitationRequest) String() string {
 func (*RevokeInvitationRequest) ProtoMessage() {}
 
 func (x *RevokeInvitationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[105]
+	mi := &file_slipway_v1_identity_proto_msgTypes[109]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5519,7 +5769,7 @@ func (x *RevokeInvitationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeInvitationRequest.ProtoReflect.Descriptor instead.
 func (*RevokeInvitationRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{105}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{109}
 }
 
 func (x *RevokeInvitationRequest) GetId() string {
@@ -5537,7 +5787,7 @@ type RevokeInvitationResponse struct {
 
 func (x *RevokeInvitationResponse) Reset() {
 	*x = RevokeInvitationResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[106]
+	mi := &file_slipway_v1_identity_proto_msgTypes[110]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5549,7 +5799,7 @@ func (x *RevokeInvitationResponse) String() string {
 func (*RevokeInvitationResponse) ProtoMessage() {}
 
 func (x *RevokeInvitationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[106]
+	mi := &file_slipway_v1_identity_proto_msgTypes[110]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5562,7 +5812,7 @@ func (x *RevokeInvitationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeInvitationResponse.ProtoReflect.Descriptor instead.
 func (*RevokeInvitationResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{106}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{110}
 }
 
 type Team struct {
@@ -5580,7 +5830,7 @@ type Team struct {
 
 func (x *Team) Reset() {
 	*x = Team{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[107]
+	mi := &file_slipway_v1_identity_proto_msgTypes[111]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5592,7 +5842,7 @@ func (x *Team) String() string {
 func (*Team) ProtoMessage() {}
 
 func (x *Team) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[107]
+	mi := &file_slipway_v1_identity_proto_msgTypes[111]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5605,7 +5855,7 @@ func (x *Team) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Team.ProtoReflect.Descriptor instead.
 func (*Team) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{107}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{111}
 }
 
 func (x *Team) GetId() string {
@@ -5666,7 +5916,7 @@ type TeamMember struct {
 
 func (x *TeamMember) Reset() {
 	*x = TeamMember{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[108]
+	mi := &file_slipway_v1_identity_proto_msgTypes[112]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5678,7 +5928,7 @@ func (x *TeamMember) String() string {
 func (*TeamMember) ProtoMessage() {}
 
 func (x *TeamMember) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[108]
+	mi := &file_slipway_v1_identity_proto_msgTypes[112]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5691,7 +5941,7 @@ func (x *TeamMember) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamMember.ProtoReflect.Descriptor instead.
 func (*TeamMember) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{108}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{112}
 }
 
 func (x *TeamMember) GetUser() *User {
@@ -5710,7 +5960,7 @@ type ListTeamsRequest struct {
 
 func (x *ListTeamsRequest) Reset() {
 	*x = ListTeamsRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[109]
+	mi := &file_slipway_v1_identity_proto_msgTypes[113]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5722,7 +5972,7 @@ func (x *ListTeamsRequest) String() string {
 func (*ListTeamsRequest) ProtoMessage() {}
 
 func (x *ListTeamsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[109]
+	mi := &file_slipway_v1_identity_proto_msgTypes[113]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5735,7 +5985,7 @@ func (x *ListTeamsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTeamsRequest.ProtoReflect.Descriptor instead.
 func (*ListTeamsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{109}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{113}
 }
 
 func (x *ListTeamsRequest) GetPage() *PageRequest {
@@ -5755,7 +6005,7 @@ type ListTeamsResponse struct {
 
 func (x *ListTeamsResponse) Reset() {
 	*x = ListTeamsResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[110]
+	mi := &file_slipway_v1_identity_proto_msgTypes[114]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5767,7 +6017,7 @@ func (x *ListTeamsResponse) String() string {
 func (*ListTeamsResponse) ProtoMessage() {}
 
 func (x *ListTeamsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[110]
+	mi := &file_slipway_v1_identity_proto_msgTypes[114]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5780,7 +6030,7 @@ func (x *ListTeamsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTeamsResponse.ProtoReflect.Descriptor instead.
 func (*ListTeamsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{110}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{114}
 }
 
 func (x *ListTeamsResponse) GetItems() []*Team {
@@ -5808,7 +6058,7 @@ type CreateTeamRequest struct {
 
 func (x *CreateTeamRequest) Reset() {
 	*x = CreateTeamRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[111]
+	mi := &file_slipway_v1_identity_proto_msgTypes[115]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5820,7 +6070,7 @@ func (x *CreateTeamRequest) String() string {
 func (*CreateTeamRequest) ProtoMessage() {}
 
 func (x *CreateTeamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[111]
+	mi := &file_slipway_v1_identity_proto_msgTypes[115]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5833,7 +6083,7 @@ func (x *CreateTeamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTeamRequest.ProtoReflect.Descriptor instead.
 func (*CreateTeamRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{111}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{115}
 }
 
 func (x *CreateTeamRequest) GetSlug() string {
@@ -5866,7 +6116,7 @@ type CreateTeamResponse struct {
 
 func (x *CreateTeamResponse) Reset() {
 	*x = CreateTeamResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[112]
+	mi := &file_slipway_v1_identity_proto_msgTypes[116]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5878,7 +6128,7 @@ func (x *CreateTeamResponse) String() string {
 func (*CreateTeamResponse) ProtoMessage() {}
 
 func (x *CreateTeamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[112]
+	mi := &file_slipway_v1_identity_proto_msgTypes[116]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5891,7 +6141,7 @@ func (x *CreateTeamResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTeamResponse.ProtoReflect.Descriptor instead.
 func (*CreateTeamResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{112}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{116}
 }
 
 func (x *CreateTeamResponse) GetTeam() *Team {
@@ -5910,7 +6160,7 @@ type GetTeamRequest struct {
 
 func (x *GetTeamRequest) Reset() {
 	*x = GetTeamRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[113]
+	mi := &file_slipway_v1_identity_proto_msgTypes[117]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5922,7 +6172,7 @@ func (x *GetTeamRequest) String() string {
 func (*GetTeamRequest) ProtoMessage() {}
 
 func (x *GetTeamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[113]
+	mi := &file_slipway_v1_identity_proto_msgTypes[117]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5935,7 +6185,7 @@ func (x *GetTeamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTeamRequest.ProtoReflect.Descriptor instead.
 func (*GetTeamRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{113}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{117}
 }
 
 func (x *GetTeamRequest) GetId() string {
@@ -5954,7 +6204,7 @@ type GetTeamResponse struct {
 
 func (x *GetTeamResponse) Reset() {
 	*x = GetTeamResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[114]
+	mi := &file_slipway_v1_identity_proto_msgTypes[118]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5966,7 +6216,7 @@ func (x *GetTeamResponse) String() string {
 func (*GetTeamResponse) ProtoMessage() {}
 
 func (x *GetTeamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[114]
+	mi := &file_slipway_v1_identity_proto_msgTypes[118]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5979,7 +6229,7 @@ func (x *GetTeamResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTeamResponse.ProtoReflect.Descriptor instead.
 func (*GetTeamResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{114}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{118}
 }
 
 func (x *GetTeamResponse) GetTeam() *Team {
@@ -5999,7 +6249,7 @@ type UpdateTeamRequest struct {
 
 func (x *UpdateTeamRequest) Reset() {
 	*x = UpdateTeamRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[115]
+	mi := &file_slipway_v1_identity_proto_msgTypes[119]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6011,7 +6261,7 @@ func (x *UpdateTeamRequest) String() string {
 func (*UpdateTeamRequest) ProtoMessage() {}
 
 func (x *UpdateTeamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[115]
+	mi := &file_slipway_v1_identity_proto_msgTypes[119]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6024,7 +6274,7 @@ func (x *UpdateTeamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateTeamRequest.ProtoReflect.Descriptor instead.
 func (*UpdateTeamRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{115}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{119}
 }
 
 func (x *UpdateTeamRequest) GetTeam() *Team {
@@ -6050,7 +6300,7 @@ type UpdateTeamResponse struct {
 
 func (x *UpdateTeamResponse) Reset() {
 	*x = UpdateTeamResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[116]
+	mi := &file_slipway_v1_identity_proto_msgTypes[120]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6062,7 +6312,7 @@ func (x *UpdateTeamResponse) String() string {
 func (*UpdateTeamResponse) ProtoMessage() {}
 
 func (x *UpdateTeamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[116]
+	mi := &file_slipway_v1_identity_proto_msgTypes[120]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6075,7 +6325,7 @@ func (x *UpdateTeamResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateTeamResponse.ProtoReflect.Descriptor instead.
 func (*UpdateTeamResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{116}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{120}
 }
 
 func (x *UpdateTeamResponse) GetTeam() *Team {
@@ -6094,7 +6344,7 @@ type DeleteTeamRequest struct {
 
 func (x *DeleteTeamRequest) Reset() {
 	*x = DeleteTeamRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[117]
+	mi := &file_slipway_v1_identity_proto_msgTypes[121]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6106,7 +6356,7 @@ func (x *DeleteTeamRequest) String() string {
 func (*DeleteTeamRequest) ProtoMessage() {}
 
 func (x *DeleteTeamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[117]
+	mi := &file_slipway_v1_identity_proto_msgTypes[121]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6119,7 +6369,7 @@ func (x *DeleteTeamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTeamRequest.ProtoReflect.Descriptor instead.
 func (*DeleteTeamRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{117}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{121}
 }
 
 func (x *DeleteTeamRequest) GetId() string {
@@ -6137,7 +6387,7 @@ type DeleteTeamResponse struct {
 
 func (x *DeleteTeamResponse) Reset() {
 	*x = DeleteTeamResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[118]
+	mi := &file_slipway_v1_identity_proto_msgTypes[122]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6149,7 +6399,7 @@ func (x *DeleteTeamResponse) String() string {
 func (*DeleteTeamResponse) ProtoMessage() {}
 
 func (x *DeleteTeamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[118]
+	mi := &file_slipway_v1_identity_proto_msgTypes[122]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6162,7 +6412,7 @@ func (x *DeleteTeamResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTeamResponse.ProtoReflect.Descriptor instead.
 func (*DeleteTeamResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{118}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{122}
 }
 
 type ListTeamMembersRequest struct {
@@ -6174,7 +6424,7 @@ type ListTeamMembersRequest struct {
 
 func (x *ListTeamMembersRequest) Reset() {
 	*x = ListTeamMembersRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[119]
+	mi := &file_slipway_v1_identity_proto_msgTypes[123]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6186,7 +6436,7 @@ func (x *ListTeamMembersRequest) String() string {
 func (*ListTeamMembersRequest) ProtoMessage() {}
 
 func (x *ListTeamMembersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[119]
+	mi := &file_slipway_v1_identity_proto_msgTypes[123]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6199,7 +6449,7 @@ func (x *ListTeamMembersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTeamMembersRequest.ProtoReflect.Descriptor instead.
 func (*ListTeamMembersRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{119}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{123}
 }
 
 func (x *ListTeamMembersRequest) GetTeamId() string {
@@ -6218,7 +6468,7 @@ type ListTeamMembersResponse struct {
 
 func (x *ListTeamMembersResponse) Reset() {
 	*x = ListTeamMembersResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[120]
+	mi := &file_slipway_v1_identity_proto_msgTypes[124]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6230,7 +6480,7 @@ func (x *ListTeamMembersResponse) String() string {
 func (*ListTeamMembersResponse) ProtoMessage() {}
 
 func (x *ListTeamMembersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[120]
+	mi := &file_slipway_v1_identity_proto_msgTypes[124]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6243,7 +6493,7 @@ func (x *ListTeamMembersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTeamMembersResponse.ProtoReflect.Descriptor instead.
 func (*ListTeamMembersResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{120}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{124}
 }
 
 func (x *ListTeamMembersResponse) GetItems() []*TeamMember {
@@ -6263,7 +6513,7 @@ type AddTeamMemberRequest struct {
 
 func (x *AddTeamMemberRequest) Reset() {
 	*x = AddTeamMemberRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[121]
+	mi := &file_slipway_v1_identity_proto_msgTypes[125]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6275,7 +6525,7 @@ func (x *AddTeamMemberRequest) String() string {
 func (*AddTeamMemberRequest) ProtoMessage() {}
 
 func (x *AddTeamMemberRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[121]
+	mi := &file_slipway_v1_identity_proto_msgTypes[125]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6288,7 +6538,7 @@ func (x *AddTeamMemberRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddTeamMemberRequest.ProtoReflect.Descriptor instead.
 func (*AddTeamMemberRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{121}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{125}
 }
 
 func (x *AddTeamMemberRequest) GetTeamId() string {
@@ -6313,7 +6563,7 @@ type AddTeamMemberResponse struct {
 
 func (x *AddTeamMemberResponse) Reset() {
 	*x = AddTeamMemberResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[122]
+	mi := &file_slipway_v1_identity_proto_msgTypes[126]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6325,7 +6575,7 @@ func (x *AddTeamMemberResponse) String() string {
 func (*AddTeamMemberResponse) ProtoMessage() {}
 
 func (x *AddTeamMemberResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[122]
+	mi := &file_slipway_v1_identity_proto_msgTypes[126]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6338,7 +6588,7 @@ func (x *AddTeamMemberResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddTeamMemberResponse.ProtoReflect.Descriptor instead.
 func (*AddTeamMemberResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{122}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{126}
 }
 
 type RemoveTeamMemberRequest struct {
@@ -6351,7 +6601,7 @@ type RemoveTeamMemberRequest struct {
 
 func (x *RemoveTeamMemberRequest) Reset() {
 	*x = RemoveTeamMemberRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[123]
+	mi := &file_slipway_v1_identity_proto_msgTypes[127]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6363,7 +6613,7 @@ func (x *RemoveTeamMemberRequest) String() string {
 func (*RemoveTeamMemberRequest) ProtoMessage() {}
 
 func (x *RemoveTeamMemberRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[123]
+	mi := &file_slipway_v1_identity_proto_msgTypes[127]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6376,7 +6626,7 @@ func (x *RemoveTeamMemberRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveTeamMemberRequest.ProtoReflect.Descriptor instead.
 func (*RemoveTeamMemberRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{123}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{127}
 }
 
 func (x *RemoveTeamMemberRequest) GetTeamId() string {
@@ -6401,7 +6651,7 @@ type RemoveTeamMemberResponse struct {
 
 func (x *RemoveTeamMemberResponse) Reset() {
 	*x = RemoveTeamMemberResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[124]
+	mi := &file_slipway_v1_identity_proto_msgTypes[128]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6413,7 +6663,7 @@ func (x *RemoveTeamMemberResponse) String() string {
 func (*RemoveTeamMemberResponse) ProtoMessage() {}
 
 func (x *RemoveTeamMemberResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[124]
+	mi := &file_slipway_v1_identity_proto_msgTypes[128]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6426,7 +6676,7 @@ func (x *RemoveTeamMemberResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveTeamMemberResponse.ProtoReflect.Descriptor instead.
 func (*RemoveTeamMemberResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{124}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{128}
 }
 
 type PermissionInfo struct {
@@ -6441,7 +6691,7 @@ type PermissionInfo struct {
 
 func (x *PermissionInfo) Reset() {
 	*x = PermissionInfo{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[125]
+	mi := &file_slipway_v1_identity_proto_msgTypes[129]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6453,7 +6703,7 @@ func (x *PermissionInfo) String() string {
 func (*PermissionInfo) ProtoMessage() {}
 
 func (x *PermissionInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[125]
+	mi := &file_slipway_v1_identity_proto_msgTypes[129]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6466,7 +6716,7 @@ func (x *PermissionInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PermissionInfo.ProtoReflect.Descriptor instead.
 func (*PermissionInfo) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{125}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{129}
 }
 
 func (x *PermissionInfo) GetName() string {
@@ -6515,7 +6765,7 @@ type RoleBinding struct {
 
 func (x *RoleBinding) Reset() {
 	*x = RoleBinding{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[126]
+	mi := &file_slipway_v1_identity_proto_msgTypes[130]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6527,7 +6777,7 @@ func (x *RoleBinding) String() string {
 func (*RoleBinding) ProtoMessage() {}
 
 func (x *RoleBinding) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[126]
+	mi := &file_slipway_v1_identity_proto_msgTypes[130]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6540,7 +6790,7 @@ func (x *RoleBinding) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoleBinding.ProtoReflect.Descriptor instead.
 func (*RoleBinding) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{126}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{130}
 }
 
 func (x *RoleBinding) GetId() string {
@@ -6614,7 +6864,7 @@ type ListPermissionsRequest struct {
 
 func (x *ListPermissionsRequest) Reset() {
 	*x = ListPermissionsRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[127]
+	mi := &file_slipway_v1_identity_proto_msgTypes[131]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6626,7 +6876,7 @@ func (x *ListPermissionsRequest) String() string {
 func (*ListPermissionsRequest) ProtoMessage() {}
 
 func (x *ListPermissionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[127]
+	mi := &file_slipway_v1_identity_proto_msgTypes[131]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6639,7 +6889,7 @@ func (x *ListPermissionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPermissionsRequest.ProtoReflect.Descriptor instead.
 func (*ListPermissionsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{127}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{131}
 }
 
 type ListPermissionsResponse struct {
@@ -6651,7 +6901,7 @@ type ListPermissionsResponse struct {
 
 func (x *ListPermissionsResponse) Reset() {
 	*x = ListPermissionsResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[128]
+	mi := &file_slipway_v1_identity_proto_msgTypes[132]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6663,7 +6913,7 @@ func (x *ListPermissionsResponse) String() string {
 func (*ListPermissionsResponse) ProtoMessage() {}
 
 func (x *ListPermissionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[128]
+	mi := &file_slipway_v1_identity_proto_msgTypes[132]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6676,7 +6926,7 @@ func (x *ListPermissionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPermissionsResponse.ProtoReflect.Descriptor instead.
 func (*ListPermissionsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{128}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{132}
 }
 
 func (x *ListPermissionsResponse) GetItems() []*PermissionInfo {
@@ -6697,7 +6947,7 @@ type CreateRoleRequest struct {
 
 func (x *CreateRoleRequest) Reset() {
 	*x = CreateRoleRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[129]
+	mi := &file_slipway_v1_identity_proto_msgTypes[133]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6709,7 +6959,7 @@ func (x *CreateRoleRequest) String() string {
 func (*CreateRoleRequest) ProtoMessage() {}
 
 func (x *CreateRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[129]
+	mi := &file_slipway_v1_identity_proto_msgTypes[133]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6722,7 +6972,7 @@ func (x *CreateRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRoleRequest.ProtoReflect.Descriptor instead.
 func (*CreateRoleRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{129}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{133}
 }
 
 func (x *CreateRoleRequest) GetName() string {
@@ -6755,7 +7005,7 @@ type CreateRoleResponse struct {
 
 func (x *CreateRoleResponse) Reset() {
 	*x = CreateRoleResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[130]
+	mi := &file_slipway_v1_identity_proto_msgTypes[134]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6767,7 +7017,7 @@ func (x *CreateRoleResponse) String() string {
 func (*CreateRoleResponse) ProtoMessage() {}
 
 func (x *CreateRoleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[130]
+	mi := &file_slipway_v1_identity_proto_msgTypes[134]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6780,7 +7030,7 @@ func (x *CreateRoleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRoleResponse.ProtoReflect.Descriptor instead.
 func (*CreateRoleResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{130}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{134}
 }
 
 func (x *CreateRoleResponse) GetRole() *Role {
@@ -6799,7 +7049,7 @@ type GetRoleRequest struct {
 
 func (x *GetRoleRequest) Reset() {
 	*x = GetRoleRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[131]
+	mi := &file_slipway_v1_identity_proto_msgTypes[135]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6811,7 +7061,7 @@ func (x *GetRoleRequest) String() string {
 func (*GetRoleRequest) ProtoMessage() {}
 
 func (x *GetRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[131]
+	mi := &file_slipway_v1_identity_proto_msgTypes[135]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6824,7 +7074,7 @@ func (x *GetRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRoleRequest.ProtoReflect.Descriptor instead.
 func (*GetRoleRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{131}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{135}
 }
 
 func (x *GetRoleRequest) GetId() string {
@@ -6843,7 +7093,7 @@ type GetRoleResponse struct {
 
 func (x *GetRoleResponse) Reset() {
 	*x = GetRoleResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[132]
+	mi := &file_slipway_v1_identity_proto_msgTypes[136]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6855,7 +7105,7 @@ func (x *GetRoleResponse) String() string {
 func (*GetRoleResponse) ProtoMessage() {}
 
 func (x *GetRoleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[132]
+	mi := &file_slipway_v1_identity_proto_msgTypes[136]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6868,7 +7118,7 @@ func (x *GetRoleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRoleResponse.ProtoReflect.Descriptor instead.
 func (*GetRoleResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{132}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{136}
 }
 
 func (x *GetRoleResponse) GetRole() *Role {
@@ -6888,7 +7138,7 @@ type UpdateRoleRequest struct {
 
 func (x *UpdateRoleRequest) Reset() {
 	*x = UpdateRoleRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[133]
+	mi := &file_slipway_v1_identity_proto_msgTypes[137]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6900,7 +7150,7 @@ func (x *UpdateRoleRequest) String() string {
 func (*UpdateRoleRequest) ProtoMessage() {}
 
 func (x *UpdateRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[133]
+	mi := &file_slipway_v1_identity_proto_msgTypes[137]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6913,7 +7163,7 @@ func (x *UpdateRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateRoleRequest.ProtoReflect.Descriptor instead.
 func (*UpdateRoleRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{133}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{137}
 }
 
 func (x *UpdateRoleRequest) GetRole() *Role {
@@ -6939,7 +7189,7 @@ type UpdateRoleResponse struct {
 
 func (x *UpdateRoleResponse) Reset() {
 	*x = UpdateRoleResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[134]
+	mi := &file_slipway_v1_identity_proto_msgTypes[138]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6951,7 +7201,7 @@ func (x *UpdateRoleResponse) String() string {
 func (*UpdateRoleResponse) ProtoMessage() {}
 
 func (x *UpdateRoleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[134]
+	mi := &file_slipway_v1_identity_proto_msgTypes[138]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6964,7 +7214,7 @@ func (x *UpdateRoleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateRoleResponse.ProtoReflect.Descriptor instead.
 func (*UpdateRoleResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{134}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{138}
 }
 
 func (x *UpdateRoleResponse) GetRole() *Role {
@@ -6983,7 +7233,7 @@ type DeleteRoleRequest struct {
 
 func (x *DeleteRoleRequest) Reset() {
 	*x = DeleteRoleRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[135]
+	mi := &file_slipway_v1_identity_proto_msgTypes[139]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6995,7 +7245,7 @@ func (x *DeleteRoleRequest) String() string {
 func (*DeleteRoleRequest) ProtoMessage() {}
 
 func (x *DeleteRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[135]
+	mi := &file_slipway_v1_identity_proto_msgTypes[139]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7008,7 +7258,7 @@ func (x *DeleteRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRoleRequest.ProtoReflect.Descriptor instead.
 func (*DeleteRoleRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{135}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{139}
 }
 
 func (x *DeleteRoleRequest) GetId() string {
@@ -7026,7 +7276,7 @@ type DeleteRoleResponse struct {
 
 func (x *DeleteRoleResponse) Reset() {
 	*x = DeleteRoleResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[136]
+	mi := &file_slipway_v1_identity_proto_msgTypes[140]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7038,7 +7288,7 @@ func (x *DeleteRoleResponse) String() string {
 func (*DeleteRoleResponse) ProtoMessage() {}
 
 func (x *DeleteRoleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[136]
+	mi := &file_slipway_v1_identity_proto_msgTypes[140]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7051,7 +7301,7 @@ func (x *DeleteRoleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRoleResponse.ProtoReflect.Descriptor instead.
 func (*DeleteRoleResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{136}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{140}
 }
 
 type ListRoleBindingsRequest struct {
@@ -7064,7 +7314,7 @@ type ListRoleBindingsRequest struct {
 
 func (x *ListRoleBindingsRequest) Reset() {
 	*x = ListRoleBindingsRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[137]
+	mi := &file_slipway_v1_identity_proto_msgTypes[141]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7076,7 +7326,7 @@ func (x *ListRoleBindingsRequest) String() string {
 func (*ListRoleBindingsRequest) ProtoMessage() {}
 
 func (x *ListRoleBindingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[137]
+	mi := &file_slipway_v1_identity_proto_msgTypes[141]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7089,7 +7339,7 @@ func (x *ListRoleBindingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRoleBindingsRequest.ProtoReflect.Descriptor instead.
 func (*ListRoleBindingsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{137}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{141}
 }
 
 func (x *ListRoleBindingsRequest) GetSubjectId() string {
@@ -7115,7 +7365,7 @@ type ListRoleBindingsResponse struct {
 
 func (x *ListRoleBindingsResponse) Reset() {
 	*x = ListRoleBindingsResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[138]
+	mi := &file_slipway_v1_identity_proto_msgTypes[142]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7127,7 +7377,7 @@ func (x *ListRoleBindingsResponse) String() string {
 func (*ListRoleBindingsResponse) ProtoMessage() {}
 
 func (x *ListRoleBindingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[138]
+	mi := &file_slipway_v1_identity_proto_msgTypes[142]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7140,7 +7390,7 @@ func (x *ListRoleBindingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRoleBindingsResponse.ProtoReflect.Descriptor instead.
 func (*ListRoleBindingsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{138}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{142}
 }
 
 func (x *ListRoleBindingsResponse) GetItems() []*RoleBinding {
@@ -7159,7 +7409,7 @@ type CreateRoleBindingRequest struct {
 
 func (x *CreateRoleBindingRequest) Reset() {
 	*x = CreateRoleBindingRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[139]
+	mi := &file_slipway_v1_identity_proto_msgTypes[143]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7171,7 +7421,7 @@ func (x *CreateRoleBindingRequest) String() string {
 func (*CreateRoleBindingRequest) ProtoMessage() {}
 
 func (x *CreateRoleBindingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[139]
+	mi := &file_slipway_v1_identity_proto_msgTypes[143]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7184,7 +7434,7 @@ func (x *CreateRoleBindingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRoleBindingRequest.ProtoReflect.Descriptor instead.
 func (*CreateRoleBindingRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{139}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{143}
 }
 
 func (x *CreateRoleBindingRequest) GetBinding() *RoleBinding {
@@ -7203,7 +7453,7 @@ type CreateRoleBindingResponse struct {
 
 func (x *CreateRoleBindingResponse) Reset() {
 	*x = CreateRoleBindingResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[140]
+	mi := &file_slipway_v1_identity_proto_msgTypes[144]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7215,7 +7465,7 @@ func (x *CreateRoleBindingResponse) String() string {
 func (*CreateRoleBindingResponse) ProtoMessage() {}
 
 func (x *CreateRoleBindingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[140]
+	mi := &file_slipway_v1_identity_proto_msgTypes[144]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7228,7 +7478,7 @@ func (x *CreateRoleBindingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRoleBindingResponse.ProtoReflect.Descriptor instead.
 func (*CreateRoleBindingResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{140}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{144}
 }
 
 func (x *CreateRoleBindingResponse) GetBinding() *RoleBinding {
@@ -7247,7 +7497,7 @@ type DeleteRoleBindingRequest struct {
 
 func (x *DeleteRoleBindingRequest) Reset() {
 	*x = DeleteRoleBindingRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[141]
+	mi := &file_slipway_v1_identity_proto_msgTypes[145]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7259,7 +7509,7 @@ func (x *DeleteRoleBindingRequest) String() string {
 func (*DeleteRoleBindingRequest) ProtoMessage() {}
 
 func (x *DeleteRoleBindingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[141]
+	mi := &file_slipway_v1_identity_proto_msgTypes[145]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7272,7 +7522,7 @@ func (x *DeleteRoleBindingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRoleBindingRequest.ProtoReflect.Descriptor instead.
 func (*DeleteRoleBindingRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{141}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{145}
 }
 
 func (x *DeleteRoleBindingRequest) GetId() string {
@@ -7290,7 +7540,7 @@ type DeleteRoleBindingResponse struct {
 
 func (x *DeleteRoleBindingResponse) Reset() {
 	*x = DeleteRoleBindingResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[142]
+	mi := &file_slipway_v1_identity_proto_msgTypes[146]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7302,7 +7552,7 @@ func (x *DeleteRoleBindingResponse) String() string {
 func (*DeleteRoleBindingResponse) ProtoMessage() {}
 
 func (x *DeleteRoleBindingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[142]
+	mi := &file_slipway_v1_identity_proto_msgTypes[146]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7315,7 +7565,7 @@ func (x *DeleteRoleBindingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRoleBindingResponse.ProtoReflect.Descriptor instead.
 func (*DeleteRoleBindingResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{142}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{146}
 }
 
 // CheckPermissions answers "what may the caller do here" for UI gating. Every name in permissions is evaluated at
@@ -7332,7 +7582,7 @@ type CheckPermissionsRequest struct {
 
 func (x *CheckPermissionsRequest) Reset() {
 	*x = CheckPermissionsRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[143]
+	mi := &file_slipway_v1_identity_proto_msgTypes[147]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7344,7 +7594,7 @@ func (x *CheckPermissionsRequest) String() string {
 func (*CheckPermissionsRequest) ProtoMessage() {}
 
 func (x *CheckPermissionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[143]
+	mi := &file_slipway_v1_identity_proto_msgTypes[147]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7357,7 +7607,7 @@ func (x *CheckPermissionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckPermissionsRequest.ProtoReflect.Descriptor instead.
 func (*CheckPermissionsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{143}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{147}
 }
 
 func (x *CheckPermissionsRequest) GetPermissions() []string {
@@ -7397,7 +7647,7 @@ type CheckPermissionsResponse struct {
 
 func (x *CheckPermissionsResponse) Reset() {
 	*x = CheckPermissionsResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[144]
+	mi := &file_slipway_v1_identity_proto_msgTypes[148]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7409,7 +7659,7 @@ func (x *CheckPermissionsResponse) String() string {
 func (*CheckPermissionsResponse) ProtoMessage() {}
 
 func (x *CheckPermissionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[144]
+	mi := &file_slipway_v1_identity_proto_msgTypes[148]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7422,7 +7672,7 @@ func (x *CheckPermissionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckPermissionsResponse.ProtoReflect.Descriptor instead.
 func (*CheckPermissionsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{144}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{148}
 }
 
 func (x *CheckPermissionsResponse) GetAllowed() map[string]bool {
@@ -7446,7 +7696,7 @@ type ServiceAccount struct {
 
 func (x *ServiceAccount) Reset() {
 	*x = ServiceAccount{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[145]
+	mi := &file_slipway_v1_identity_proto_msgTypes[149]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7458,7 +7708,7 @@ func (x *ServiceAccount) String() string {
 func (*ServiceAccount) ProtoMessage() {}
 
 func (x *ServiceAccount) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[145]
+	mi := &file_slipway_v1_identity_proto_msgTypes[149]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7471,7 +7721,7 @@ func (x *ServiceAccount) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServiceAccount.ProtoReflect.Descriptor instead.
 func (*ServiceAccount) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{145}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{149}
 }
 
 func (x *ServiceAccount) GetId() string {
@@ -7525,7 +7775,7 @@ type ListServiceAccountsRequest struct {
 
 func (x *ListServiceAccountsRequest) Reset() {
 	*x = ListServiceAccountsRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[146]
+	mi := &file_slipway_v1_identity_proto_msgTypes[150]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7537,7 +7787,7 @@ func (x *ListServiceAccountsRequest) String() string {
 func (*ListServiceAccountsRequest) ProtoMessage() {}
 
 func (x *ListServiceAccountsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[146]
+	mi := &file_slipway_v1_identity_proto_msgTypes[150]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7550,7 +7800,7 @@ func (x *ListServiceAccountsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListServiceAccountsRequest.ProtoReflect.Descriptor instead.
 func (*ListServiceAccountsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{146}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{150}
 }
 
 func (x *ListServiceAccountsRequest) GetPage() *PageRequest {
@@ -7570,7 +7820,7 @@ type ListServiceAccountsResponse struct {
 
 func (x *ListServiceAccountsResponse) Reset() {
 	*x = ListServiceAccountsResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[147]
+	mi := &file_slipway_v1_identity_proto_msgTypes[151]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7582,7 +7832,7 @@ func (x *ListServiceAccountsResponse) String() string {
 func (*ListServiceAccountsResponse) ProtoMessage() {}
 
 func (x *ListServiceAccountsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[147]
+	mi := &file_slipway_v1_identity_proto_msgTypes[151]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7595,7 +7845,7 @@ func (x *ListServiceAccountsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListServiceAccountsResponse.ProtoReflect.Descriptor instead.
 func (*ListServiceAccountsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{147}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{151}
 }
 
 func (x *ListServiceAccountsResponse) GetItems() []*ServiceAccount {
@@ -7623,7 +7873,7 @@ type CreateServiceAccountRequest struct {
 
 func (x *CreateServiceAccountRequest) Reset() {
 	*x = CreateServiceAccountRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[148]
+	mi := &file_slipway_v1_identity_proto_msgTypes[152]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7635,7 +7885,7 @@ func (x *CreateServiceAccountRequest) String() string {
 func (*CreateServiceAccountRequest) ProtoMessage() {}
 
 func (x *CreateServiceAccountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[148]
+	mi := &file_slipway_v1_identity_proto_msgTypes[152]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7648,7 +7898,7 @@ func (x *CreateServiceAccountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateServiceAccountRequest.ProtoReflect.Descriptor instead.
 func (*CreateServiceAccountRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{148}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{152}
 }
 
 func (x *CreateServiceAccountRequest) GetName() string {
@@ -7681,7 +7931,7 @@ type CreateServiceAccountResponse struct {
 
 func (x *CreateServiceAccountResponse) Reset() {
 	*x = CreateServiceAccountResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[149]
+	mi := &file_slipway_v1_identity_proto_msgTypes[153]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7693,7 +7943,7 @@ func (x *CreateServiceAccountResponse) String() string {
 func (*CreateServiceAccountResponse) ProtoMessage() {}
 
 func (x *CreateServiceAccountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[149]
+	mi := &file_slipway_v1_identity_proto_msgTypes[153]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7706,7 +7956,7 @@ func (x *CreateServiceAccountResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateServiceAccountResponse.ProtoReflect.Descriptor instead.
 func (*CreateServiceAccountResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{149}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{153}
 }
 
 func (x *CreateServiceAccountResponse) GetServiceAccount() *ServiceAccount {
@@ -7725,7 +7975,7 @@ type GetServiceAccountRequest struct {
 
 func (x *GetServiceAccountRequest) Reset() {
 	*x = GetServiceAccountRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[150]
+	mi := &file_slipway_v1_identity_proto_msgTypes[154]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7737,7 +7987,7 @@ func (x *GetServiceAccountRequest) String() string {
 func (*GetServiceAccountRequest) ProtoMessage() {}
 
 func (x *GetServiceAccountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[150]
+	mi := &file_slipway_v1_identity_proto_msgTypes[154]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7750,7 +8000,7 @@ func (x *GetServiceAccountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetServiceAccountRequest.ProtoReflect.Descriptor instead.
 func (*GetServiceAccountRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{150}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{154}
 }
 
 func (x *GetServiceAccountRequest) GetId() string {
@@ -7769,7 +8019,7 @@ type GetServiceAccountResponse struct {
 
 func (x *GetServiceAccountResponse) Reset() {
 	*x = GetServiceAccountResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[151]
+	mi := &file_slipway_v1_identity_proto_msgTypes[155]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7781,7 +8031,7 @@ func (x *GetServiceAccountResponse) String() string {
 func (*GetServiceAccountResponse) ProtoMessage() {}
 
 func (x *GetServiceAccountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[151]
+	mi := &file_slipway_v1_identity_proto_msgTypes[155]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7794,7 +8044,7 @@ func (x *GetServiceAccountResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetServiceAccountResponse.ProtoReflect.Descriptor instead.
 func (*GetServiceAccountResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{151}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{155}
 }
 
 func (x *GetServiceAccountResponse) GetServiceAccount() *ServiceAccount {
@@ -7814,7 +8064,7 @@ type UpdateServiceAccountRequest struct {
 
 func (x *UpdateServiceAccountRequest) Reset() {
 	*x = UpdateServiceAccountRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[152]
+	mi := &file_slipway_v1_identity_proto_msgTypes[156]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7826,7 +8076,7 @@ func (x *UpdateServiceAccountRequest) String() string {
 func (*UpdateServiceAccountRequest) ProtoMessage() {}
 
 func (x *UpdateServiceAccountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[152]
+	mi := &file_slipway_v1_identity_proto_msgTypes[156]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7839,7 +8089,7 @@ func (x *UpdateServiceAccountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateServiceAccountRequest.ProtoReflect.Descriptor instead.
 func (*UpdateServiceAccountRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{152}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{156}
 }
 
 func (x *UpdateServiceAccountRequest) GetServiceAccount() *ServiceAccount {
@@ -7865,7 +8115,7 @@ type UpdateServiceAccountResponse struct {
 
 func (x *UpdateServiceAccountResponse) Reset() {
 	*x = UpdateServiceAccountResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[153]
+	mi := &file_slipway_v1_identity_proto_msgTypes[157]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7877,7 +8127,7 @@ func (x *UpdateServiceAccountResponse) String() string {
 func (*UpdateServiceAccountResponse) ProtoMessage() {}
 
 func (x *UpdateServiceAccountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[153]
+	mi := &file_slipway_v1_identity_proto_msgTypes[157]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7890,7 +8140,7 @@ func (x *UpdateServiceAccountResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateServiceAccountResponse.ProtoReflect.Descriptor instead.
 func (*UpdateServiceAccountResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{153}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{157}
 }
 
 func (x *UpdateServiceAccountResponse) GetServiceAccount() *ServiceAccount {
@@ -7909,7 +8159,7 @@ type DeleteServiceAccountRequest struct {
 
 func (x *DeleteServiceAccountRequest) Reset() {
 	*x = DeleteServiceAccountRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[154]
+	mi := &file_slipway_v1_identity_proto_msgTypes[158]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7921,7 +8171,7 @@ func (x *DeleteServiceAccountRequest) String() string {
 func (*DeleteServiceAccountRequest) ProtoMessage() {}
 
 func (x *DeleteServiceAccountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[154]
+	mi := &file_slipway_v1_identity_proto_msgTypes[158]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7934,7 +8184,7 @@ func (x *DeleteServiceAccountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteServiceAccountRequest.ProtoReflect.Descriptor instead.
 func (*DeleteServiceAccountRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{154}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{158}
 }
 
 func (x *DeleteServiceAccountRequest) GetId() string {
@@ -7952,7 +8202,7 @@ type DeleteServiceAccountResponse struct {
 
 func (x *DeleteServiceAccountResponse) Reset() {
 	*x = DeleteServiceAccountResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[155]
+	mi := &file_slipway_v1_identity_proto_msgTypes[159]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7964,7 +8214,7 @@ func (x *DeleteServiceAccountResponse) String() string {
 func (*DeleteServiceAccountResponse) ProtoMessage() {}
 
 func (x *DeleteServiceAccountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[155]
+	mi := &file_slipway_v1_identity_proto_msgTypes[159]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7977,7 +8227,7 @@ func (x *DeleteServiceAccountResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteServiceAccountResponse.ProtoReflect.Descriptor instead.
 func (*DeleteServiceAccountResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{155}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{159}
 }
 
 type ListServiceAccountTokensRequest struct {
@@ -7990,7 +8240,7 @@ type ListServiceAccountTokensRequest struct {
 
 func (x *ListServiceAccountTokensRequest) Reset() {
 	*x = ListServiceAccountTokensRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[156]
+	mi := &file_slipway_v1_identity_proto_msgTypes[160]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8002,7 +8252,7 @@ func (x *ListServiceAccountTokensRequest) String() string {
 func (*ListServiceAccountTokensRequest) ProtoMessage() {}
 
 func (x *ListServiceAccountTokensRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[156]
+	mi := &file_slipway_v1_identity_proto_msgTypes[160]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8015,7 +8265,7 @@ func (x *ListServiceAccountTokensRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListServiceAccountTokensRequest.ProtoReflect.Descriptor instead.
 func (*ListServiceAccountTokensRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{156}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{160}
 }
 
 func (x *ListServiceAccountTokensRequest) GetServiceAccountId() string {
@@ -8042,7 +8292,7 @@ type ListServiceAccountTokensResponse struct {
 
 func (x *ListServiceAccountTokensResponse) Reset() {
 	*x = ListServiceAccountTokensResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[157]
+	mi := &file_slipway_v1_identity_proto_msgTypes[161]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8054,7 +8304,7 @@ func (x *ListServiceAccountTokensResponse) String() string {
 func (*ListServiceAccountTokensResponse) ProtoMessage() {}
 
 func (x *ListServiceAccountTokensResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[157]
+	mi := &file_slipway_v1_identity_proto_msgTypes[161]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8067,7 +8317,7 @@ func (x *ListServiceAccountTokensResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListServiceAccountTokensResponse.ProtoReflect.Descriptor instead.
 func (*ListServiceAccountTokensResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{157}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{161}
 }
 
 func (x *ListServiceAccountTokensResponse) GetItems() []*ApiToken {
@@ -8096,7 +8346,7 @@ type CreateServiceAccountTokenRequest struct {
 
 func (x *CreateServiceAccountTokenRequest) Reset() {
 	*x = CreateServiceAccountTokenRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[158]
+	mi := &file_slipway_v1_identity_proto_msgTypes[162]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8108,7 +8358,7 @@ func (x *CreateServiceAccountTokenRequest) String() string {
 func (*CreateServiceAccountTokenRequest) ProtoMessage() {}
 
 func (x *CreateServiceAccountTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[158]
+	mi := &file_slipway_v1_identity_proto_msgTypes[162]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8121,7 +8371,7 @@ func (x *CreateServiceAccountTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateServiceAccountTokenRequest.ProtoReflect.Descriptor instead.
 func (*CreateServiceAccountTokenRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{158}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{162}
 }
 
 func (x *CreateServiceAccountTokenRequest) GetServiceAccountId() string {
@@ -8162,7 +8412,7 @@ type CreateServiceAccountTokenResponse struct {
 
 func (x *CreateServiceAccountTokenResponse) Reset() {
 	*x = CreateServiceAccountTokenResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[159]
+	mi := &file_slipway_v1_identity_proto_msgTypes[163]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8174,7 +8424,7 @@ func (x *CreateServiceAccountTokenResponse) String() string {
 func (*CreateServiceAccountTokenResponse) ProtoMessage() {}
 
 func (x *CreateServiceAccountTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[159]
+	mi := &file_slipway_v1_identity_proto_msgTypes[163]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8187,7 +8437,7 @@ func (x *CreateServiceAccountTokenResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use CreateServiceAccountTokenResponse.ProtoReflect.Descriptor instead.
 func (*CreateServiceAccountTokenResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{159}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{163}
 }
 
 func (x *CreateServiceAccountTokenResponse) GetToken() *ApiToken {
@@ -8214,7 +8464,7 @@ type RevokeServiceAccountTokenRequest struct {
 
 func (x *RevokeServiceAccountTokenRequest) Reset() {
 	*x = RevokeServiceAccountTokenRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[160]
+	mi := &file_slipway_v1_identity_proto_msgTypes[164]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8226,7 +8476,7 @@ func (x *RevokeServiceAccountTokenRequest) String() string {
 func (*RevokeServiceAccountTokenRequest) ProtoMessage() {}
 
 func (x *RevokeServiceAccountTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[160]
+	mi := &file_slipway_v1_identity_proto_msgTypes[164]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8239,7 +8489,7 @@ func (x *RevokeServiceAccountTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeServiceAccountTokenRequest.ProtoReflect.Descriptor instead.
 func (*RevokeServiceAccountTokenRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{160}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{164}
 }
 
 func (x *RevokeServiceAccountTokenRequest) GetServiceAccountId() string {
@@ -8264,7 +8514,7 @@ type RevokeServiceAccountTokenResponse struct {
 
 func (x *RevokeServiceAccountTokenResponse) Reset() {
 	*x = RevokeServiceAccountTokenResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[161]
+	mi := &file_slipway_v1_identity_proto_msgTypes[165]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8276,7 +8526,7 @@ func (x *RevokeServiceAccountTokenResponse) String() string {
 func (*RevokeServiceAccountTokenResponse) ProtoMessage() {}
 
 func (x *RevokeServiceAccountTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[161]
+	mi := &file_slipway_v1_identity_proto_msgTypes[165]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8289,7 +8539,7 @@ func (x *RevokeServiceAccountTokenResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use RevokeServiceAccountTokenResponse.ProtoReflect.Descriptor instead.
 func (*RevokeServiceAccountTokenResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{161}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{165}
 }
 
 type QueryAuditEventsRequest struct {
@@ -8308,7 +8558,7 @@ type QueryAuditEventsRequest struct {
 
 func (x *QueryAuditEventsRequest) Reset() {
 	*x = QueryAuditEventsRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[162]
+	mi := &file_slipway_v1_identity_proto_msgTypes[166]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8320,7 +8570,7 @@ func (x *QueryAuditEventsRequest) String() string {
 func (*QueryAuditEventsRequest) ProtoMessage() {}
 
 func (x *QueryAuditEventsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[162]
+	mi := &file_slipway_v1_identity_proto_msgTypes[166]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8333,7 +8583,7 @@ func (x *QueryAuditEventsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryAuditEventsRequest.ProtoReflect.Descriptor instead.
 func (*QueryAuditEventsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{162}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{166}
 }
 
 func (x *QueryAuditEventsRequest) GetPage() *PageRequest {
@@ -8402,7 +8652,7 @@ type QueryAuditEventsResponse struct {
 
 func (x *QueryAuditEventsResponse) Reset() {
 	*x = QueryAuditEventsResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[163]
+	mi := &file_slipway_v1_identity_proto_msgTypes[167]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8414,7 +8664,7 @@ func (x *QueryAuditEventsResponse) String() string {
 func (*QueryAuditEventsResponse) ProtoMessage() {}
 
 func (x *QueryAuditEventsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[163]
+	mi := &file_slipway_v1_identity_proto_msgTypes[167]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8427,7 +8677,7 @@ func (x *QueryAuditEventsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryAuditEventsResponse.ProtoReflect.Descriptor instead.
 func (*QueryAuditEventsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{163}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{167}
 }
 
 func (x *QueryAuditEventsResponse) GetItems() []*AuditEvent {
@@ -8452,7 +8702,7 @@ type VerifyAuditChainRequest struct {
 
 func (x *VerifyAuditChainRequest) Reset() {
 	*x = VerifyAuditChainRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[164]
+	mi := &file_slipway_v1_identity_proto_msgTypes[168]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8464,7 +8714,7 @@ func (x *VerifyAuditChainRequest) String() string {
 func (*VerifyAuditChainRequest) ProtoMessage() {}
 
 func (x *VerifyAuditChainRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[164]
+	mi := &file_slipway_v1_identity_proto_msgTypes[168]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8477,7 +8727,7 @@ func (x *VerifyAuditChainRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyAuditChainRequest.ProtoReflect.Descriptor instead.
 func (*VerifyAuditChainRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{164}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{168}
 }
 
 type VerifyAuditChainResponse struct {
@@ -8492,7 +8742,7 @@ type VerifyAuditChainResponse struct {
 
 func (x *VerifyAuditChainResponse) Reset() {
 	*x = VerifyAuditChainResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[165]
+	mi := &file_slipway_v1_identity_proto_msgTypes[169]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8504,7 +8754,7 @@ func (x *VerifyAuditChainResponse) String() string {
 func (*VerifyAuditChainResponse) ProtoMessage() {}
 
 func (x *VerifyAuditChainResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[165]
+	mi := &file_slipway_v1_identity_proto_msgTypes[169]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8517,7 +8767,7 @@ func (x *VerifyAuditChainResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyAuditChainResponse.ProtoReflect.Descriptor instead.
 func (*VerifyAuditChainResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{165}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{169}
 }
 
 func (x *VerifyAuditChainResponse) GetOk() bool {
@@ -8556,7 +8806,7 @@ type GetAuditRetentionRequest struct {
 
 func (x *GetAuditRetentionRequest) Reset() {
 	*x = GetAuditRetentionRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[166]
+	mi := &file_slipway_v1_identity_proto_msgTypes[170]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8568,7 +8818,7 @@ func (x *GetAuditRetentionRequest) String() string {
 func (*GetAuditRetentionRequest) ProtoMessage() {}
 
 func (x *GetAuditRetentionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[166]
+	mi := &file_slipway_v1_identity_proto_msgTypes[170]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8581,7 +8831,7 @@ func (x *GetAuditRetentionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAuditRetentionRequest.ProtoReflect.Descriptor instead.
 func (*GetAuditRetentionRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{166}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{170}
 }
 
 type GetAuditRetentionResponse struct {
@@ -8596,7 +8846,7 @@ type GetAuditRetentionResponse struct {
 
 func (x *GetAuditRetentionResponse) Reset() {
 	*x = GetAuditRetentionResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[167]
+	mi := &file_slipway_v1_identity_proto_msgTypes[171]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8608,7 +8858,7 @@ func (x *GetAuditRetentionResponse) String() string {
 func (*GetAuditRetentionResponse) ProtoMessage() {}
 
 func (x *GetAuditRetentionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[167]
+	mi := &file_slipway_v1_identity_proto_msgTypes[171]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8621,7 +8871,7 @@ func (x *GetAuditRetentionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAuditRetentionResponse.ProtoReflect.Descriptor instead.
 func (*GetAuditRetentionResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{167}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{171}
 }
 
 func (x *GetAuditRetentionResponse) GetRetentionDays() int32 {
@@ -8674,7 +8924,7 @@ type SsoConnection struct {
 
 func (x *SsoConnection) Reset() {
 	*x = SsoConnection{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[168]
+	mi := &file_slipway_v1_identity_proto_msgTypes[172]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8686,7 +8936,7 @@ func (x *SsoConnection) String() string {
 func (*SsoConnection) ProtoMessage() {}
 
 func (x *SsoConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[168]
+	mi := &file_slipway_v1_identity_proto_msgTypes[172]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8699,7 +8949,7 @@ func (x *SsoConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SsoConnection.ProtoReflect.Descriptor instead.
 func (*SsoConnection) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{168}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{172}
 }
 
 func (x *SsoConnection) GetId() string {
@@ -8808,7 +9058,7 @@ type ListSsoConnectionsRequest struct {
 
 func (x *ListSsoConnectionsRequest) Reset() {
 	*x = ListSsoConnectionsRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[169]
+	mi := &file_slipway_v1_identity_proto_msgTypes[173]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8820,7 +9070,7 @@ func (x *ListSsoConnectionsRequest) String() string {
 func (*ListSsoConnectionsRequest) ProtoMessage() {}
 
 func (x *ListSsoConnectionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[169]
+	mi := &file_slipway_v1_identity_proto_msgTypes[173]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8833,7 +9083,7 @@ func (x *ListSsoConnectionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSsoConnectionsRequest.ProtoReflect.Descriptor instead.
 func (*ListSsoConnectionsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{169}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{173}
 }
 
 type ListSsoConnectionsResponse struct {
@@ -8845,7 +9095,7 @@ type ListSsoConnectionsResponse struct {
 
 func (x *ListSsoConnectionsResponse) Reset() {
 	*x = ListSsoConnectionsResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[170]
+	mi := &file_slipway_v1_identity_proto_msgTypes[174]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8857,7 +9107,7 @@ func (x *ListSsoConnectionsResponse) String() string {
 func (*ListSsoConnectionsResponse) ProtoMessage() {}
 
 func (x *ListSsoConnectionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[170]
+	mi := &file_slipway_v1_identity_proto_msgTypes[174]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8870,7 +9120,7 @@ func (x *ListSsoConnectionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSsoConnectionsResponse.ProtoReflect.Descriptor instead.
 func (*ListSsoConnectionsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{170}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{174}
 }
 
 func (x *ListSsoConnectionsResponse) GetItems() []*SsoConnection {
@@ -8889,7 +9139,7 @@ type CreateSsoConnectionRequest struct {
 
 func (x *CreateSsoConnectionRequest) Reset() {
 	*x = CreateSsoConnectionRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[171]
+	mi := &file_slipway_v1_identity_proto_msgTypes[175]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8901,7 +9151,7 @@ func (x *CreateSsoConnectionRequest) String() string {
 func (*CreateSsoConnectionRequest) ProtoMessage() {}
 
 func (x *CreateSsoConnectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[171]
+	mi := &file_slipway_v1_identity_proto_msgTypes[175]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8914,7 +9164,7 @@ func (x *CreateSsoConnectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSsoConnectionRequest.ProtoReflect.Descriptor instead.
 func (*CreateSsoConnectionRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{171}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{175}
 }
 
 func (x *CreateSsoConnectionRequest) GetConnection() *SsoConnection {
@@ -8933,7 +9183,7 @@ type CreateSsoConnectionResponse struct {
 
 func (x *CreateSsoConnectionResponse) Reset() {
 	*x = CreateSsoConnectionResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[172]
+	mi := &file_slipway_v1_identity_proto_msgTypes[176]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8945,7 +9195,7 @@ func (x *CreateSsoConnectionResponse) String() string {
 func (*CreateSsoConnectionResponse) ProtoMessage() {}
 
 func (x *CreateSsoConnectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[172]
+	mi := &file_slipway_v1_identity_proto_msgTypes[176]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8958,7 +9208,7 @@ func (x *CreateSsoConnectionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSsoConnectionResponse.ProtoReflect.Descriptor instead.
 func (*CreateSsoConnectionResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{172}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{176}
 }
 
 func (x *CreateSsoConnectionResponse) GetConnection() *SsoConnection {
@@ -8978,7 +9228,7 @@ type UpdateSsoConnectionRequest struct {
 
 func (x *UpdateSsoConnectionRequest) Reset() {
 	*x = UpdateSsoConnectionRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[173]
+	mi := &file_slipway_v1_identity_proto_msgTypes[177]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8990,7 +9240,7 @@ func (x *UpdateSsoConnectionRequest) String() string {
 func (*UpdateSsoConnectionRequest) ProtoMessage() {}
 
 func (x *UpdateSsoConnectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[173]
+	mi := &file_slipway_v1_identity_proto_msgTypes[177]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9003,7 +9253,7 @@ func (x *UpdateSsoConnectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSsoConnectionRequest.ProtoReflect.Descriptor instead.
 func (*UpdateSsoConnectionRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{173}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{177}
 }
 
 func (x *UpdateSsoConnectionRequest) GetConnection() *SsoConnection {
@@ -9029,7 +9279,7 @@ type UpdateSsoConnectionResponse struct {
 
 func (x *UpdateSsoConnectionResponse) Reset() {
 	*x = UpdateSsoConnectionResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[174]
+	mi := &file_slipway_v1_identity_proto_msgTypes[178]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9041,7 +9291,7 @@ func (x *UpdateSsoConnectionResponse) String() string {
 func (*UpdateSsoConnectionResponse) ProtoMessage() {}
 
 func (x *UpdateSsoConnectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[174]
+	mi := &file_slipway_v1_identity_proto_msgTypes[178]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9054,7 +9304,7 @@ func (x *UpdateSsoConnectionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSsoConnectionResponse.ProtoReflect.Descriptor instead.
 func (*UpdateSsoConnectionResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{174}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{178}
 }
 
 func (x *UpdateSsoConnectionResponse) GetConnection() *SsoConnection {
@@ -9073,7 +9323,7 @@ type DeleteSsoConnectionRequest struct {
 
 func (x *DeleteSsoConnectionRequest) Reset() {
 	*x = DeleteSsoConnectionRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[175]
+	mi := &file_slipway_v1_identity_proto_msgTypes[179]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9085,7 +9335,7 @@ func (x *DeleteSsoConnectionRequest) String() string {
 func (*DeleteSsoConnectionRequest) ProtoMessage() {}
 
 func (x *DeleteSsoConnectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[175]
+	mi := &file_slipway_v1_identity_proto_msgTypes[179]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9098,7 +9348,7 @@ func (x *DeleteSsoConnectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteSsoConnectionRequest.ProtoReflect.Descriptor instead.
 func (*DeleteSsoConnectionRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{175}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{179}
 }
 
 func (x *DeleteSsoConnectionRequest) GetId() string {
@@ -9116,7 +9366,7 @@ type DeleteSsoConnectionResponse struct {
 
 func (x *DeleteSsoConnectionResponse) Reset() {
 	*x = DeleteSsoConnectionResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[176]
+	mi := &file_slipway_v1_identity_proto_msgTypes[180]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9128,7 +9378,7 @@ func (x *DeleteSsoConnectionResponse) String() string {
 func (*DeleteSsoConnectionResponse) ProtoMessage() {}
 
 func (x *DeleteSsoConnectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[176]
+	mi := &file_slipway_v1_identity_proto_msgTypes[180]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9141,7 +9391,7 @@ func (x *DeleteSsoConnectionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteSsoConnectionResponse.ProtoReflect.Descriptor instead.
 func (*DeleteSsoConnectionResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{176}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{180}
 }
 
 // SAML service-provider details to paste into the identity provider.
@@ -9153,7 +9403,7 @@ type GetSamlServiceProviderRequest struct {
 
 func (x *GetSamlServiceProviderRequest) Reset() {
 	*x = GetSamlServiceProviderRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[177]
+	mi := &file_slipway_v1_identity_proto_msgTypes[181]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9165,7 +9415,7 @@ func (x *GetSamlServiceProviderRequest) String() string {
 func (*GetSamlServiceProviderRequest) ProtoMessage() {}
 
 func (x *GetSamlServiceProviderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[177]
+	mi := &file_slipway_v1_identity_proto_msgTypes[181]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9178,7 +9428,7 @@ func (x *GetSamlServiceProviderRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSamlServiceProviderRequest.ProtoReflect.Descriptor instead.
 func (*GetSamlServiceProviderRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{177}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{181}
 }
 
 type GetSamlServiceProviderResponse struct {
@@ -9193,7 +9443,7 @@ type GetSamlServiceProviderResponse struct {
 
 func (x *GetSamlServiceProviderResponse) Reset() {
 	*x = GetSamlServiceProviderResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[178]
+	mi := &file_slipway_v1_identity_proto_msgTypes[182]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9205,7 +9455,7 @@ func (x *GetSamlServiceProviderResponse) String() string {
 func (*GetSamlServiceProviderResponse) ProtoMessage() {}
 
 func (x *GetSamlServiceProviderResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[178]
+	mi := &file_slipway_v1_identity_proto_msgTypes[182]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9218,7 +9468,7 @@ func (x *GetSamlServiceProviderResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSamlServiceProviderResponse.ProtoReflect.Descriptor instead.
 func (*GetSamlServiceProviderResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{178}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{182}
 }
 
 func (x *GetSamlServiceProviderResponse) GetEntityId() string {
@@ -9266,7 +9516,7 @@ type OrgDomain struct {
 
 func (x *OrgDomain) Reset() {
 	*x = OrgDomain{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[179]
+	mi := &file_slipway_v1_identity_proto_msgTypes[183]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9278,7 +9528,7 @@ func (x *OrgDomain) String() string {
 func (*OrgDomain) ProtoMessage() {}
 
 func (x *OrgDomain) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[179]
+	mi := &file_slipway_v1_identity_proto_msgTypes[183]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9291,7 +9541,7 @@ func (x *OrgDomain) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OrgDomain.ProtoReflect.Descriptor instead.
 func (*OrgDomain) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{179}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{183}
 }
 
 func (x *OrgDomain) GetDomain() string {
@@ -9344,7 +9594,7 @@ type ListOrgDomainsRequest struct {
 
 func (x *ListOrgDomainsRequest) Reset() {
 	*x = ListOrgDomainsRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[180]
+	mi := &file_slipway_v1_identity_proto_msgTypes[184]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9356,7 +9606,7 @@ func (x *ListOrgDomainsRequest) String() string {
 func (*ListOrgDomainsRequest) ProtoMessage() {}
 
 func (x *ListOrgDomainsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[180]
+	mi := &file_slipway_v1_identity_proto_msgTypes[184]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9369,7 +9619,7 @@ func (x *ListOrgDomainsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListOrgDomainsRequest.ProtoReflect.Descriptor instead.
 func (*ListOrgDomainsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{180}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{184}
 }
 
 type ListOrgDomainsResponse struct {
@@ -9381,7 +9631,7 @@ type ListOrgDomainsResponse struct {
 
 func (x *ListOrgDomainsResponse) Reset() {
 	*x = ListOrgDomainsResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[181]
+	mi := &file_slipway_v1_identity_proto_msgTypes[185]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9393,7 +9643,7 @@ func (x *ListOrgDomainsResponse) String() string {
 func (*ListOrgDomainsResponse) ProtoMessage() {}
 
 func (x *ListOrgDomainsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[181]
+	mi := &file_slipway_v1_identity_proto_msgTypes[185]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9406,7 +9656,7 @@ func (x *ListOrgDomainsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListOrgDomainsResponse.ProtoReflect.Descriptor instead.
 func (*ListOrgDomainsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{181}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{185}
 }
 
 func (x *ListOrgDomainsResponse) GetItems() []*OrgDomain {
@@ -9426,7 +9676,7 @@ type AddOrgDomainRequest struct {
 
 func (x *AddOrgDomainRequest) Reset() {
 	*x = AddOrgDomainRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[182]
+	mi := &file_slipway_v1_identity_proto_msgTypes[186]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9438,7 +9688,7 @@ func (x *AddOrgDomainRequest) String() string {
 func (*AddOrgDomainRequest) ProtoMessage() {}
 
 func (x *AddOrgDomainRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[182]
+	mi := &file_slipway_v1_identity_proto_msgTypes[186]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9451,7 +9701,7 @@ func (x *AddOrgDomainRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddOrgDomainRequest.ProtoReflect.Descriptor instead.
 func (*AddOrgDomainRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{182}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{186}
 }
 
 func (x *AddOrgDomainRequest) GetDomain() string {
@@ -9470,7 +9720,7 @@ type AddOrgDomainResponse struct {
 
 func (x *AddOrgDomainResponse) Reset() {
 	*x = AddOrgDomainResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[183]
+	mi := &file_slipway_v1_identity_proto_msgTypes[187]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9482,7 +9732,7 @@ func (x *AddOrgDomainResponse) String() string {
 func (*AddOrgDomainResponse) ProtoMessage() {}
 
 func (x *AddOrgDomainResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[183]
+	mi := &file_slipway_v1_identity_proto_msgTypes[187]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9495,7 +9745,7 @@ func (x *AddOrgDomainResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddOrgDomainResponse.ProtoReflect.Descriptor instead.
 func (*AddOrgDomainResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{183}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{187}
 }
 
 func (x *AddOrgDomainResponse) GetDomain() *OrgDomain {
@@ -9515,7 +9765,7 @@ type ConfirmOrgDomainRequest struct {
 
 func (x *ConfirmOrgDomainRequest) Reset() {
 	*x = ConfirmOrgDomainRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[184]
+	mi := &file_slipway_v1_identity_proto_msgTypes[188]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9527,7 +9777,7 @@ func (x *ConfirmOrgDomainRequest) String() string {
 func (*ConfirmOrgDomainRequest) ProtoMessage() {}
 
 func (x *ConfirmOrgDomainRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[184]
+	mi := &file_slipway_v1_identity_proto_msgTypes[188]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9540,7 +9790,7 @@ func (x *ConfirmOrgDomainRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmOrgDomainRequest.ProtoReflect.Descriptor instead.
 func (*ConfirmOrgDomainRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{184}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{188}
 }
 
 func (x *ConfirmOrgDomainRequest) GetDomain() string {
@@ -9559,7 +9809,7 @@ type ConfirmOrgDomainResponse struct {
 
 func (x *ConfirmOrgDomainResponse) Reset() {
 	*x = ConfirmOrgDomainResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[185]
+	mi := &file_slipway_v1_identity_proto_msgTypes[189]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9571,7 +9821,7 @@ func (x *ConfirmOrgDomainResponse) String() string {
 func (*ConfirmOrgDomainResponse) ProtoMessage() {}
 
 func (x *ConfirmOrgDomainResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[185]
+	mi := &file_slipway_v1_identity_proto_msgTypes[189]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9584,7 +9834,7 @@ func (x *ConfirmOrgDomainResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmOrgDomainResponse.ProtoReflect.Descriptor instead.
 func (*ConfirmOrgDomainResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{185}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{189}
 }
 
 func (x *ConfirmOrgDomainResponse) GetDomain() *OrgDomain {
@@ -9603,7 +9853,7 @@ type DeleteOrgDomainRequest struct {
 
 func (x *DeleteOrgDomainRequest) Reset() {
 	*x = DeleteOrgDomainRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[186]
+	mi := &file_slipway_v1_identity_proto_msgTypes[190]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9615,7 +9865,7 @@ func (x *DeleteOrgDomainRequest) String() string {
 func (*DeleteOrgDomainRequest) ProtoMessage() {}
 
 func (x *DeleteOrgDomainRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[186]
+	mi := &file_slipway_v1_identity_proto_msgTypes[190]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9628,7 +9878,7 @@ func (x *DeleteOrgDomainRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteOrgDomainRequest.ProtoReflect.Descriptor instead.
 func (*DeleteOrgDomainRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{186}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{190}
 }
 
 func (x *DeleteOrgDomainRequest) GetDomain() string {
@@ -9646,7 +9896,7 @@ type DeleteOrgDomainResponse struct {
 
 func (x *DeleteOrgDomainResponse) Reset() {
 	*x = DeleteOrgDomainResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[187]
+	mi := &file_slipway_v1_identity_proto_msgTypes[191]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9658,7 +9908,7 @@ func (x *DeleteOrgDomainResponse) String() string {
 func (*DeleteOrgDomainResponse) ProtoMessage() {}
 
 func (x *DeleteOrgDomainResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[187]
+	mi := &file_slipway_v1_identity_proto_msgTypes[191]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9671,7 +9921,7 @@ func (x *DeleteOrgDomainResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteOrgDomainResponse.ProtoReflect.Descriptor instead.
 func (*DeleteOrgDomainResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{187}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{191}
 }
 
 type ScimToken struct {
@@ -9688,7 +9938,7 @@ type ScimToken struct {
 
 func (x *ScimToken) Reset() {
 	*x = ScimToken{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[188]
+	mi := &file_slipway_v1_identity_proto_msgTypes[192]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9700,7 +9950,7 @@ func (x *ScimToken) String() string {
 func (*ScimToken) ProtoMessage() {}
 
 func (x *ScimToken) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[188]
+	mi := &file_slipway_v1_identity_proto_msgTypes[192]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9713,7 +9963,7 @@ func (x *ScimToken) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScimToken.ProtoReflect.Descriptor instead.
 func (*ScimToken) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{188}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{192}
 }
 
 func (x *ScimToken) GetId() string {
@@ -9766,7 +10016,7 @@ type ListScimTokensRequest struct {
 
 func (x *ListScimTokensRequest) Reset() {
 	*x = ListScimTokensRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[189]
+	mi := &file_slipway_v1_identity_proto_msgTypes[193]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9778,7 +10028,7 @@ func (x *ListScimTokensRequest) String() string {
 func (*ListScimTokensRequest) ProtoMessage() {}
 
 func (x *ListScimTokensRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[189]
+	mi := &file_slipway_v1_identity_proto_msgTypes[193]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9791,7 +10041,7 @@ func (x *ListScimTokensRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListScimTokensRequest.ProtoReflect.Descriptor instead.
 func (*ListScimTokensRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{189}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{193}
 }
 
 type ListScimTokensResponse struct {
@@ -9804,7 +10054,7 @@ type ListScimTokensResponse struct {
 
 func (x *ListScimTokensResponse) Reset() {
 	*x = ListScimTokensResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[190]
+	mi := &file_slipway_v1_identity_proto_msgTypes[194]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9816,7 +10066,7 @@ func (x *ListScimTokensResponse) String() string {
 func (*ListScimTokensResponse) ProtoMessage() {}
 
 func (x *ListScimTokensResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[190]
+	mi := &file_slipway_v1_identity_proto_msgTypes[194]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9829,7 +10079,7 @@ func (x *ListScimTokensResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListScimTokensResponse.ProtoReflect.Descriptor instead.
 func (*ListScimTokensResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{190}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{194}
 }
 
 func (x *ListScimTokensResponse) GetItems() []*ScimToken {
@@ -9856,7 +10106,7 @@ type CreateScimTokenRequest struct {
 
 func (x *CreateScimTokenRequest) Reset() {
 	*x = CreateScimTokenRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[191]
+	mi := &file_slipway_v1_identity_proto_msgTypes[195]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9868,7 +10118,7 @@ func (x *CreateScimTokenRequest) String() string {
 func (*CreateScimTokenRequest) ProtoMessage() {}
 
 func (x *CreateScimTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[191]
+	mi := &file_slipway_v1_identity_proto_msgTypes[195]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9881,7 +10131,7 @@ func (x *CreateScimTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateScimTokenRequest.ProtoReflect.Descriptor instead.
 func (*CreateScimTokenRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{191}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{195}
 }
 
 func (x *CreateScimTokenRequest) GetName() string {
@@ -9908,7 +10158,7 @@ type CreateScimTokenResponse struct {
 
 func (x *CreateScimTokenResponse) Reset() {
 	*x = CreateScimTokenResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[192]
+	mi := &file_slipway_v1_identity_proto_msgTypes[196]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9920,7 +10170,7 @@ func (x *CreateScimTokenResponse) String() string {
 func (*CreateScimTokenResponse) ProtoMessage() {}
 
 func (x *CreateScimTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[192]
+	mi := &file_slipway_v1_identity_proto_msgTypes[196]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9933,7 +10183,7 @@ func (x *CreateScimTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateScimTokenResponse.ProtoReflect.Descriptor instead.
 func (*CreateScimTokenResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{192}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{196}
 }
 
 func (x *CreateScimTokenResponse) GetToken() *ScimToken {
@@ -9959,7 +10209,7 @@ type RevokeScimTokenRequest struct {
 
 func (x *RevokeScimTokenRequest) Reset() {
 	*x = RevokeScimTokenRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[193]
+	mi := &file_slipway_v1_identity_proto_msgTypes[197]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9971,7 +10221,7 @@ func (x *RevokeScimTokenRequest) String() string {
 func (*RevokeScimTokenRequest) ProtoMessage() {}
 
 func (x *RevokeScimTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[193]
+	mi := &file_slipway_v1_identity_proto_msgTypes[197]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9984,7 +10234,7 @@ func (x *RevokeScimTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeScimTokenRequest.ProtoReflect.Descriptor instead.
 func (*RevokeScimTokenRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{193}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{197}
 }
 
 func (x *RevokeScimTokenRequest) GetId() string {
@@ -10002,7 +10252,7 @@ type RevokeScimTokenResponse struct {
 
 func (x *RevokeScimTokenResponse) Reset() {
 	*x = RevokeScimTokenResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[194]
+	mi := &file_slipway_v1_identity_proto_msgTypes[198]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10014,7 +10264,7 @@ func (x *RevokeScimTokenResponse) String() string {
 func (*RevokeScimTokenResponse) ProtoMessage() {}
 
 func (x *RevokeScimTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[194]
+	mi := &file_slipway_v1_identity_proto_msgTypes[198]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10027,7 +10277,7 @@ func (x *RevokeScimTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeScimTokenResponse.ProtoReflect.Descriptor instead.
 func (*RevokeScimTokenResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{194}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{198}
 }
 
 type GetBadgeKeyRequest struct {
@@ -10039,7 +10289,7 @@ type GetBadgeKeyRequest struct {
 
 func (x *GetBadgeKeyRequest) Reset() {
 	*x = GetBadgeKeyRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[195]
+	mi := &file_slipway_v1_identity_proto_msgTypes[199]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10051,7 +10301,7 @@ func (x *GetBadgeKeyRequest) String() string {
 func (*GetBadgeKeyRequest) ProtoMessage() {}
 
 func (x *GetBadgeKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[195]
+	mi := &file_slipway_v1_identity_proto_msgTypes[199]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10064,7 +10314,7 @@ func (x *GetBadgeKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBadgeKeyRequest.ProtoReflect.Descriptor instead.
 func (*GetBadgeKeyRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{195}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{199}
 }
 
 func (x *GetBadgeKeyRequest) GetProjectId() string {
@@ -10083,7 +10333,7 @@ type GetBadgeKeyResponse struct {
 
 func (x *GetBadgeKeyResponse) Reset() {
 	*x = GetBadgeKeyResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[196]
+	mi := &file_slipway_v1_identity_proto_msgTypes[200]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10095,7 +10345,7 @@ func (x *GetBadgeKeyResponse) String() string {
 func (*GetBadgeKeyResponse) ProtoMessage() {}
 
 func (x *GetBadgeKeyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[196]
+	mi := &file_slipway_v1_identity_proto_msgTypes[200]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10108,7 +10358,7 @@ func (x *GetBadgeKeyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBadgeKeyResponse.ProtoReflect.Descriptor instead.
 func (*GetBadgeKeyResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{196}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{200}
 }
 
 func (x *GetBadgeKeyResponse) GetKey() string {
@@ -10127,7 +10377,7 @@ type RegenerateBadgeKeyRequest struct {
 
 func (x *RegenerateBadgeKeyRequest) Reset() {
 	*x = RegenerateBadgeKeyRequest{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[197]
+	mi := &file_slipway_v1_identity_proto_msgTypes[201]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10139,7 +10389,7 @@ func (x *RegenerateBadgeKeyRequest) String() string {
 func (*RegenerateBadgeKeyRequest) ProtoMessage() {}
 
 func (x *RegenerateBadgeKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[197]
+	mi := &file_slipway_v1_identity_proto_msgTypes[201]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10152,7 +10402,7 @@ func (x *RegenerateBadgeKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegenerateBadgeKeyRequest.ProtoReflect.Descriptor instead.
 func (*RegenerateBadgeKeyRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{197}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{201}
 }
 
 func (x *RegenerateBadgeKeyRequest) GetProjectId() string {
@@ -10171,7 +10421,7 @@ type RegenerateBadgeKeyResponse struct {
 
 func (x *RegenerateBadgeKeyResponse) Reset() {
 	*x = RegenerateBadgeKeyResponse{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[198]
+	mi := &file_slipway_v1_identity_proto_msgTypes[202]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10183,7 +10433,7 @@ func (x *RegenerateBadgeKeyResponse) String() string {
 func (*RegenerateBadgeKeyResponse) ProtoMessage() {}
 
 func (x *RegenerateBadgeKeyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[198]
+	mi := &file_slipway_v1_identity_proto_msgTypes[202]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10196,7 +10446,7 @@ func (x *RegenerateBadgeKeyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegenerateBadgeKeyResponse.ProtoReflect.Descriptor instead.
 func (*RegenerateBadgeKeyResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{198}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{202}
 }
 
 func (x *RegenerateBadgeKeyResponse) GetKey() string {
@@ -10218,7 +10468,7 @@ type ListAuthProvidersResponse_Provider struct {
 
 func (x *ListAuthProvidersResponse_Provider) Reset() {
 	*x = ListAuthProvidersResponse_Provider{}
-	mi := &file_slipway_v1_identity_proto_msgTypes[199]
+	mi := &file_slipway_v1_identity_proto_msgTypes[203]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10230,7 +10480,7 @@ func (x *ListAuthProvidersResponse_Provider) String() string {
 func (*ListAuthProvidersResponse_Provider) ProtoMessage() {}
 
 func (x *ListAuthProvidersResponse_Provider) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_identity_proto_msgTypes[199]
+	mi := &file_slipway_v1_identity_proto_msgTypes[203]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10243,7 +10493,7 @@ func (x *ListAuthProvidersResponse_Provider) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ListAuthProvidersResponse_Provider.ProtoReflect.Descriptor instead.
 func (*ListAuthProvidersResponse_Provider) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{53, 0}
+	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{55, 0}
 }
 
 func (x *ListAuthProvidersResponse_Provider) GetId() string {
@@ -10279,7 +10529,7 @@ var File_slipway_v1_identity_proto protoreflect.FileDescriptor
 const file_slipway_v1_identity_proto_rawDesc = "" +
 	"\n" +
 	"\x19slipway/v1/identity.proto\x12\n" +
-	"slipway.v1\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17slipway/v1/common.proto\"\xa6\x02\n" +
+	"slipway.v1\x1a\x1egoogle/protobuf/duration.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17slipway/v1/common.proto\"\xa6\x02\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x12\n" +
@@ -10374,7 +10624,7 @@ const file_slipway_v1_identity_proto_rawDesc = "" +
 	"\n" +
 	"user_agent\x18\n" +
 	" \x01(\tR\tuserAgent\"\x0f\n" +
-	"\rWhoAmIRequest\"\x89\x03\n" +
+	"\rWhoAmIRequest\"\xd2\x03\n" +
 	"\x0eWhoAmIResponse\x12$\n" +
 	"\x04user\x18\x01 \x01(\v2\x10.slipway.v1.UserR\x04user\x12>\n" +
 	"\rorganizations\x18\x02 \x03(\v2\x18.slipway.v1.OrganizationR\rorganizations\x129\n" +
@@ -10385,7 +10635,9 @@ const file_slipway_v1_identity_proto_rawDesc = "" +
 	"\x0esession_method\x18\x06 \x01(\tR\rsessionMethod\x12!\n" +
 	"\fmfa_verified\x18\a \x01(\bR\vmfaVerified\x12(\n" +
 	"\x10org_requires_mfa\x18\b \x01(\bR\x0eorgRequiresMfa\x12,\n" +
-	"\x12mfa_setup_required\x18\t \x01(\bR\x10mfaSetupRequired\"G\n" +
+	"\x12mfa_setup_required\x18\t \x01(\bR\x10mfaSetupRequired\x12G\n" +
+	"\x12org_deletion_grace\x18\n" +
+	" \x01(\v2\x19.google.protobuf.DurationR\x10orgDeletionGrace\"G\n" +
 	"\x18ListOrganizationsRequest\x12+\n" +
 	"\x04page\x18\x01 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\"y\n" +
 	"\x19ListOrganizationsResponse\x12.\n" +
@@ -10405,7 +10657,15 @@ const file_slipway_v1_identity_proto_rawDesc = "" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
 	"updateMask\"Z\n" +
 	"\x1aUpdateOrganizationResponse\x12<\n" +
-	"\forganization\x18\x01 \x01(\v2\x18.slipway.v1.OrganizationR\forganization\"B\n" +
+	"\forganization\x18\x01 \x01(\v2\x18.slipway.v1.OrganizationR\forganization\"\xa6\x01\n" +
+	"\x19DeleteOrganizationRequest\x12'\n" +
+	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12!\n" +
+	"\fconfirm_slug\x18\x02 \x01(\tR\vconfirmSlug\x12)\n" +
+	"\x10current_password\x18\x03 \x01(\tR\x0fcurrentPassword\x12\x12\n" +
+	"\x04code\x18\x04 \x01(\tR\x04code\"Y\n" +
+	"\x1aDeleteOrganizationResponse\x12;\n" +
+	"\vpurge_after\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"purgeAfter\"B\n" +
 	"\x13ListProjectsRequest\x12+\n" +
 	"\x04page\x18\x01 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\"o\n" +
 	"\x14ListProjectsResponse\x12)\n" +
@@ -10518,9 +10778,11 @@ const file_slipway_v1_identity_proto_rawDesc = "" +
 	"\tstart_url\x18\x03 \x01(\tR\bstartUrl\x12\x12\n" +
 	"\x04kind\x18\x04 \x01(\tR\x04kind\"*\n" +
 	"\x12VerifyEmailRequest\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\";\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"\x96\x01\n" +
 	"\x13VerifyEmailResponse\x12$\n" +
-	"\x04user\x18\x01 \x01(\v2\x10.slipway.v1.UserR\x04user\"\x1b\n" +
+	"\x04user\x18\x01 \x01(\v2\x10.slipway.v1.UserR\x04user\x12<\n" +
+	"\forganization\x18\x02 \x01(\v2\x18.slipway.v1.OrganizationR\forganization\x12\x1b\n" +
+	"\tsigned_in\x18\x03 \x01(\bR\bsignedIn\"\x1b\n" +
 	"\x19ResendVerificationRequest\"\x1c\n" +
 	"\x1aResendVerificationResponse\"3\n" +
 	"\x1bRequestPasswordResetRequest\x12\x14\n" +
@@ -10541,7 +10803,12 @@ const file_slipway_v1_identity_proto_rawDesc = "" +
 	"\x15UpdateProfileResponse\x12$\n" +
 	"\x04user\x18\x01 \x01(\v2\x10.slipway.v1.UserR\x04user\"\x1a\n" +
 	"\x18SignOutEverywhereRequest\"\x1b\n" +
-	"\x19SignOutEverywhereResponse\"D\n" +
+	"\x19SignOutEverywhereResponse\"z\n" +
+	"\x14DeleteAccountRequest\x12#\n" +
+	"\rconfirm_email\x18\x01 \x01(\tR\fconfirmEmail\x12)\n" +
+	"\x10current_password\x18\x02 \x01(\tR\x0fcurrentPassword\x12\x12\n" +
+	"\x04code\x18\x03 \x01(\tR\x04code\"\x17\n" +
+	"\x15DeleteAccountResponse\"D\n" +
 	"\x19SwitchOrganizationRequest\x12'\n" +
 	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\"Z\n" +
 	"\x1aSwitchOrganizationResponse\x12<\n" +
@@ -10946,7 +11213,7 @@ const file_slipway_v1_identity_proto_rawDesc = "" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\".\n" +
 	"\x1aRegenerateBadgeKeyResponse\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key2\xb8\x1f\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key2\xf3 \n" +
 	"\x0fIdentityService\x12?\n" +
 	"\x06WhoAmI\x12\x19.slipway.v1.WhoAmIRequest\x1a\x1a.slipway.v1.WhoAmIResponse\x12<\n" +
 	"\x05Login\x12\x18.slipway.v1.LoginRequest\x1a\x19.slipway.v1.LoginResponse\x12?\n" +
@@ -10956,7 +11223,8 @@ const file_slipway_v1_identity_proto_rawDesc = "" +
 	"\x11ListOrganizations\x12$.slipway.v1.ListOrganizationsRequest\x1a%.slipway.v1.ListOrganizationsResponse\x12c\n" +
 	"\x12CreateOrganization\x12%.slipway.v1.CreateOrganizationRequest\x1a&.slipway.v1.CreateOrganizationResponse\x12Z\n" +
 	"\x0fGetOrganization\x12\".slipway.v1.GetOrganizationRequest\x1a#.slipway.v1.GetOrganizationResponse\x12c\n" +
-	"\x12UpdateOrganization\x12%.slipway.v1.UpdateOrganizationRequest\x1a&.slipway.v1.UpdateOrganizationResponse\x12N\n" +
+	"\x12UpdateOrganization\x12%.slipway.v1.UpdateOrganizationRequest\x1a&.slipway.v1.UpdateOrganizationResponse\x12c\n" +
+	"\x12DeleteOrganization\x12%.slipway.v1.DeleteOrganizationRequest\x1a&.slipway.v1.DeleteOrganizationResponse\x12N\n" +
 	"\vListMembers\x12\x1e.slipway.v1.ListMembersRequest\x1a\x1f.slipway.v1.ListMembersResponse\x12Q\n" +
 	"\fInviteMember\x12\x1f.slipway.v1.InviteMemberRequest\x1a .slipway.v1.InviteMemberResponse\x12]\n" +
 	"\x10UpdateMemberRole\x12#.slipway.v1.UpdateMemberRoleRequest\x1a$.slipway.v1.UpdateMemberRoleResponse\x12Q\n" +
@@ -10972,7 +11240,8 @@ const file_slipway_v1_identity_proto_rawDesc = "" +
 	"\rResetPassword\x12 .slipway.v1.ResetPasswordRequest\x1a!.slipway.v1.ResetPasswordResponse\x12W\n" +
 	"\x0eChangePassword\x12!.slipway.v1.ChangePasswordRequest\x1a\".slipway.v1.ChangePasswordResponse\x12T\n" +
 	"\rUpdateProfile\x12 .slipway.v1.UpdateProfileRequest\x1a!.slipway.v1.UpdateProfileResponse\x12`\n" +
-	"\x11SignOutEverywhere\x12$.slipway.v1.SignOutEverywhereRequest\x1a%.slipway.v1.SignOutEverywhereResponse\x12c\n" +
+	"\x11SignOutEverywhere\x12$.slipway.v1.SignOutEverywhereRequest\x1a%.slipway.v1.SignOutEverywhereResponse\x12T\n" +
+	"\rDeleteAccount\x12 .slipway.v1.DeleteAccountRequest\x1a!.slipway.v1.DeleteAccountResponse\x12c\n" +
 	"\x12SwitchOrganization\x12%.slipway.v1.SwitchOrganizationRequest\x1a&.slipway.v1.SwitchOrganizationResponse\x12i\n" +
 	"\x14ListLinkedIdentities\x12'.slipway.v1.ListLinkedIdentitiesRequest\x1a(.slipway.v1.ListLinkedIdentitiesResponse\x12W\n" +
 	"\x0eUnlinkIdentity\x12!.slipway.v1.UnlinkIdentityRequest\x1a\".slipway.v1.UnlinkIdentityResponse\x12Q\n" +
@@ -11069,7 +11338,7 @@ func file_slipway_v1_identity_proto_rawDescGZIP() []byte {
 	return file_slipway_v1_identity_proto_rawDescData
 }
 
-var file_slipway_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 201)
+var file_slipway_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 205)
 var file_slipway_v1_identity_proto_goTypes = []any{
 	(*User)(nil),                               // 0: slipway.v1.User
 	(*Organization)(nil),                       // 1: slipway.v1.Organization
@@ -11089,508 +11358,520 @@ var file_slipway_v1_identity_proto_goTypes = []any{
 	(*GetOrganizationResponse)(nil),            // 15: slipway.v1.GetOrganizationResponse
 	(*UpdateOrganizationRequest)(nil),          // 16: slipway.v1.UpdateOrganizationRequest
 	(*UpdateOrganizationResponse)(nil),         // 17: slipway.v1.UpdateOrganizationResponse
-	(*ListProjectsRequest)(nil),                // 18: slipway.v1.ListProjectsRequest
-	(*ListProjectsResponse)(nil),               // 19: slipway.v1.ListProjectsResponse
-	(*CreateProjectRequest)(nil),               // 20: slipway.v1.CreateProjectRequest
-	(*CreateProjectResponse)(nil),              // 21: slipway.v1.CreateProjectResponse
-	(*GetProjectRequest)(nil),                  // 22: slipway.v1.GetProjectRequest
-	(*GetProjectResponse)(nil),                 // 23: slipway.v1.GetProjectResponse
-	(*UpdateProjectRequest)(nil),               // 24: slipway.v1.UpdateProjectRequest
-	(*UpdateProjectResponse)(nil),              // 25: slipway.v1.UpdateProjectResponse
-	(*DeleteProjectRequest)(nil),               // 26: slipway.v1.DeleteProjectRequest
-	(*DeleteProjectResponse)(nil),              // 27: slipway.v1.DeleteProjectResponse
-	(*ListMembersRequest)(nil),                 // 28: slipway.v1.ListMembersRequest
-	(*ListMembersResponse)(nil),                // 29: slipway.v1.ListMembersResponse
-	(*InviteMemberRequest)(nil),                // 30: slipway.v1.InviteMemberRequest
-	(*InviteMemberResponse)(nil),               // 31: slipway.v1.InviteMemberResponse
-	(*UpdateMemberRoleRequest)(nil),            // 32: slipway.v1.UpdateMemberRoleRequest
-	(*UpdateMemberRoleResponse)(nil),           // 33: slipway.v1.UpdateMemberRoleResponse
-	(*RemoveMemberRequest)(nil),                // 34: slipway.v1.RemoveMemberRequest
-	(*RemoveMemberResponse)(nil),               // 35: slipway.v1.RemoveMemberResponse
-	(*ListRolesRequest)(nil),                   // 36: slipway.v1.ListRolesRequest
-	(*ListRolesResponse)(nil),                  // 37: slipway.v1.ListRolesResponse
-	(*ListApiTokensRequest)(nil),               // 38: slipway.v1.ListApiTokensRequest
-	(*ListApiTokensResponse)(nil),              // 39: slipway.v1.ListApiTokensResponse
-	(*CreateApiTokenRequest)(nil),              // 40: slipway.v1.CreateApiTokenRequest
-	(*CreateApiTokenResponse)(nil),             // 41: slipway.v1.CreateApiTokenResponse
-	(*RevokeApiTokenRequest)(nil),              // 42: slipway.v1.RevokeApiTokenRequest
-	(*RevokeApiTokenResponse)(nil),             // 43: slipway.v1.RevokeApiTokenResponse
-	(*ListAuditEventsRequest)(nil),             // 44: slipway.v1.ListAuditEventsRequest
-	(*ListAuditEventsResponse)(nil),            // 45: slipway.v1.ListAuditEventsResponse
-	(*LoginRequest)(nil),                       // 46: slipway.v1.LoginRequest
-	(*LoginResponse)(nil),                      // 47: slipway.v1.LoginResponse
-	(*LogoutRequest)(nil),                      // 48: slipway.v1.LogoutRequest
-	(*LogoutResponse)(nil),                     // 49: slipway.v1.LogoutResponse
-	(*SignupRequest)(nil),                      // 50: slipway.v1.SignupRequest
-	(*SignupResponse)(nil),                     // 51: slipway.v1.SignupResponse
-	(*ListAuthProvidersRequest)(nil),           // 52: slipway.v1.ListAuthProvidersRequest
-	(*ListAuthProvidersResponse)(nil),          // 53: slipway.v1.ListAuthProvidersResponse
-	(*VerifyEmailRequest)(nil),                 // 54: slipway.v1.VerifyEmailRequest
-	(*VerifyEmailResponse)(nil),                // 55: slipway.v1.VerifyEmailResponse
-	(*ResendVerificationRequest)(nil),          // 56: slipway.v1.ResendVerificationRequest
-	(*ResendVerificationResponse)(nil),         // 57: slipway.v1.ResendVerificationResponse
-	(*RequestPasswordResetRequest)(nil),        // 58: slipway.v1.RequestPasswordResetRequest
-	(*RequestPasswordResetResponse)(nil),       // 59: slipway.v1.RequestPasswordResetResponse
-	(*ResetPasswordRequest)(nil),               // 60: slipway.v1.ResetPasswordRequest
-	(*ResetPasswordResponse)(nil),              // 61: slipway.v1.ResetPasswordResponse
-	(*ChangePasswordRequest)(nil),              // 62: slipway.v1.ChangePasswordRequest
-	(*ChangePasswordResponse)(nil),             // 63: slipway.v1.ChangePasswordResponse
-	(*UpdateProfileRequest)(nil),               // 64: slipway.v1.UpdateProfileRequest
-	(*UpdateProfileResponse)(nil),              // 65: slipway.v1.UpdateProfileResponse
-	(*SignOutEverywhereRequest)(nil),           // 66: slipway.v1.SignOutEverywhereRequest
-	(*SignOutEverywhereResponse)(nil),          // 67: slipway.v1.SignOutEverywhereResponse
-	(*SwitchOrganizationRequest)(nil),          // 68: slipway.v1.SwitchOrganizationRequest
-	(*SwitchOrganizationResponse)(nil),         // 69: slipway.v1.SwitchOrganizationResponse
-	(*LinkedIdentity)(nil),                     // 70: slipway.v1.LinkedIdentity
-	(*ListLinkedIdentitiesRequest)(nil),        // 71: slipway.v1.ListLinkedIdentitiesRequest
-	(*ListLinkedIdentitiesResponse)(nil),       // 72: slipway.v1.ListLinkedIdentitiesResponse
-	(*UnlinkIdentityRequest)(nil),              // 73: slipway.v1.UnlinkIdentityRequest
-	(*UnlinkIdentityResponse)(nil),             // 74: slipway.v1.UnlinkIdentityResponse
-	(*GetMfaStatusRequest)(nil),                // 75: slipway.v1.GetMfaStatusRequest
-	(*GetMfaStatusResponse)(nil),               // 76: slipway.v1.GetMfaStatusResponse
-	(*BeginTotpEnrollmentRequest)(nil),         // 77: slipway.v1.BeginTotpEnrollmentRequest
-	(*BeginTotpEnrollmentResponse)(nil),        // 78: slipway.v1.BeginTotpEnrollmentResponse
-	(*ConfirmTotpEnrollmentRequest)(nil),       // 79: slipway.v1.ConfirmTotpEnrollmentRequest
-	(*ConfirmTotpEnrollmentResponse)(nil),      // 80: slipway.v1.ConfirmTotpEnrollmentResponse
-	(*RegenerateRecoveryCodesRequest)(nil),     // 81: slipway.v1.RegenerateRecoveryCodesRequest
-	(*RegenerateRecoveryCodesResponse)(nil),    // 82: slipway.v1.RegenerateRecoveryCodesResponse
-	(*DisableMfaRequest)(nil),                  // 83: slipway.v1.DisableMfaRequest
-	(*DisableMfaResponse)(nil),                 // 84: slipway.v1.DisableMfaResponse
-	(*WebAuthnCredential)(nil),                 // 85: slipway.v1.WebAuthnCredential
-	(*ListWebAuthnCredentialsRequest)(nil),     // 86: slipway.v1.ListWebAuthnCredentialsRequest
-	(*ListWebAuthnCredentialsResponse)(nil),    // 87: slipway.v1.ListWebAuthnCredentialsResponse
-	(*BeginWebAuthnRegistrationRequest)(nil),   // 88: slipway.v1.BeginWebAuthnRegistrationRequest
-	(*BeginWebAuthnRegistrationResponse)(nil),  // 89: slipway.v1.BeginWebAuthnRegistrationResponse
-	(*FinishWebAuthnRegistrationRequest)(nil),  // 90: slipway.v1.FinishWebAuthnRegistrationRequest
-	(*FinishWebAuthnRegistrationResponse)(nil), // 91: slipway.v1.FinishWebAuthnRegistrationResponse
-	(*DeleteWebAuthnCredentialRequest)(nil),    // 92: slipway.v1.DeleteWebAuthnCredentialRequest
-	(*DeleteWebAuthnCredentialResponse)(nil),   // 93: slipway.v1.DeleteWebAuthnCredentialResponse
-	(*BeginWebAuthnLoginRequest)(nil),          // 94: slipway.v1.BeginWebAuthnLoginRequest
-	(*BeginWebAuthnLoginResponse)(nil),         // 95: slipway.v1.BeginWebAuthnLoginResponse
-	(*FinishWebAuthnLoginRequest)(nil),         // 96: slipway.v1.FinishWebAuthnLoginRequest
-	(*FinishWebAuthnLoginResponse)(nil),        // 97: slipway.v1.FinishWebAuthnLoginResponse
-	(*Invitation)(nil),                         // 98: slipway.v1.Invitation
-	(*GetInvitationRequest)(nil),               // 99: slipway.v1.GetInvitationRequest
-	(*GetInvitationResponse)(nil),              // 100: slipway.v1.GetInvitationResponse
-	(*AcceptInvitationRequest)(nil),            // 101: slipway.v1.AcceptInvitationRequest
-	(*AcceptInvitationResponse)(nil),           // 102: slipway.v1.AcceptInvitationResponse
-	(*ListInvitationsRequest)(nil),             // 103: slipway.v1.ListInvitationsRequest
-	(*ListInvitationsResponse)(nil),            // 104: slipway.v1.ListInvitationsResponse
-	(*RevokeInvitationRequest)(nil),            // 105: slipway.v1.RevokeInvitationRequest
-	(*RevokeInvitationResponse)(nil),           // 106: slipway.v1.RevokeInvitationResponse
-	(*Team)(nil),                               // 107: slipway.v1.Team
-	(*TeamMember)(nil),                         // 108: slipway.v1.TeamMember
-	(*ListTeamsRequest)(nil),                   // 109: slipway.v1.ListTeamsRequest
-	(*ListTeamsResponse)(nil),                  // 110: slipway.v1.ListTeamsResponse
-	(*CreateTeamRequest)(nil),                  // 111: slipway.v1.CreateTeamRequest
-	(*CreateTeamResponse)(nil),                 // 112: slipway.v1.CreateTeamResponse
-	(*GetTeamRequest)(nil),                     // 113: slipway.v1.GetTeamRequest
-	(*GetTeamResponse)(nil),                    // 114: slipway.v1.GetTeamResponse
-	(*UpdateTeamRequest)(nil),                  // 115: slipway.v1.UpdateTeamRequest
-	(*UpdateTeamResponse)(nil),                 // 116: slipway.v1.UpdateTeamResponse
-	(*DeleteTeamRequest)(nil),                  // 117: slipway.v1.DeleteTeamRequest
-	(*DeleteTeamResponse)(nil),                 // 118: slipway.v1.DeleteTeamResponse
-	(*ListTeamMembersRequest)(nil),             // 119: slipway.v1.ListTeamMembersRequest
-	(*ListTeamMembersResponse)(nil),            // 120: slipway.v1.ListTeamMembersResponse
-	(*AddTeamMemberRequest)(nil),               // 121: slipway.v1.AddTeamMemberRequest
-	(*AddTeamMemberResponse)(nil),              // 122: slipway.v1.AddTeamMemberResponse
-	(*RemoveTeamMemberRequest)(nil),            // 123: slipway.v1.RemoveTeamMemberRequest
-	(*RemoveTeamMemberResponse)(nil),           // 124: slipway.v1.RemoveTeamMemberResponse
-	(*PermissionInfo)(nil),                     // 125: slipway.v1.PermissionInfo
-	(*RoleBinding)(nil),                        // 126: slipway.v1.RoleBinding
-	(*ListPermissionsRequest)(nil),             // 127: slipway.v1.ListPermissionsRequest
-	(*ListPermissionsResponse)(nil),            // 128: slipway.v1.ListPermissionsResponse
-	(*CreateRoleRequest)(nil),                  // 129: slipway.v1.CreateRoleRequest
-	(*CreateRoleResponse)(nil),                 // 130: slipway.v1.CreateRoleResponse
-	(*GetRoleRequest)(nil),                     // 131: slipway.v1.GetRoleRequest
-	(*GetRoleResponse)(nil),                    // 132: slipway.v1.GetRoleResponse
-	(*UpdateRoleRequest)(nil),                  // 133: slipway.v1.UpdateRoleRequest
-	(*UpdateRoleResponse)(nil),                 // 134: slipway.v1.UpdateRoleResponse
-	(*DeleteRoleRequest)(nil),                  // 135: slipway.v1.DeleteRoleRequest
-	(*DeleteRoleResponse)(nil),                 // 136: slipway.v1.DeleteRoleResponse
-	(*ListRoleBindingsRequest)(nil),            // 137: slipway.v1.ListRoleBindingsRequest
-	(*ListRoleBindingsResponse)(nil),           // 138: slipway.v1.ListRoleBindingsResponse
-	(*CreateRoleBindingRequest)(nil),           // 139: slipway.v1.CreateRoleBindingRequest
-	(*CreateRoleBindingResponse)(nil),          // 140: slipway.v1.CreateRoleBindingResponse
-	(*DeleteRoleBindingRequest)(nil),           // 141: slipway.v1.DeleteRoleBindingRequest
-	(*DeleteRoleBindingResponse)(nil),          // 142: slipway.v1.DeleteRoleBindingResponse
-	(*CheckPermissionsRequest)(nil),            // 143: slipway.v1.CheckPermissionsRequest
-	(*CheckPermissionsResponse)(nil),           // 144: slipway.v1.CheckPermissionsResponse
-	(*ServiceAccount)(nil),                     // 145: slipway.v1.ServiceAccount
-	(*ListServiceAccountsRequest)(nil),         // 146: slipway.v1.ListServiceAccountsRequest
-	(*ListServiceAccountsResponse)(nil),        // 147: slipway.v1.ListServiceAccountsResponse
-	(*CreateServiceAccountRequest)(nil),        // 148: slipway.v1.CreateServiceAccountRequest
-	(*CreateServiceAccountResponse)(nil),       // 149: slipway.v1.CreateServiceAccountResponse
-	(*GetServiceAccountRequest)(nil),           // 150: slipway.v1.GetServiceAccountRequest
-	(*GetServiceAccountResponse)(nil),          // 151: slipway.v1.GetServiceAccountResponse
-	(*UpdateServiceAccountRequest)(nil),        // 152: slipway.v1.UpdateServiceAccountRequest
-	(*UpdateServiceAccountResponse)(nil),       // 153: slipway.v1.UpdateServiceAccountResponse
-	(*DeleteServiceAccountRequest)(nil),        // 154: slipway.v1.DeleteServiceAccountRequest
-	(*DeleteServiceAccountResponse)(nil),       // 155: slipway.v1.DeleteServiceAccountResponse
-	(*ListServiceAccountTokensRequest)(nil),    // 156: slipway.v1.ListServiceAccountTokensRequest
-	(*ListServiceAccountTokensResponse)(nil),   // 157: slipway.v1.ListServiceAccountTokensResponse
-	(*CreateServiceAccountTokenRequest)(nil),   // 158: slipway.v1.CreateServiceAccountTokenRequest
-	(*CreateServiceAccountTokenResponse)(nil),  // 159: slipway.v1.CreateServiceAccountTokenResponse
-	(*RevokeServiceAccountTokenRequest)(nil),   // 160: slipway.v1.RevokeServiceAccountTokenRequest
-	(*RevokeServiceAccountTokenResponse)(nil),  // 161: slipway.v1.RevokeServiceAccountTokenResponse
-	(*QueryAuditEventsRequest)(nil),            // 162: slipway.v1.QueryAuditEventsRequest
-	(*QueryAuditEventsResponse)(nil),           // 163: slipway.v1.QueryAuditEventsResponse
-	(*VerifyAuditChainRequest)(nil),            // 164: slipway.v1.VerifyAuditChainRequest
-	(*VerifyAuditChainResponse)(nil),           // 165: slipway.v1.VerifyAuditChainResponse
-	(*GetAuditRetentionRequest)(nil),           // 166: slipway.v1.GetAuditRetentionRequest
-	(*GetAuditRetentionResponse)(nil),          // 167: slipway.v1.GetAuditRetentionResponse
-	(*SsoConnection)(nil),                      // 168: slipway.v1.SsoConnection
-	(*ListSsoConnectionsRequest)(nil),          // 169: slipway.v1.ListSsoConnectionsRequest
-	(*ListSsoConnectionsResponse)(nil),         // 170: slipway.v1.ListSsoConnectionsResponse
-	(*CreateSsoConnectionRequest)(nil),         // 171: slipway.v1.CreateSsoConnectionRequest
-	(*CreateSsoConnectionResponse)(nil),        // 172: slipway.v1.CreateSsoConnectionResponse
-	(*UpdateSsoConnectionRequest)(nil),         // 173: slipway.v1.UpdateSsoConnectionRequest
-	(*UpdateSsoConnectionResponse)(nil),        // 174: slipway.v1.UpdateSsoConnectionResponse
-	(*DeleteSsoConnectionRequest)(nil),         // 175: slipway.v1.DeleteSsoConnectionRequest
-	(*DeleteSsoConnectionResponse)(nil),        // 176: slipway.v1.DeleteSsoConnectionResponse
-	(*GetSamlServiceProviderRequest)(nil),      // 177: slipway.v1.GetSamlServiceProviderRequest
-	(*GetSamlServiceProviderResponse)(nil),     // 178: slipway.v1.GetSamlServiceProviderResponse
-	(*OrgDomain)(nil),                          // 179: slipway.v1.OrgDomain
-	(*ListOrgDomainsRequest)(nil),              // 180: slipway.v1.ListOrgDomainsRequest
-	(*ListOrgDomainsResponse)(nil),             // 181: slipway.v1.ListOrgDomainsResponse
-	(*AddOrgDomainRequest)(nil),                // 182: slipway.v1.AddOrgDomainRequest
-	(*AddOrgDomainResponse)(nil),               // 183: slipway.v1.AddOrgDomainResponse
-	(*ConfirmOrgDomainRequest)(nil),            // 184: slipway.v1.ConfirmOrgDomainRequest
-	(*ConfirmOrgDomainResponse)(nil),           // 185: slipway.v1.ConfirmOrgDomainResponse
-	(*DeleteOrgDomainRequest)(nil),             // 186: slipway.v1.DeleteOrgDomainRequest
-	(*DeleteOrgDomainResponse)(nil),            // 187: slipway.v1.DeleteOrgDomainResponse
-	(*ScimToken)(nil),                          // 188: slipway.v1.ScimToken
-	(*ListScimTokensRequest)(nil),              // 189: slipway.v1.ListScimTokensRequest
-	(*ListScimTokensResponse)(nil),             // 190: slipway.v1.ListScimTokensResponse
-	(*CreateScimTokenRequest)(nil),             // 191: slipway.v1.CreateScimTokenRequest
-	(*CreateScimTokenResponse)(nil),            // 192: slipway.v1.CreateScimTokenResponse
-	(*RevokeScimTokenRequest)(nil),             // 193: slipway.v1.RevokeScimTokenRequest
-	(*RevokeScimTokenResponse)(nil),            // 194: slipway.v1.RevokeScimTokenResponse
-	(*GetBadgeKeyRequest)(nil),                 // 195: slipway.v1.GetBadgeKeyRequest
-	(*GetBadgeKeyResponse)(nil),                // 196: slipway.v1.GetBadgeKeyResponse
-	(*RegenerateBadgeKeyRequest)(nil),          // 197: slipway.v1.RegenerateBadgeKeyRequest
-	(*RegenerateBadgeKeyResponse)(nil),         // 198: slipway.v1.RegenerateBadgeKeyResponse
-	(*ListAuthProvidersResponse_Provider)(nil), // 199: slipway.v1.ListAuthProvidersResponse.Provider
-	nil,                           // 200: slipway.v1.CheckPermissionsResponse.AllowedEntry
-	(*timestamppb.Timestamp)(nil), // 201: google.protobuf.Timestamp
-	(*Actor)(nil),                 // 202: slipway.v1.Actor
-	(*PageRequest)(nil),           // 203: slipway.v1.PageRequest
-	(*PageResponse)(nil),          // 204: slipway.v1.PageResponse
-	(*fieldmaskpb.FieldMask)(nil), // 205: google.protobuf.FieldMask
+	(*DeleteOrganizationRequest)(nil),          // 18: slipway.v1.DeleteOrganizationRequest
+	(*DeleteOrganizationResponse)(nil),         // 19: slipway.v1.DeleteOrganizationResponse
+	(*ListProjectsRequest)(nil),                // 20: slipway.v1.ListProjectsRequest
+	(*ListProjectsResponse)(nil),               // 21: slipway.v1.ListProjectsResponse
+	(*CreateProjectRequest)(nil),               // 22: slipway.v1.CreateProjectRequest
+	(*CreateProjectResponse)(nil),              // 23: slipway.v1.CreateProjectResponse
+	(*GetProjectRequest)(nil),                  // 24: slipway.v1.GetProjectRequest
+	(*GetProjectResponse)(nil),                 // 25: slipway.v1.GetProjectResponse
+	(*UpdateProjectRequest)(nil),               // 26: slipway.v1.UpdateProjectRequest
+	(*UpdateProjectResponse)(nil),              // 27: slipway.v1.UpdateProjectResponse
+	(*DeleteProjectRequest)(nil),               // 28: slipway.v1.DeleteProjectRequest
+	(*DeleteProjectResponse)(nil),              // 29: slipway.v1.DeleteProjectResponse
+	(*ListMembersRequest)(nil),                 // 30: slipway.v1.ListMembersRequest
+	(*ListMembersResponse)(nil),                // 31: slipway.v1.ListMembersResponse
+	(*InviteMemberRequest)(nil),                // 32: slipway.v1.InviteMemberRequest
+	(*InviteMemberResponse)(nil),               // 33: slipway.v1.InviteMemberResponse
+	(*UpdateMemberRoleRequest)(nil),            // 34: slipway.v1.UpdateMemberRoleRequest
+	(*UpdateMemberRoleResponse)(nil),           // 35: slipway.v1.UpdateMemberRoleResponse
+	(*RemoveMemberRequest)(nil),                // 36: slipway.v1.RemoveMemberRequest
+	(*RemoveMemberResponse)(nil),               // 37: slipway.v1.RemoveMemberResponse
+	(*ListRolesRequest)(nil),                   // 38: slipway.v1.ListRolesRequest
+	(*ListRolesResponse)(nil),                  // 39: slipway.v1.ListRolesResponse
+	(*ListApiTokensRequest)(nil),               // 40: slipway.v1.ListApiTokensRequest
+	(*ListApiTokensResponse)(nil),              // 41: slipway.v1.ListApiTokensResponse
+	(*CreateApiTokenRequest)(nil),              // 42: slipway.v1.CreateApiTokenRequest
+	(*CreateApiTokenResponse)(nil),             // 43: slipway.v1.CreateApiTokenResponse
+	(*RevokeApiTokenRequest)(nil),              // 44: slipway.v1.RevokeApiTokenRequest
+	(*RevokeApiTokenResponse)(nil),             // 45: slipway.v1.RevokeApiTokenResponse
+	(*ListAuditEventsRequest)(nil),             // 46: slipway.v1.ListAuditEventsRequest
+	(*ListAuditEventsResponse)(nil),            // 47: slipway.v1.ListAuditEventsResponse
+	(*LoginRequest)(nil),                       // 48: slipway.v1.LoginRequest
+	(*LoginResponse)(nil),                      // 49: slipway.v1.LoginResponse
+	(*LogoutRequest)(nil),                      // 50: slipway.v1.LogoutRequest
+	(*LogoutResponse)(nil),                     // 51: slipway.v1.LogoutResponse
+	(*SignupRequest)(nil),                      // 52: slipway.v1.SignupRequest
+	(*SignupResponse)(nil),                     // 53: slipway.v1.SignupResponse
+	(*ListAuthProvidersRequest)(nil),           // 54: slipway.v1.ListAuthProvidersRequest
+	(*ListAuthProvidersResponse)(nil),          // 55: slipway.v1.ListAuthProvidersResponse
+	(*VerifyEmailRequest)(nil),                 // 56: slipway.v1.VerifyEmailRequest
+	(*VerifyEmailResponse)(nil),                // 57: slipway.v1.VerifyEmailResponse
+	(*ResendVerificationRequest)(nil),          // 58: slipway.v1.ResendVerificationRequest
+	(*ResendVerificationResponse)(nil),         // 59: slipway.v1.ResendVerificationResponse
+	(*RequestPasswordResetRequest)(nil),        // 60: slipway.v1.RequestPasswordResetRequest
+	(*RequestPasswordResetResponse)(nil),       // 61: slipway.v1.RequestPasswordResetResponse
+	(*ResetPasswordRequest)(nil),               // 62: slipway.v1.ResetPasswordRequest
+	(*ResetPasswordResponse)(nil),              // 63: slipway.v1.ResetPasswordResponse
+	(*ChangePasswordRequest)(nil),              // 64: slipway.v1.ChangePasswordRequest
+	(*ChangePasswordResponse)(nil),             // 65: slipway.v1.ChangePasswordResponse
+	(*UpdateProfileRequest)(nil),               // 66: slipway.v1.UpdateProfileRequest
+	(*UpdateProfileResponse)(nil),              // 67: slipway.v1.UpdateProfileResponse
+	(*SignOutEverywhereRequest)(nil),           // 68: slipway.v1.SignOutEverywhereRequest
+	(*SignOutEverywhereResponse)(nil),          // 69: slipway.v1.SignOutEverywhereResponse
+	(*DeleteAccountRequest)(nil),               // 70: slipway.v1.DeleteAccountRequest
+	(*DeleteAccountResponse)(nil),              // 71: slipway.v1.DeleteAccountResponse
+	(*SwitchOrganizationRequest)(nil),          // 72: slipway.v1.SwitchOrganizationRequest
+	(*SwitchOrganizationResponse)(nil),         // 73: slipway.v1.SwitchOrganizationResponse
+	(*LinkedIdentity)(nil),                     // 74: slipway.v1.LinkedIdentity
+	(*ListLinkedIdentitiesRequest)(nil),        // 75: slipway.v1.ListLinkedIdentitiesRequest
+	(*ListLinkedIdentitiesResponse)(nil),       // 76: slipway.v1.ListLinkedIdentitiesResponse
+	(*UnlinkIdentityRequest)(nil),              // 77: slipway.v1.UnlinkIdentityRequest
+	(*UnlinkIdentityResponse)(nil),             // 78: slipway.v1.UnlinkIdentityResponse
+	(*GetMfaStatusRequest)(nil),                // 79: slipway.v1.GetMfaStatusRequest
+	(*GetMfaStatusResponse)(nil),               // 80: slipway.v1.GetMfaStatusResponse
+	(*BeginTotpEnrollmentRequest)(nil),         // 81: slipway.v1.BeginTotpEnrollmentRequest
+	(*BeginTotpEnrollmentResponse)(nil),        // 82: slipway.v1.BeginTotpEnrollmentResponse
+	(*ConfirmTotpEnrollmentRequest)(nil),       // 83: slipway.v1.ConfirmTotpEnrollmentRequest
+	(*ConfirmTotpEnrollmentResponse)(nil),      // 84: slipway.v1.ConfirmTotpEnrollmentResponse
+	(*RegenerateRecoveryCodesRequest)(nil),     // 85: slipway.v1.RegenerateRecoveryCodesRequest
+	(*RegenerateRecoveryCodesResponse)(nil),    // 86: slipway.v1.RegenerateRecoveryCodesResponse
+	(*DisableMfaRequest)(nil),                  // 87: slipway.v1.DisableMfaRequest
+	(*DisableMfaResponse)(nil),                 // 88: slipway.v1.DisableMfaResponse
+	(*WebAuthnCredential)(nil),                 // 89: slipway.v1.WebAuthnCredential
+	(*ListWebAuthnCredentialsRequest)(nil),     // 90: slipway.v1.ListWebAuthnCredentialsRequest
+	(*ListWebAuthnCredentialsResponse)(nil),    // 91: slipway.v1.ListWebAuthnCredentialsResponse
+	(*BeginWebAuthnRegistrationRequest)(nil),   // 92: slipway.v1.BeginWebAuthnRegistrationRequest
+	(*BeginWebAuthnRegistrationResponse)(nil),  // 93: slipway.v1.BeginWebAuthnRegistrationResponse
+	(*FinishWebAuthnRegistrationRequest)(nil),  // 94: slipway.v1.FinishWebAuthnRegistrationRequest
+	(*FinishWebAuthnRegistrationResponse)(nil), // 95: slipway.v1.FinishWebAuthnRegistrationResponse
+	(*DeleteWebAuthnCredentialRequest)(nil),    // 96: slipway.v1.DeleteWebAuthnCredentialRequest
+	(*DeleteWebAuthnCredentialResponse)(nil),   // 97: slipway.v1.DeleteWebAuthnCredentialResponse
+	(*BeginWebAuthnLoginRequest)(nil),          // 98: slipway.v1.BeginWebAuthnLoginRequest
+	(*BeginWebAuthnLoginResponse)(nil),         // 99: slipway.v1.BeginWebAuthnLoginResponse
+	(*FinishWebAuthnLoginRequest)(nil),         // 100: slipway.v1.FinishWebAuthnLoginRequest
+	(*FinishWebAuthnLoginResponse)(nil),        // 101: slipway.v1.FinishWebAuthnLoginResponse
+	(*Invitation)(nil),                         // 102: slipway.v1.Invitation
+	(*GetInvitationRequest)(nil),               // 103: slipway.v1.GetInvitationRequest
+	(*GetInvitationResponse)(nil),              // 104: slipway.v1.GetInvitationResponse
+	(*AcceptInvitationRequest)(nil),            // 105: slipway.v1.AcceptInvitationRequest
+	(*AcceptInvitationResponse)(nil),           // 106: slipway.v1.AcceptInvitationResponse
+	(*ListInvitationsRequest)(nil),             // 107: slipway.v1.ListInvitationsRequest
+	(*ListInvitationsResponse)(nil),            // 108: slipway.v1.ListInvitationsResponse
+	(*RevokeInvitationRequest)(nil),            // 109: slipway.v1.RevokeInvitationRequest
+	(*RevokeInvitationResponse)(nil),           // 110: slipway.v1.RevokeInvitationResponse
+	(*Team)(nil),                               // 111: slipway.v1.Team
+	(*TeamMember)(nil),                         // 112: slipway.v1.TeamMember
+	(*ListTeamsRequest)(nil),                   // 113: slipway.v1.ListTeamsRequest
+	(*ListTeamsResponse)(nil),                  // 114: slipway.v1.ListTeamsResponse
+	(*CreateTeamRequest)(nil),                  // 115: slipway.v1.CreateTeamRequest
+	(*CreateTeamResponse)(nil),                 // 116: slipway.v1.CreateTeamResponse
+	(*GetTeamRequest)(nil),                     // 117: slipway.v1.GetTeamRequest
+	(*GetTeamResponse)(nil),                    // 118: slipway.v1.GetTeamResponse
+	(*UpdateTeamRequest)(nil),                  // 119: slipway.v1.UpdateTeamRequest
+	(*UpdateTeamResponse)(nil),                 // 120: slipway.v1.UpdateTeamResponse
+	(*DeleteTeamRequest)(nil),                  // 121: slipway.v1.DeleteTeamRequest
+	(*DeleteTeamResponse)(nil),                 // 122: slipway.v1.DeleteTeamResponse
+	(*ListTeamMembersRequest)(nil),             // 123: slipway.v1.ListTeamMembersRequest
+	(*ListTeamMembersResponse)(nil),            // 124: slipway.v1.ListTeamMembersResponse
+	(*AddTeamMemberRequest)(nil),               // 125: slipway.v1.AddTeamMemberRequest
+	(*AddTeamMemberResponse)(nil),              // 126: slipway.v1.AddTeamMemberResponse
+	(*RemoveTeamMemberRequest)(nil),            // 127: slipway.v1.RemoveTeamMemberRequest
+	(*RemoveTeamMemberResponse)(nil),           // 128: slipway.v1.RemoveTeamMemberResponse
+	(*PermissionInfo)(nil),                     // 129: slipway.v1.PermissionInfo
+	(*RoleBinding)(nil),                        // 130: slipway.v1.RoleBinding
+	(*ListPermissionsRequest)(nil),             // 131: slipway.v1.ListPermissionsRequest
+	(*ListPermissionsResponse)(nil),            // 132: slipway.v1.ListPermissionsResponse
+	(*CreateRoleRequest)(nil),                  // 133: slipway.v1.CreateRoleRequest
+	(*CreateRoleResponse)(nil),                 // 134: slipway.v1.CreateRoleResponse
+	(*GetRoleRequest)(nil),                     // 135: slipway.v1.GetRoleRequest
+	(*GetRoleResponse)(nil),                    // 136: slipway.v1.GetRoleResponse
+	(*UpdateRoleRequest)(nil),                  // 137: slipway.v1.UpdateRoleRequest
+	(*UpdateRoleResponse)(nil),                 // 138: slipway.v1.UpdateRoleResponse
+	(*DeleteRoleRequest)(nil),                  // 139: slipway.v1.DeleteRoleRequest
+	(*DeleteRoleResponse)(nil),                 // 140: slipway.v1.DeleteRoleResponse
+	(*ListRoleBindingsRequest)(nil),            // 141: slipway.v1.ListRoleBindingsRequest
+	(*ListRoleBindingsResponse)(nil),           // 142: slipway.v1.ListRoleBindingsResponse
+	(*CreateRoleBindingRequest)(nil),           // 143: slipway.v1.CreateRoleBindingRequest
+	(*CreateRoleBindingResponse)(nil),          // 144: slipway.v1.CreateRoleBindingResponse
+	(*DeleteRoleBindingRequest)(nil),           // 145: slipway.v1.DeleteRoleBindingRequest
+	(*DeleteRoleBindingResponse)(nil),          // 146: slipway.v1.DeleteRoleBindingResponse
+	(*CheckPermissionsRequest)(nil),            // 147: slipway.v1.CheckPermissionsRequest
+	(*CheckPermissionsResponse)(nil),           // 148: slipway.v1.CheckPermissionsResponse
+	(*ServiceAccount)(nil),                     // 149: slipway.v1.ServiceAccount
+	(*ListServiceAccountsRequest)(nil),         // 150: slipway.v1.ListServiceAccountsRequest
+	(*ListServiceAccountsResponse)(nil),        // 151: slipway.v1.ListServiceAccountsResponse
+	(*CreateServiceAccountRequest)(nil),        // 152: slipway.v1.CreateServiceAccountRequest
+	(*CreateServiceAccountResponse)(nil),       // 153: slipway.v1.CreateServiceAccountResponse
+	(*GetServiceAccountRequest)(nil),           // 154: slipway.v1.GetServiceAccountRequest
+	(*GetServiceAccountResponse)(nil),          // 155: slipway.v1.GetServiceAccountResponse
+	(*UpdateServiceAccountRequest)(nil),        // 156: slipway.v1.UpdateServiceAccountRequest
+	(*UpdateServiceAccountResponse)(nil),       // 157: slipway.v1.UpdateServiceAccountResponse
+	(*DeleteServiceAccountRequest)(nil),        // 158: slipway.v1.DeleteServiceAccountRequest
+	(*DeleteServiceAccountResponse)(nil),       // 159: slipway.v1.DeleteServiceAccountResponse
+	(*ListServiceAccountTokensRequest)(nil),    // 160: slipway.v1.ListServiceAccountTokensRequest
+	(*ListServiceAccountTokensResponse)(nil),   // 161: slipway.v1.ListServiceAccountTokensResponse
+	(*CreateServiceAccountTokenRequest)(nil),   // 162: slipway.v1.CreateServiceAccountTokenRequest
+	(*CreateServiceAccountTokenResponse)(nil),  // 163: slipway.v1.CreateServiceAccountTokenResponse
+	(*RevokeServiceAccountTokenRequest)(nil),   // 164: slipway.v1.RevokeServiceAccountTokenRequest
+	(*RevokeServiceAccountTokenResponse)(nil),  // 165: slipway.v1.RevokeServiceAccountTokenResponse
+	(*QueryAuditEventsRequest)(nil),            // 166: slipway.v1.QueryAuditEventsRequest
+	(*QueryAuditEventsResponse)(nil),           // 167: slipway.v1.QueryAuditEventsResponse
+	(*VerifyAuditChainRequest)(nil),            // 168: slipway.v1.VerifyAuditChainRequest
+	(*VerifyAuditChainResponse)(nil),           // 169: slipway.v1.VerifyAuditChainResponse
+	(*GetAuditRetentionRequest)(nil),           // 170: slipway.v1.GetAuditRetentionRequest
+	(*GetAuditRetentionResponse)(nil),          // 171: slipway.v1.GetAuditRetentionResponse
+	(*SsoConnection)(nil),                      // 172: slipway.v1.SsoConnection
+	(*ListSsoConnectionsRequest)(nil),          // 173: slipway.v1.ListSsoConnectionsRequest
+	(*ListSsoConnectionsResponse)(nil),         // 174: slipway.v1.ListSsoConnectionsResponse
+	(*CreateSsoConnectionRequest)(nil),         // 175: slipway.v1.CreateSsoConnectionRequest
+	(*CreateSsoConnectionResponse)(nil),        // 176: slipway.v1.CreateSsoConnectionResponse
+	(*UpdateSsoConnectionRequest)(nil),         // 177: slipway.v1.UpdateSsoConnectionRequest
+	(*UpdateSsoConnectionResponse)(nil),        // 178: slipway.v1.UpdateSsoConnectionResponse
+	(*DeleteSsoConnectionRequest)(nil),         // 179: slipway.v1.DeleteSsoConnectionRequest
+	(*DeleteSsoConnectionResponse)(nil),        // 180: slipway.v1.DeleteSsoConnectionResponse
+	(*GetSamlServiceProviderRequest)(nil),      // 181: slipway.v1.GetSamlServiceProviderRequest
+	(*GetSamlServiceProviderResponse)(nil),     // 182: slipway.v1.GetSamlServiceProviderResponse
+	(*OrgDomain)(nil),                          // 183: slipway.v1.OrgDomain
+	(*ListOrgDomainsRequest)(nil),              // 184: slipway.v1.ListOrgDomainsRequest
+	(*ListOrgDomainsResponse)(nil),             // 185: slipway.v1.ListOrgDomainsResponse
+	(*AddOrgDomainRequest)(nil),                // 186: slipway.v1.AddOrgDomainRequest
+	(*AddOrgDomainResponse)(nil),               // 187: slipway.v1.AddOrgDomainResponse
+	(*ConfirmOrgDomainRequest)(nil),            // 188: slipway.v1.ConfirmOrgDomainRequest
+	(*ConfirmOrgDomainResponse)(nil),           // 189: slipway.v1.ConfirmOrgDomainResponse
+	(*DeleteOrgDomainRequest)(nil),             // 190: slipway.v1.DeleteOrgDomainRequest
+	(*DeleteOrgDomainResponse)(nil),            // 191: slipway.v1.DeleteOrgDomainResponse
+	(*ScimToken)(nil),                          // 192: slipway.v1.ScimToken
+	(*ListScimTokensRequest)(nil),              // 193: slipway.v1.ListScimTokensRequest
+	(*ListScimTokensResponse)(nil),             // 194: slipway.v1.ListScimTokensResponse
+	(*CreateScimTokenRequest)(nil),             // 195: slipway.v1.CreateScimTokenRequest
+	(*CreateScimTokenResponse)(nil),            // 196: slipway.v1.CreateScimTokenResponse
+	(*RevokeScimTokenRequest)(nil),             // 197: slipway.v1.RevokeScimTokenRequest
+	(*RevokeScimTokenResponse)(nil),            // 198: slipway.v1.RevokeScimTokenResponse
+	(*GetBadgeKeyRequest)(nil),                 // 199: slipway.v1.GetBadgeKeyRequest
+	(*GetBadgeKeyResponse)(nil),                // 200: slipway.v1.GetBadgeKeyResponse
+	(*RegenerateBadgeKeyRequest)(nil),          // 201: slipway.v1.RegenerateBadgeKeyRequest
+	(*RegenerateBadgeKeyResponse)(nil),         // 202: slipway.v1.RegenerateBadgeKeyResponse
+	(*ListAuthProvidersResponse_Provider)(nil), // 203: slipway.v1.ListAuthProvidersResponse.Provider
+	nil,                           // 204: slipway.v1.CheckPermissionsResponse.AllowedEntry
+	(*timestamppb.Timestamp)(nil), // 205: google.protobuf.Timestamp
+	(*Actor)(nil),                 // 206: slipway.v1.Actor
+	(*durationpb.Duration)(nil),   // 207: google.protobuf.Duration
+	(*PageRequest)(nil),           // 208: slipway.v1.PageRequest
+	(*PageResponse)(nil),          // 209: slipway.v1.PageResponse
+	(*fieldmaskpb.FieldMask)(nil), // 210: google.protobuf.FieldMask
 }
 var file_slipway_v1_identity_proto_depIdxs = []int32{
-	201, // 0: slipway.v1.User.created_at:type_name -> google.protobuf.Timestamp
-	201, // 1: slipway.v1.Organization.created_at:type_name -> google.protobuf.Timestamp
+	205, // 0: slipway.v1.User.created_at:type_name -> google.protobuf.Timestamp
+	205, // 1: slipway.v1.Organization.created_at:type_name -> google.protobuf.Timestamp
 	2,   // 2: slipway.v1.Organization.settings:type_name -> slipway.v1.OrganizationSettings
-	201, // 3: slipway.v1.Project.created_at:type_name -> google.protobuf.Timestamp
-	201, // 4: slipway.v1.Project.updated_at:type_name -> google.protobuf.Timestamp
+	205, // 3: slipway.v1.Project.created_at:type_name -> google.protobuf.Timestamp
+	205, // 4: slipway.v1.Project.updated_at:type_name -> google.protobuf.Timestamp
 	0,   // 5: slipway.v1.Membership.user:type_name -> slipway.v1.User
-	201, // 6: slipway.v1.Membership.created_at:type_name -> google.protobuf.Timestamp
-	201, // 7: slipway.v1.Role.created_at:type_name -> google.protobuf.Timestamp
-	201, // 8: slipway.v1.ApiToken.expires_at:type_name -> google.protobuf.Timestamp
-	201, // 9: slipway.v1.ApiToken.last_used_at:type_name -> google.protobuf.Timestamp
-	201, // 10: slipway.v1.ApiToken.created_at:type_name -> google.protobuf.Timestamp
-	202, // 11: slipway.v1.AuditEvent.actor:type_name -> slipway.v1.Actor
-	201, // 12: slipway.v1.AuditEvent.at:type_name -> google.protobuf.Timestamp
+	205, // 6: slipway.v1.Membership.created_at:type_name -> google.protobuf.Timestamp
+	205, // 7: slipway.v1.Role.created_at:type_name -> google.protobuf.Timestamp
+	205, // 8: slipway.v1.ApiToken.expires_at:type_name -> google.protobuf.Timestamp
+	205, // 9: slipway.v1.ApiToken.last_used_at:type_name -> google.protobuf.Timestamp
+	205, // 10: slipway.v1.ApiToken.created_at:type_name -> google.protobuf.Timestamp
+	206, // 11: slipway.v1.AuditEvent.actor:type_name -> slipway.v1.Actor
+	205, // 12: slipway.v1.AuditEvent.at:type_name -> google.protobuf.Timestamp
 	0,   // 13: slipway.v1.WhoAmIResponse.user:type_name -> slipway.v1.User
 	1,   // 14: slipway.v1.WhoAmIResponse.organizations:type_name -> slipway.v1.Organization
 	1,   // 15: slipway.v1.WhoAmIResponse.current_org:type_name -> slipway.v1.Organization
-	203, // 16: slipway.v1.ListOrganizationsRequest.page:type_name -> slipway.v1.PageRequest
-	1,   // 17: slipway.v1.ListOrganizationsResponse.items:type_name -> slipway.v1.Organization
-	204, // 18: slipway.v1.ListOrganizationsResponse.page:type_name -> slipway.v1.PageResponse
-	1,   // 19: slipway.v1.CreateOrganizationResponse.organization:type_name -> slipway.v1.Organization
-	1,   // 20: slipway.v1.GetOrganizationResponse.organization:type_name -> slipway.v1.Organization
-	1,   // 21: slipway.v1.UpdateOrganizationRequest.organization:type_name -> slipway.v1.Organization
-	205, // 22: slipway.v1.UpdateOrganizationRequest.update_mask:type_name -> google.protobuf.FieldMask
-	1,   // 23: slipway.v1.UpdateOrganizationResponse.organization:type_name -> slipway.v1.Organization
-	203, // 24: slipway.v1.ListProjectsRequest.page:type_name -> slipway.v1.PageRequest
-	3,   // 25: slipway.v1.ListProjectsResponse.items:type_name -> slipway.v1.Project
-	204, // 26: slipway.v1.ListProjectsResponse.page:type_name -> slipway.v1.PageResponse
-	3,   // 27: slipway.v1.CreateProjectResponse.project:type_name -> slipway.v1.Project
-	3,   // 28: slipway.v1.GetProjectResponse.project:type_name -> slipway.v1.Project
-	3,   // 29: slipway.v1.UpdateProjectRequest.project:type_name -> slipway.v1.Project
-	205, // 30: slipway.v1.UpdateProjectRequest.update_mask:type_name -> google.protobuf.FieldMask
-	3,   // 31: slipway.v1.UpdateProjectResponse.project:type_name -> slipway.v1.Project
-	203, // 32: slipway.v1.ListMembersRequest.page:type_name -> slipway.v1.PageRequest
-	4,   // 33: slipway.v1.ListMembersResponse.items:type_name -> slipway.v1.Membership
-	204, // 34: slipway.v1.ListMembersResponse.page:type_name -> slipway.v1.PageResponse
-	98,  // 35: slipway.v1.InviteMemberResponse.invitation:type_name -> slipway.v1.Invitation
-	4,   // 36: slipway.v1.UpdateMemberRoleResponse.membership:type_name -> slipway.v1.Membership
-	5,   // 37: slipway.v1.ListRolesResponse.items:type_name -> slipway.v1.Role
-	203, // 38: slipway.v1.ListApiTokensRequest.page:type_name -> slipway.v1.PageRequest
-	6,   // 39: slipway.v1.ListApiTokensResponse.items:type_name -> slipway.v1.ApiToken
-	204, // 40: slipway.v1.ListApiTokensResponse.page:type_name -> slipway.v1.PageResponse
-	201, // 41: slipway.v1.CreateApiTokenRequest.expires_at:type_name -> google.protobuf.Timestamp
-	6,   // 42: slipway.v1.CreateApiTokenResponse.token:type_name -> slipway.v1.ApiToken
-	203, // 43: slipway.v1.ListAuditEventsRequest.page:type_name -> slipway.v1.PageRequest
-	7,   // 44: slipway.v1.ListAuditEventsResponse.items:type_name -> slipway.v1.AuditEvent
-	204, // 45: slipway.v1.ListAuditEventsResponse.page:type_name -> slipway.v1.PageResponse
-	0,   // 46: slipway.v1.LoginResponse.user:type_name -> slipway.v1.User
-	1,   // 47: slipway.v1.LoginResponse.current_org:type_name -> slipway.v1.Organization
-	0,   // 48: slipway.v1.SignupResponse.user:type_name -> slipway.v1.User
-	1,   // 49: slipway.v1.SignupResponse.organization:type_name -> slipway.v1.Organization
-	199, // 50: slipway.v1.ListAuthProvidersResponse.providers:type_name -> slipway.v1.ListAuthProvidersResponse.Provider
-	0,   // 51: slipway.v1.VerifyEmailResponse.user:type_name -> slipway.v1.User
-	0,   // 52: slipway.v1.UpdateProfileRequest.user:type_name -> slipway.v1.User
-	205, // 53: slipway.v1.UpdateProfileRequest.update_mask:type_name -> google.protobuf.FieldMask
-	0,   // 54: slipway.v1.UpdateProfileResponse.user:type_name -> slipway.v1.User
-	1,   // 55: slipway.v1.SwitchOrganizationResponse.organization:type_name -> slipway.v1.Organization
-	70,  // 56: slipway.v1.ListLinkedIdentitiesResponse.items:type_name -> slipway.v1.LinkedIdentity
-	201, // 57: slipway.v1.WebAuthnCredential.created_at:type_name -> google.protobuf.Timestamp
-	201, // 58: slipway.v1.WebAuthnCredential.last_used_at:type_name -> google.protobuf.Timestamp
-	85,  // 59: slipway.v1.ListWebAuthnCredentialsResponse.items:type_name -> slipway.v1.WebAuthnCredential
-	85,  // 60: slipway.v1.FinishWebAuthnRegistrationResponse.credential:type_name -> slipway.v1.WebAuthnCredential
-	0,   // 61: slipway.v1.FinishWebAuthnLoginResponse.user:type_name -> slipway.v1.User
-	1,   // 62: slipway.v1.FinishWebAuthnLoginResponse.current_org:type_name -> slipway.v1.Organization
-	201, // 63: slipway.v1.Invitation.expires_at:type_name -> google.protobuf.Timestamp
-	201, // 64: slipway.v1.Invitation.created_at:type_name -> google.protobuf.Timestamp
-	1,   // 65: slipway.v1.AcceptInvitationResponse.organization:type_name -> slipway.v1.Organization
-	98,  // 66: slipway.v1.ListInvitationsResponse.items:type_name -> slipway.v1.Invitation
-	201, // 67: slipway.v1.Team.created_at:type_name -> google.protobuf.Timestamp
-	0,   // 68: slipway.v1.TeamMember.user:type_name -> slipway.v1.User
-	203, // 69: slipway.v1.ListTeamsRequest.page:type_name -> slipway.v1.PageRequest
-	107, // 70: slipway.v1.ListTeamsResponse.items:type_name -> slipway.v1.Team
-	204, // 71: slipway.v1.ListTeamsResponse.page:type_name -> slipway.v1.PageResponse
-	107, // 72: slipway.v1.CreateTeamResponse.team:type_name -> slipway.v1.Team
-	107, // 73: slipway.v1.GetTeamResponse.team:type_name -> slipway.v1.Team
-	107, // 74: slipway.v1.UpdateTeamRequest.team:type_name -> slipway.v1.Team
-	205, // 75: slipway.v1.UpdateTeamRequest.update_mask:type_name -> google.protobuf.FieldMask
-	107, // 76: slipway.v1.UpdateTeamResponse.team:type_name -> slipway.v1.Team
-	108, // 77: slipway.v1.ListTeamMembersResponse.items:type_name -> slipway.v1.TeamMember
-	201, // 78: slipway.v1.RoleBinding.created_at:type_name -> google.protobuf.Timestamp
-	125, // 79: slipway.v1.ListPermissionsResponse.items:type_name -> slipway.v1.PermissionInfo
-	5,   // 80: slipway.v1.CreateRoleResponse.role:type_name -> slipway.v1.Role
-	5,   // 81: slipway.v1.GetRoleResponse.role:type_name -> slipway.v1.Role
-	5,   // 82: slipway.v1.UpdateRoleRequest.role:type_name -> slipway.v1.Role
-	205, // 83: slipway.v1.UpdateRoleRequest.update_mask:type_name -> google.protobuf.FieldMask
-	5,   // 84: slipway.v1.UpdateRoleResponse.role:type_name -> slipway.v1.Role
-	126, // 85: slipway.v1.ListRoleBindingsResponse.items:type_name -> slipway.v1.RoleBinding
-	126, // 86: slipway.v1.CreateRoleBindingRequest.binding:type_name -> slipway.v1.RoleBinding
-	126, // 87: slipway.v1.CreateRoleBindingResponse.binding:type_name -> slipway.v1.RoleBinding
-	200, // 88: slipway.v1.CheckPermissionsResponse.allowed:type_name -> slipway.v1.CheckPermissionsResponse.AllowedEntry
-	201, // 89: slipway.v1.ServiceAccount.created_at:type_name -> google.protobuf.Timestamp
-	203, // 90: slipway.v1.ListServiceAccountsRequest.page:type_name -> slipway.v1.PageRequest
-	145, // 91: slipway.v1.ListServiceAccountsResponse.items:type_name -> slipway.v1.ServiceAccount
-	204, // 92: slipway.v1.ListServiceAccountsResponse.page:type_name -> slipway.v1.PageResponse
-	145, // 93: slipway.v1.CreateServiceAccountResponse.service_account:type_name -> slipway.v1.ServiceAccount
-	145, // 94: slipway.v1.GetServiceAccountResponse.service_account:type_name -> slipway.v1.ServiceAccount
-	145, // 95: slipway.v1.UpdateServiceAccountRequest.service_account:type_name -> slipway.v1.ServiceAccount
-	205, // 96: slipway.v1.UpdateServiceAccountRequest.update_mask:type_name -> google.protobuf.FieldMask
-	145, // 97: slipway.v1.UpdateServiceAccountResponse.service_account:type_name -> slipway.v1.ServiceAccount
-	203, // 98: slipway.v1.ListServiceAccountTokensRequest.page:type_name -> slipway.v1.PageRequest
-	6,   // 99: slipway.v1.ListServiceAccountTokensResponse.items:type_name -> slipway.v1.ApiToken
-	204, // 100: slipway.v1.ListServiceAccountTokensResponse.page:type_name -> slipway.v1.PageResponse
-	201, // 101: slipway.v1.CreateServiceAccountTokenRequest.expires_at:type_name -> google.protobuf.Timestamp
-	6,   // 102: slipway.v1.CreateServiceAccountTokenResponse.token:type_name -> slipway.v1.ApiToken
-	203, // 103: slipway.v1.QueryAuditEventsRequest.page:type_name -> slipway.v1.PageRequest
-	201, // 104: slipway.v1.QueryAuditEventsRequest.since:type_name -> google.protobuf.Timestamp
-	201, // 105: slipway.v1.QueryAuditEventsRequest.until:type_name -> google.protobuf.Timestamp
-	7,   // 106: slipway.v1.QueryAuditEventsResponse.items:type_name -> slipway.v1.AuditEvent
-	204, // 107: slipway.v1.QueryAuditEventsResponse.page:type_name -> slipway.v1.PageResponse
-	201, // 108: slipway.v1.SsoConnection.created_at:type_name -> google.protobuf.Timestamp
-	201, // 109: slipway.v1.SsoConnection.updated_at:type_name -> google.protobuf.Timestamp
-	168, // 110: slipway.v1.ListSsoConnectionsResponse.items:type_name -> slipway.v1.SsoConnection
-	168, // 111: slipway.v1.CreateSsoConnectionRequest.connection:type_name -> slipway.v1.SsoConnection
-	168, // 112: slipway.v1.CreateSsoConnectionResponse.connection:type_name -> slipway.v1.SsoConnection
-	168, // 113: slipway.v1.UpdateSsoConnectionRequest.connection:type_name -> slipway.v1.SsoConnection
-	205, // 114: slipway.v1.UpdateSsoConnectionRequest.update_mask:type_name -> google.protobuf.FieldMask
-	168, // 115: slipway.v1.UpdateSsoConnectionResponse.connection:type_name -> slipway.v1.SsoConnection
-	201, // 116: slipway.v1.OrgDomain.verified_at:type_name -> google.protobuf.Timestamp
-	201, // 117: slipway.v1.OrgDomain.created_at:type_name -> google.protobuf.Timestamp
-	179, // 118: slipway.v1.ListOrgDomainsResponse.items:type_name -> slipway.v1.OrgDomain
-	179, // 119: slipway.v1.AddOrgDomainResponse.domain:type_name -> slipway.v1.OrgDomain
-	179, // 120: slipway.v1.ConfirmOrgDomainResponse.domain:type_name -> slipway.v1.OrgDomain
-	201, // 121: slipway.v1.ScimToken.expires_at:type_name -> google.protobuf.Timestamp
-	201, // 122: slipway.v1.ScimToken.last_used_at:type_name -> google.protobuf.Timestamp
-	201, // 123: slipway.v1.ScimToken.created_at:type_name -> google.protobuf.Timestamp
-	188, // 124: slipway.v1.ListScimTokensResponse.items:type_name -> slipway.v1.ScimToken
-	201, // 125: slipway.v1.CreateScimTokenRequest.expires_at:type_name -> google.protobuf.Timestamp
-	188, // 126: slipway.v1.CreateScimTokenResponse.token:type_name -> slipway.v1.ScimToken
-	8,   // 127: slipway.v1.IdentityService.WhoAmI:input_type -> slipway.v1.WhoAmIRequest
-	46,  // 128: slipway.v1.IdentityService.Login:input_type -> slipway.v1.LoginRequest
-	48,  // 129: slipway.v1.IdentityService.Logout:input_type -> slipway.v1.LogoutRequest
-	50,  // 130: slipway.v1.IdentityService.Signup:input_type -> slipway.v1.SignupRequest
-	52,  // 131: slipway.v1.IdentityService.ListAuthProviders:input_type -> slipway.v1.ListAuthProvidersRequest
-	10,  // 132: slipway.v1.IdentityService.ListOrganizations:input_type -> slipway.v1.ListOrganizationsRequest
-	12,  // 133: slipway.v1.IdentityService.CreateOrganization:input_type -> slipway.v1.CreateOrganizationRequest
-	14,  // 134: slipway.v1.IdentityService.GetOrganization:input_type -> slipway.v1.GetOrganizationRequest
-	16,  // 135: slipway.v1.IdentityService.UpdateOrganization:input_type -> slipway.v1.UpdateOrganizationRequest
-	28,  // 136: slipway.v1.IdentityService.ListMembers:input_type -> slipway.v1.ListMembersRequest
-	30,  // 137: slipway.v1.IdentityService.InviteMember:input_type -> slipway.v1.InviteMemberRequest
-	32,  // 138: slipway.v1.IdentityService.UpdateMemberRole:input_type -> slipway.v1.UpdateMemberRoleRequest
-	34,  // 139: slipway.v1.IdentityService.RemoveMember:input_type -> slipway.v1.RemoveMemberRequest
-	36,  // 140: slipway.v1.IdentityService.ListRoles:input_type -> slipway.v1.ListRolesRequest
-	38,  // 141: slipway.v1.IdentityService.ListApiTokens:input_type -> slipway.v1.ListApiTokensRequest
-	40,  // 142: slipway.v1.IdentityService.CreateApiToken:input_type -> slipway.v1.CreateApiTokenRequest
-	42,  // 143: slipway.v1.IdentityService.RevokeApiToken:input_type -> slipway.v1.RevokeApiTokenRequest
-	44,  // 144: slipway.v1.IdentityService.ListAuditEvents:input_type -> slipway.v1.ListAuditEventsRequest
-	54,  // 145: slipway.v1.IdentityService.VerifyEmail:input_type -> slipway.v1.VerifyEmailRequest
-	56,  // 146: slipway.v1.IdentityService.ResendVerification:input_type -> slipway.v1.ResendVerificationRequest
-	58,  // 147: slipway.v1.IdentityService.RequestPasswordReset:input_type -> slipway.v1.RequestPasswordResetRequest
-	60,  // 148: slipway.v1.IdentityService.ResetPassword:input_type -> slipway.v1.ResetPasswordRequest
-	62,  // 149: slipway.v1.IdentityService.ChangePassword:input_type -> slipway.v1.ChangePasswordRequest
-	64,  // 150: slipway.v1.IdentityService.UpdateProfile:input_type -> slipway.v1.UpdateProfileRequest
-	66,  // 151: slipway.v1.IdentityService.SignOutEverywhere:input_type -> slipway.v1.SignOutEverywhereRequest
-	68,  // 152: slipway.v1.IdentityService.SwitchOrganization:input_type -> slipway.v1.SwitchOrganizationRequest
-	71,  // 153: slipway.v1.IdentityService.ListLinkedIdentities:input_type -> slipway.v1.ListLinkedIdentitiesRequest
-	73,  // 154: slipway.v1.IdentityService.UnlinkIdentity:input_type -> slipway.v1.UnlinkIdentityRequest
-	75,  // 155: slipway.v1.IdentityService.GetMfaStatus:input_type -> slipway.v1.GetMfaStatusRequest
-	77,  // 156: slipway.v1.IdentityService.BeginTotpEnrollment:input_type -> slipway.v1.BeginTotpEnrollmentRequest
-	79,  // 157: slipway.v1.IdentityService.ConfirmTotpEnrollment:input_type -> slipway.v1.ConfirmTotpEnrollmentRequest
-	81,  // 158: slipway.v1.IdentityService.RegenerateRecoveryCodes:input_type -> slipway.v1.RegenerateRecoveryCodesRequest
-	83,  // 159: slipway.v1.IdentityService.DisableMfa:input_type -> slipway.v1.DisableMfaRequest
-	86,  // 160: slipway.v1.IdentityService.ListWebAuthnCredentials:input_type -> slipway.v1.ListWebAuthnCredentialsRequest
-	88,  // 161: slipway.v1.IdentityService.BeginWebAuthnRegistration:input_type -> slipway.v1.BeginWebAuthnRegistrationRequest
-	90,  // 162: slipway.v1.IdentityService.FinishWebAuthnRegistration:input_type -> slipway.v1.FinishWebAuthnRegistrationRequest
-	92,  // 163: slipway.v1.IdentityService.DeleteWebAuthnCredential:input_type -> slipway.v1.DeleteWebAuthnCredentialRequest
-	94,  // 164: slipway.v1.IdentityService.BeginWebAuthnLogin:input_type -> slipway.v1.BeginWebAuthnLoginRequest
-	96,  // 165: slipway.v1.IdentityService.FinishWebAuthnLogin:input_type -> slipway.v1.FinishWebAuthnLoginRequest
-	99,  // 166: slipway.v1.IdentityService.GetInvitation:input_type -> slipway.v1.GetInvitationRequest
-	101, // 167: slipway.v1.IdentityService.AcceptInvitation:input_type -> slipway.v1.AcceptInvitationRequest
-	103, // 168: slipway.v1.IdentityService.ListInvitations:input_type -> slipway.v1.ListInvitationsRequest
-	105, // 169: slipway.v1.IdentityService.RevokeInvitation:input_type -> slipway.v1.RevokeInvitationRequest
-	18,  // 170: slipway.v1.ProjectService.ListProjects:input_type -> slipway.v1.ListProjectsRequest
-	20,  // 171: slipway.v1.ProjectService.CreateProject:input_type -> slipway.v1.CreateProjectRequest
-	22,  // 172: slipway.v1.ProjectService.GetProject:input_type -> slipway.v1.GetProjectRequest
-	24,  // 173: slipway.v1.ProjectService.UpdateProject:input_type -> slipway.v1.UpdateProjectRequest
-	26,  // 174: slipway.v1.ProjectService.DeleteProject:input_type -> slipway.v1.DeleteProjectRequest
-	195, // 175: slipway.v1.ProjectService.GetBadgeKey:input_type -> slipway.v1.GetBadgeKeyRequest
-	197, // 176: slipway.v1.ProjectService.RegenerateBadgeKey:input_type -> slipway.v1.RegenerateBadgeKeyRequest
-	109, // 177: slipway.v1.TeamService.ListTeams:input_type -> slipway.v1.ListTeamsRequest
-	111, // 178: slipway.v1.TeamService.CreateTeam:input_type -> slipway.v1.CreateTeamRequest
-	113, // 179: slipway.v1.TeamService.GetTeam:input_type -> slipway.v1.GetTeamRequest
-	115, // 180: slipway.v1.TeamService.UpdateTeam:input_type -> slipway.v1.UpdateTeamRequest
-	117, // 181: slipway.v1.TeamService.DeleteTeam:input_type -> slipway.v1.DeleteTeamRequest
-	119, // 182: slipway.v1.TeamService.ListTeamMembers:input_type -> slipway.v1.ListTeamMembersRequest
-	121, // 183: slipway.v1.TeamService.AddTeamMember:input_type -> slipway.v1.AddTeamMemberRequest
-	123, // 184: slipway.v1.TeamService.RemoveTeamMember:input_type -> slipway.v1.RemoveTeamMemberRequest
-	127, // 185: slipway.v1.RoleService.ListPermissions:input_type -> slipway.v1.ListPermissionsRequest
-	129, // 186: slipway.v1.RoleService.CreateRole:input_type -> slipway.v1.CreateRoleRequest
-	131, // 187: slipway.v1.RoleService.GetRole:input_type -> slipway.v1.GetRoleRequest
-	133, // 188: slipway.v1.RoleService.UpdateRole:input_type -> slipway.v1.UpdateRoleRequest
-	135, // 189: slipway.v1.RoleService.DeleteRole:input_type -> slipway.v1.DeleteRoleRequest
-	137, // 190: slipway.v1.RoleService.ListRoleBindings:input_type -> slipway.v1.ListRoleBindingsRequest
-	139, // 191: slipway.v1.RoleService.CreateRoleBinding:input_type -> slipway.v1.CreateRoleBindingRequest
-	141, // 192: slipway.v1.RoleService.DeleteRoleBinding:input_type -> slipway.v1.DeleteRoleBindingRequest
-	143, // 193: slipway.v1.RoleService.CheckPermissions:input_type -> slipway.v1.CheckPermissionsRequest
-	146, // 194: slipway.v1.ServiceAccountService.ListServiceAccounts:input_type -> slipway.v1.ListServiceAccountsRequest
-	148, // 195: slipway.v1.ServiceAccountService.CreateServiceAccount:input_type -> slipway.v1.CreateServiceAccountRequest
-	150, // 196: slipway.v1.ServiceAccountService.GetServiceAccount:input_type -> slipway.v1.GetServiceAccountRequest
-	152, // 197: slipway.v1.ServiceAccountService.UpdateServiceAccount:input_type -> slipway.v1.UpdateServiceAccountRequest
-	154, // 198: slipway.v1.ServiceAccountService.DeleteServiceAccount:input_type -> slipway.v1.DeleteServiceAccountRequest
-	156, // 199: slipway.v1.ServiceAccountService.ListServiceAccountTokens:input_type -> slipway.v1.ListServiceAccountTokensRequest
-	158, // 200: slipway.v1.ServiceAccountService.CreateServiceAccountToken:input_type -> slipway.v1.CreateServiceAccountTokenRequest
-	160, // 201: slipway.v1.ServiceAccountService.RevokeServiceAccountToken:input_type -> slipway.v1.RevokeServiceAccountTokenRequest
-	162, // 202: slipway.v1.AuditService.QueryAuditEvents:input_type -> slipway.v1.QueryAuditEventsRequest
-	164, // 203: slipway.v1.AuditService.VerifyAuditChain:input_type -> slipway.v1.VerifyAuditChainRequest
-	166, // 204: slipway.v1.AuditService.GetAuditRetention:input_type -> slipway.v1.GetAuditRetentionRequest
-	169, // 205: slipway.v1.SsoService.ListSsoConnections:input_type -> slipway.v1.ListSsoConnectionsRequest
-	171, // 206: slipway.v1.SsoService.CreateSsoConnection:input_type -> slipway.v1.CreateSsoConnectionRequest
-	173, // 207: slipway.v1.SsoService.UpdateSsoConnection:input_type -> slipway.v1.UpdateSsoConnectionRequest
-	175, // 208: slipway.v1.SsoService.DeleteSsoConnection:input_type -> slipway.v1.DeleteSsoConnectionRequest
-	177, // 209: slipway.v1.SsoService.GetSamlServiceProvider:input_type -> slipway.v1.GetSamlServiceProviderRequest
-	180, // 210: slipway.v1.SsoService.ListOrgDomains:input_type -> slipway.v1.ListOrgDomainsRequest
-	182, // 211: slipway.v1.SsoService.AddOrgDomain:input_type -> slipway.v1.AddOrgDomainRequest
-	184, // 212: slipway.v1.SsoService.ConfirmOrgDomain:input_type -> slipway.v1.ConfirmOrgDomainRequest
-	186, // 213: slipway.v1.SsoService.DeleteOrgDomain:input_type -> slipway.v1.DeleteOrgDomainRequest
-	189, // 214: slipway.v1.SsoService.ListScimTokens:input_type -> slipway.v1.ListScimTokensRequest
-	191, // 215: slipway.v1.SsoService.CreateScimToken:input_type -> slipway.v1.CreateScimTokenRequest
-	193, // 216: slipway.v1.SsoService.RevokeScimToken:input_type -> slipway.v1.RevokeScimTokenRequest
-	9,   // 217: slipway.v1.IdentityService.WhoAmI:output_type -> slipway.v1.WhoAmIResponse
-	47,  // 218: slipway.v1.IdentityService.Login:output_type -> slipway.v1.LoginResponse
-	49,  // 219: slipway.v1.IdentityService.Logout:output_type -> slipway.v1.LogoutResponse
-	51,  // 220: slipway.v1.IdentityService.Signup:output_type -> slipway.v1.SignupResponse
-	53,  // 221: slipway.v1.IdentityService.ListAuthProviders:output_type -> slipway.v1.ListAuthProvidersResponse
-	11,  // 222: slipway.v1.IdentityService.ListOrganizations:output_type -> slipway.v1.ListOrganizationsResponse
-	13,  // 223: slipway.v1.IdentityService.CreateOrganization:output_type -> slipway.v1.CreateOrganizationResponse
-	15,  // 224: slipway.v1.IdentityService.GetOrganization:output_type -> slipway.v1.GetOrganizationResponse
-	17,  // 225: slipway.v1.IdentityService.UpdateOrganization:output_type -> slipway.v1.UpdateOrganizationResponse
-	29,  // 226: slipway.v1.IdentityService.ListMembers:output_type -> slipway.v1.ListMembersResponse
-	31,  // 227: slipway.v1.IdentityService.InviteMember:output_type -> slipway.v1.InviteMemberResponse
-	33,  // 228: slipway.v1.IdentityService.UpdateMemberRole:output_type -> slipway.v1.UpdateMemberRoleResponse
-	35,  // 229: slipway.v1.IdentityService.RemoveMember:output_type -> slipway.v1.RemoveMemberResponse
-	37,  // 230: slipway.v1.IdentityService.ListRoles:output_type -> slipway.v1.ListRolesResponse
-	39,  // 231: slipway.v1.IdentityService.ListApiTokens:output_type -> slipway.v1.ListApiTokensResponse
-	41,  // 232: slipway.v1.IdentityService.CreateApiToken:output_type -> slipway.v1.CreateApiTokenResponse
-	43,  // 233: slipway.v1.IdentityService.RevokeApiToken:output_type -> slipway.v1.RevokeApiTokenResponse
-	45,  // 234: slipway.v1.IdentityService.ListAuditEvents:output_type -> slipway.v1.ListAuditEventsResponse
-	55,  // 235: slipway.v1.IdentityService.VerifyEmail:output_type -> slipway.v1.VerifyEmailResponse
-	57,  // 236: slipway.v1.IdentityService.ResendVerification:output_type -> slipway.v1.ResendVerificationResponse
-	59,  // 237: slipway.v1.IdentityService.RequestPasswordReset:output_type -> slipway.v1.RequestPasswordResetResponse
-	61,  // 238: slipway.v1.IdentityService.ResetPassword:output_type -> slipway.v1.ResetPasswordResponse
-	63,  // 239: slipway.v1.IdentityService.ChangePassword:output_type -> slipway.v1.ChangePasswordResponse
-	65,  // 240: slipway.v1.IdentityService.UpdateProfile:output_type -> slipway.v1.UpdateProfileResponse
-	67,  // 241: slipway.v1.IdentityService.SignOutEverywhere:output_type -> slipway.v1.SignOutEverywhereResponse
-	69,  // 242: slipway.v1.IdentityService.SwitchOrganization:output_type -> slipway.v1.SwitchOrganizationResponse
-	72,  // 243: slipway.v1.IdentityService.ListLinkedIdentities:output_type -> slipway.v1.ListLinkedIdentitiesResponse
-	74,  // 244: slipway.v1.IdentityService.UnlinkIdentity:output_type -> slipway.v1.UnlinkIdentityResponse
-	76,  // 245: slipway.v1.IdentityService.GetMfaStatus:output_type -> slipway.v1.GetMfaStatusResponse
-	78,  // 246: slipway.v1.IdentityService.BeginTotpEnrollment:output_type -> slipway.v1.BeginTotpEnrollmentResponse
-	80,  // 247: slipway.v1.IdentityService.ConfirmTotpEnrollment:output_type -> slipway.v1.ConfirmTotpEnrollmentResponse
-	82,  // 248: slipway.v1.IdentityService.RegenerateRecoveryCodes:output_type -> slipway.v1.RegenerateRecoveryCodesResponse
-	84,  // 249: slipway.v1.IdentityService.DisableMfa:output_type -> slipway.v1.DisableMfaResponse
-	87,  // 250: slipway.v1.IdentityService.ListWebAuthnCredentials:output_type -> slipway.v1.ListWebAuthnCredentialsResponse
-	89,  // 251: slipway.v1.IdentityService.BeginWebAuthnRegistration:output_type -> slipway.v1.BeginWebAuthnRegistrationResponse
-	91,  // 252: slipway.v1.IdentityService.FinishWebAuthnRegistration:output_type -> slipway.v1.FinishWebAuthnRegistrationResponse
-	93,  // 253: slipway.v1.IdentityService.DeleteWebAuthnCredential:output_type -> slipway.v1.DeleteWebAuthnCredentialResponse
-	95,  // 254: slipway.v1.IdentityService.BeginWebAuthnLogin:output_type -> slipway.v1.BeginWebAuthnLoginResponse
-	97,  // 255: slipway.v1.IdentityService.FinishWebAuthnLogin:output_type -> slipway.v1.FinishWebAuthnLoginResponse
-	100, // 256: slipway.v1.IdentityService.GetInvitation:output_type -> slipway.v1.GetInvitationResponse
-	102, // 257: slipway.v1.IdentityService.AcceptInvitation:output_type -> slipway.v1.AcceptInvitationResponse
-	104, // 258: slipway.v1.IdentityService.ListInvitations:output_type -> slipway.v1.ListInvitationsResponse
-	106, // 259: slipway.v1.IdentityService.RevokeInvitation:output_type -> slipway.v1.RevokeInvitationResponse
-	19,  // 260: slipway.v1.ProjectService.ListProjects:output_type -> slipway.v1.ListProjectsResponse
-	21,  // 261: slipway.v1.ProjectService.CreateProject:output_type -> slipway.v1.CreateProjectResponse
-	23,  // 262: slipway.v1.ProjectService.GetProject:output_type -> slipway.v1.GetProjectResponse
-	25,  // 263: slipway.v1.ProjectService.UpdateProject:output_type -> slipway.v1.UpdateProjectResponse
-	27,  // 264: slipway.v1.ProjectService.DeleteProject:output_type -> slipway.v1.DeleteProjectResponse
-	196, // 265: slipway.v1.ProjectService.GetBadgeKey:output_type -> slipway.v1.GetBadgeKeyResponse
-	198, // 266: slipway.v1.ProjectService.RegenerateBadgeKey:output_type -> slipway.v1.RegenerateBadgeKeyResponse
-	110, // 267: slipway.v1.TeamService.ListTeams:output_type -> slipway.v1.ListTeamsResponse
-	112, // 268: slipway.v1.TeamService.CreateTeam:output_type -> slipway.v1.CreateTeamResponse
-	114, // 269: slipway.v1.TeamService.GetTeam:output_type -> slipway.v1.GetTeamResponse
-	116, // 270: slipway.v1.TeamService.UpdateTeam:output_type -> slipway.v1.UpdateTeamResponse
-	118, // 271: slipway.v1.TeamService.DeleteTeam:output_type -> slipway.v1.DeleteTeamResponse
-	120, // 272: slipway.v1.TeamService.ListTeamMembers:output_type -> slipway.v1.ListTeamMembersResponse
-	122, // 273: slipway.v1.TeamService.AddTeamMember:output_type -> slipway.v1.AddTeamMemberResponse
-	124, // 274: slipway.v1.TeamService.RemoveTeamMember:output_type -> slipway.v1.RemoveTeamMemberResponse
-	128, // 275: slipway.v1.RoleService.ListPermissions:output_type -> slipway.v1.ListPermissionsResponse
-	130, // 276: slipway.v1.RoleService.CreateRole:output_type -> slipway.v1.CreateRoleResponse
-	132, // 277: slipway.v1.RoleService.GetRole:output_type -> slipway.v1.GetRoleResponse
-	134, // 278: slipway.v1.RoleService.UpdateRole:output_type -> slipway.v1.UpdateRoleResponse
-	136, // 279: slipway.v1.RoleService.DeleteRole:output_type -> slipway.v1.DeleteRoleResponse
-	138, // 280: slipway.v1.RoleService.ListRoleBindings:output_type -> slipway.v1.ListRoleBindingsResponse
-	140, // 281: slipway.v1.RoleService.CreateRoleBinding:output_type -> slipway.v1.CreateRoleBindingResponse
-	142, // 282: slipway.v1.RoleService.DeleteRoleBinding:output_type -> slipway.v1.DeleteRoleBindingResponse
-	144, // 283: slipway.v1.RoleService.CheckPermissions:output_type -> slipway.v1.CheckPermissionsResponse
-	147, // 284: slipway.v1.ServiceAccountService.ListServiceAccounts:output_type -> slipway.v1.ListServiceAccountsResponse
-	149, // 285: slipway.v1.ServiceAccountService.CreateServiceAccount:output_type -> slipway.v1.CreateServiceAccountResponse
-	151, // 286: slipway.v1.ServiceAccountService.GetServiceAccount:output_type -> slipway.v1.GetServiceAccountResponse
-	153, // 287: slipway.v1.ServiceAccountService.UpdateServiceAccount:output_type -> slipway.v1.UpdateServiceAccountResponse
-	155, // 288: slipway.v1.ServiceAccountService.DeleteServiceAccount:output_type -> slipway.v1.DeleteServiceAccountResponse
-	157, // 289: slipway.v1.ServiceAccountService.ListServiceAccountTokens:output_type -> slipway.v1.ListServiceAccountTokensResponse
-	159, // 290: slipway.v1.ServiceAccountService.CreateServiceAccountToken:output_type -> slipway.v1.CreateServiceAccountTokenResponse
-	161, // 291: slipway.v1.ServiceAccountService.RevokeServiceAccountToken:output_type -> slipway.v1.RevokeServiceAccountTokenResponse
-	163, // 292: slipway.v1.AuditService.QueryAuditEvents:output_type -> slipway.v1.QueryAuditEventsResponse
-	165, // 293: slipway.v1.AuditService.VerifyAuditChain:output_type -> slipway.v1.VerifyAuditChainResponse
-	167, // 294: slipway.v1.AuditService.GetAuditRetention:output_type -> slipway.v1.GetAuditRetentionResponse
-	170, // 295: slipway.v1.SsoService.ListSsoConnections:output_type -> slipway.v1.ListSsoConnectionsResponse
-	172, // 296: slipway.v1.SsoService.CreateSsoConnection:output_type -> slipway.v1.CreateSsoConnectionResponse
-	174, // 297: slipway.v1.SsoService.UpdateSsoConnection:output_type -> slipway.v1.UpdateSsoConnectionResponse
-	176, // 298: slipway.v1.SsoService.DeleteSsoConnection:output_type -> slipway.v1.DeleteSsoConnectionResponse
-	178, // 299: slipway.v1.SsoService.GetSamlServiceProvider:output_type -> slipway.v1.GetSamlServiceProviderResponse
-	181, // 300: slipway.v1.SsoService.ListOrgDomains:output_type -> slipway.v1.ListOrgDomainsResponse
-	183, // 301: slipway.v1.SsoService.AddOrgDomain:output_type -> slipway.v1.AddOrgDomainResponse
-	185, // 302: slipway.v1.SsoService.ConfirmOrgDomain:output_type -> slipway.v1.ConfirmOrgDomainResponse
-	187, // 303: slipway.v1.SsoService.DeleteOrgDomain:output_type -> slipway.v1.DeleteOrgDomainResponse
-	190, // 304: slipway.v1.SsoService.ListScimTokens:output_type -> slipway.v1.ListScimTokensResponse
-	192, // 305: slipway.v1.SsoService.CreateScimToken:output_type -> slipway.v1.CreateScimTokenResponse
-	194, // 306: slipway.v1.SsoService.RevokeScimToken:output_type -> slipway.v1.RevokeScimTokenResponse
-	217, // [217:307] is the sub-list for method output_type
-	127, // [127:217] is the sub-list for method input_type
-	127, // [127:127] is the sub-list for extension type_name
-	127, // [127:127] is the sub-list for extension extendee
-	0,   // [0:127] is the sub-list for field type_name
+	207, // 16: slipway.v1.WhoAmIResponse.org_deletion_grace:type_name -> google.protobuf.Duration
+	208, // 17: slipway.v1.ListOrganizationsRequest.page:type_name -> slipway.v1.PageRequest
+	1,   // 18: slipway.v1.ListOrganizationsResponse.items:type_name -> slipway.v1.Organization
+	209, // 19: slipway.v1.ListOrganizationsResponse.page:type_name -> slipway.v1.PageResponse
+	1,   // 20: slipway.v1.CreateOrganizationResponse.organization:type_name -> slipway.v1.Organization
+	1,   // 21: slipway.v1.GetOrganizationResponse.organization:type_name -> slipway.v1.Organization
+	1,   // 22: slipway.v1.UpdateOrganizationRequest.organization:type_name -> slipway.v1.Organization
+	210, // 23: slipway.v1.UpdateOrganizationRequest.update_mask:type_name -> google.protobuf.FieldMask
+	1,   // 24: slipway.v1.UpdateOrganizationResponse.organization:type_name -> slipway.v1.Organization
+	205, // 25: slipway.v1.DeleteOrganizationResponse.purge_after:type_name -> google.protobuf.Timestamp
+	208, // 26: slipway.v1.ListProjectsRequest.page:type_name -> slipway.v1.PageRequest
+	3,   // 27: slipway.v1.ListProjectsResponse.items:type_name -> slipway.v1.Project
+	209, // 28: slipway.v1.ListProjectsResponse.page:type_name -> slipway.v1.PageResponse
+	3,   // 29: slipway.v1.CreateProjectResponse.project:type_name -> slipway.v1.Project
+	3,   // 30: slipway.v1.GetProjectResponse.project:type_name -> slipway.v1.Project
+	3,   // 31: slipway.v1.UpdateProjectRequest.project:type_name -> slipway.v1.Project
+	210, // 32: slipway.v1.UpdateProjectRequest.update_mask:type_name -> google.protobuf.FieldMask
+	3,   // 33: slipway.v1.UpdateProjectResponse.project:type_name -> slipway.v1.Project
+	208, // 34: slipway.v1.ListMembersRequest.page:type_name -> slipway.v1.PageRequest
+	4,   // 35: slipway.v1.ListMembersResponse.items:type_name -> slipway.v1.Membership
+	209, // 36: slipway.v1.ListMembersResponse.page:type_name -> slipway.v1.PageResponse
+	102, // 37: slipway.v1.InviteMemberResponse.invitation:type_name -> slipway.v1.Invitation
+	4,   // 38: slipway.v1.UpdateMemberRoleResponse.membership:type_name -> slipway.v1.Membership
+	5,   // 39: slipway.v1.ListRolesResponse.items:type_name -> slipway.v1.Role
+	208, // 40: slipway.v1.ListApiTokensRequest.page:type_name -> slipway.v1.PageRequest
+	6,   // 41: slipway.v1.ListApiTokensResponse.items:type_name -> slipway.v1.ApiToken
+	209, // 42: slipway.v1.ListApiTokensResponse.page:type_name -> slipway.v1.PageResponse
+	205, // 43: slipway.v1.CreateApiTokenRequest.expires_at:type_name -> google.protobuf.Timestamp
+	6,   // 44: slipway.v1.CreateApiTokenResponse.token:type_name -> slipway.v1.ApiToken
+	208, // 45: slipway.v1.ListAuditEventsRequest.page:type_name -> slipway.v1.PageRequest
+	7,   // 46: slipway.v1.ListAuditEventsResponse.items:type_name -> slipway.v1.AuditEvent
+	209, // 47: slipway.v1.ListAuditEventsResponse.page:type_name -> slipway.v1.PageResponse
+	0,   // 48: slipway.v1.LoginResponse.user:type_name -> slipway.v1.User
+	1,   // 49: slipway.v1.LoginResponse.current_org:type_name -> slipway.v1.Organization
+	0,   // 50: slipway.v1.SignupResponse.user:type_name -> slipway.v1.User
+	1,   // 51: slipway.v1.SignupResponse.organization:type_name -> slipway.v1.Organization
+	203, // 52: slipway.v1.ListAuthProvidersResponse.providers:type_name -> slipway.v1.ListAuthProvidersResponse.Provider
+	0,   // 53: slipway.v1.VerifyEmailResponse.user:type_name -> slipway.v1.User
+	1,   // 54: slipway.v1.VerifyEmailResponse.organization:type_name -> slipway.v1.Organization
+	0,   // 55: slipway.v1.UpdateProfileRequest.user:type_name -> slipway.v1.User
+	210, // 56: slipway.v1.UpdateProfileRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,   // 57: slipway.v1.UpdateProfileResponse.user:type_name -> slipway.v1.User
+	1,   // 58: slipway.v1.SwitchOrganizationResponse.organization:type_name -> slipway.v1.Organization
+	74,  // 59: slipway.v1.ListLinkedIdentitiesResponse.items:type_name -> slipway.v1.LinkedIdentity
+	205, // 60: slipway.v1.WebAuthnCredential.created_at:type_name -> google.protobuf.Timestamp
+	205, // 61: slipway.v1.WebAuthnCredential.last_used_at:type_name -> google.protobuf.Timestamp
+	89,  // 62: slipway.v1.ListWebAuthnCredentialsResponse.items:type_name -> slipway.v1.WebAuthnCredential
+	89,  // 63: slipway.v1.FinishWebAuthnRegistrationResponse.credential:type_name -> slipway.v1.WebAuthnCredential
+	0,   // 64: slipway.v1.FinishWebAuthnLoginResponse.user:type_name -> slipway.v1.User
+	1,   // 65: slipway.v1.FinishWebAuthnLoginResponse.current_org:type_name -> slipway.v1.Organization
+	205, // 66: slipway.v1.Invitation.expires_at:type_name -> google.protobuf.Timestamp
+	205, // 67: slipway.v1.Invitation.created_at:type_name -> google.protobuf.Timestamp
+	1,   // 68: slipway.v1.AcceptInvitationResponse.organization:type_name -> slipway.v1.Organization
+	102, // 69: slipway.v1.ListInvitationsResponse.items:type_name -> slipway.v1.Invitation
+	205, // 70: slipway.v1.Team.created_at:type_name -> google.protobuf.Timestamp
+	0,   // 71: slipway.v1.TeamMember.user:type_name -> slipway.v1.User
+	208, // 72: slipway.v1.ListTeamsRequest.page:type_name -> slipway.v1.PageRequest
+	111, // 73: slipway.v1.ListTeamsResponse.items:type_name -> slipway.v1.Team
+	209, // 74: slipway.v1.ListTeamsResponse.page:type_name -> slipway.v1.PageResponse
+	111, // 75: slipway.v1.CreateTeamResponse.team:type_name -> slipway.v1.Team
+	111, // 76: slipway.v1.GetTeamResponse.team:type_name -> slipway.v1.Team
+	111, // 77: slipway.v1.UpdateTeamRequest.team:type_name -> slipway.v1.Team
+	210, // 78: slipway.v1.UpdateTeamRequest.update_mask:type_name -> google.protobuf.FieldMask
+	111, // 79: slipway.v1.UpdateTeamResponse.team:type_name -> slipway.v1.Team
+	112, // 80: slipway.v1.ListTeamMembersResponse.items:type_name -> slipway.v1.TeamMember
+	205, // 81: slipway.v1.RoleBinding.created_at:type_name -> google.protobuf.Timestamp
+	129, // 82: slipway.v1.ListPermissionsResponse.items:type_name -> slipway.v1.PermissionInfo
+	5,   // 83: slipway.v1.CreateRoleResponse.role:type_name -> slipway.v1.Role
+	5,   // 84: slipway.v1.GetRoleResponse.role:type_name -> slipway.v1.Role
+	5,   // 85: slipway.v1.UpdateRoleRequest.role:type_name -> slipway.v1.Role
+	210, // 86: slipway.v1.UpdateRoleRequest.update_mask:type_name -> google.protobuf.FieldMask
+	5,   // 87: slipway.v1.UpdateRoleResponse.role:type_name -> slipway.v1.Role
+	130, // 88: slipway.v1.ListRoleBindingsResponse.items:type_name -> slipway.v1.RoleBinding
+	130, // 89: slipway.v1.CreateRoleBindingRequest.binding:type_name -> slipway.v1.RoleBinding
+	130, // 90: slipway.v1.CreateRoleBindingResponse.binding:type_name -> slipway.v1.RoleBinding
+	204, // 91: slipway.v1.CheckPermissionsResponse.allowed:type_name -> slipway.v1.CheckPermissionsResponse.AllowedEntry
+	205, // 92: slipway.v1.ServiceAccount.created_at:type_name -> google.protobuf.Timestamp
+	208, // 93: slipway.v1.ListServiceAccountsRequest.page:type_name -> slipway.v1.PageRequest
+	149, // 94: slipway.v1.ListServiceAccountsResponse.items:type_name -> slipway.v1.ServiceAccount
+	209, // 95: slipway.v1.ListServiceAccountsResponse.page:type_name -> slipway.v1.PageResponse
+	149, // 96: slipway.v1.CreateServiceAccountResponse.service_account:type_name -> slipway.v1.ServiceAccount
+	149, // 97: slipway.v1.GetServiceAccountResponse.service_account:type_name -> slipway.v1.ServiceAccount
+	149, // 98: slipway.v1.UpdateServiceAccountRequest.service_account:type_name -> slipway.v1.ServiceAccount
+	210, // 99: slipway.v1.UpdateServiceAccountRequest.update_mask:type_name -> google.protobuf.FieldMask
+	149, // 100: slipway.v1.UpdateServiceAccountResponse.service_account:type_name -> slipway.v1.ServiceAccount
+	208, // 101: slipway.v1.ListServiceAccountTokensRequest.page:type_name -> slipway.v1.PageRequest
+	6,   // 102: slipway.v1.ListServiceAccountTokensResponse.items:type_name -> slipway.v1.ApiToken
+	209, // 103: slipway.v1.ListServiceAccountTokensResponse.page:type_name -> slipway.v1.PageResponse
+	205, // 104: slipway.v1.CreateServiceAccountTokenRequest.expires_at:type_name -> google.protobuf.Timestamp
+	6,   // 105: slipway.v1.CreateServiceAccountTokenResponse.token:type_name -> slipway.v1.ApiToken
+	208, // 106: slipway.v1.QueryAuditEventsRequest.page:type_name -> slipway.v1.PageRequest
+	205, // 107: slipway.v1.QueryAuditEventsRequest.since:type_name -> google.protobuf.Timestamp
+	205, // 108: slipway.v1.QueryAuditEventsRequest.until:type_name -> google.protobuf.Timestamp
+	7,   // 109: slipway.v1.QueryAuditEventsResponse.items:type_name -> slipway.v1.AuditEvent
+	209, // 110: slipway.v1.QueryAuditEventsResponse.page:type_name -> slipway.v1.PageResponse
+	205, // 111: slipway.v1.SsoConnection.created_at:type_name -> google.protobuf.Timestamp
+	205, // 112: slipway.v1.SsoConnection.updated_at:type_name -> google.protobuf.Timestamp
+	172, // 113: slipway.v1.ListSsoConnectionsResponse.items:type_name -> slipway.v1.SsoConnection
+	172, // 114: slipway.v1.CreateSsoConnectionRequest.connection:type_name -> slipway.v1.SsoConnection
+	172, // 115: slipway.v1.CreateSsoConnectionResponse.connection:type_name -> slipway.v1.SsoConnection
+	172, // 116: slipway.v1.UpdateSsoConnectionRequest.connection:type_name -> slipway.v1.SsoConnection
+	210, // 117: slipway.v1.UpdateSsoConnectionRequest.update_mask:type_name -> google.protobuf.FieldMask
+	172, // 118: slipway.v1.UpdateSsoConnectionResponse.connection:type_name -> slipway.v1.SsoConnection
+	205, // 119: slipway.v1.OrgDomain.verified_at:type_name -> google.protobuf.Timestamp
+	205, // 120: slipway.v1.OrgDomain.created_at:type_name -> google.protobuf.Timestamp
+	183, // 121: slipway.v1.ListOrgDomainsResponse.items:type_name -> slipway.v1.OrgDomain
+	183, // 122: slipway.v1.AddOrgDomainResponse.domain:type_name -> slipway.v1.OrgDomain
+	183, // 123: slipway.v1.ConfirmOrgDomainResponse.domain:type_name -> slipway.v1.OrgDomain
+	205, // 124: slipway.v1.ScimToken.expires_at:type_name -> google.protobuf.Timestamp
+	205, // 125: slipway.v1.ScimToken.last_used_at:type_name -> google.protobuf.Timestamp
+	205, // 126: slipway.v1.ScimToken.created_at:type_name -> google.protobuf.Timestamp
+	192, // 127: slipway.v1.ListScimTokensResponse.items:type_name -> slipway.v1.ScimToken
+	205, // 128: slipway.v1.CreateScimTokenRequest.expires_at:type_name -> google.protobuf.Timestamp
+	192, // 129: slipway.v1.CreateScimTokenResponse.token:type_name -> slipway.v1.ScimToken
+	8,   // 130: slipway.v1.IdentityService.WhoAmI:input_type -> slipway.v1.WhoAmIRequest
+	48,  // 131: slipway.v1.IdentityService.Login:input_type -> slipway.v1.LoginRequest
+	50,  // 132: slipway.v1.IdentityService.Logout:input_type -> slipway.v1.LogoutRequest
+	52,  // 133: slipway.v1.IdentityService.Signup:input_type -> slipway.v1.SignupRequest
+	54,  // 134: slipway.v1.IdentityService.ListAuthProviders:input_type -> slipway.v1.ListAuthProvidersRequest
+	10,  // 135: slipway.v1.IdentityService.ListOrganizations:input_type -> slipway.v1.ListOrganizationsRequest
+	12,  // 136: slipway.v1.IdentityService.CreateOrganization:input_type -> slipway.v1.CreateOrganizationRequest
+	14,  // 137: slipway.v1.IdentityService.GetOrganization:input_type -> slipway.v1.GetOrganizationRequest
+	16,  // 138: slipway.v1.IdentityService.UpdateOrganization:input_type -> slipway.v1.UpdateOrganizationRequest
+	18,  // 139: slipway.v1.IdentityService.DeleteOrganization:input_type -> slipway.v1.DeleteOrganizationRequest
+	30,  // 140: slipway.v1.IdentityService.ListMembers:input_type -> slipway.v1.ListMembersRequest
+	32,  // 141: slipway.v1.IdentityService.InviteMember:input_type -> slipway.v1.InviteMemberRequest
+	34,  // 142: slipway.v1.IdentityService.UpdateMemberRole:input_type -> slipway.v1.UpdateMemberRoleRequest
+	36,  // 143: slipway.v1.IdentityService.RemoveMember:input_type -> slipway.v1.RemoveMemberRequest
+	38,  // 144: slipway.v1.IdentityService.ListRoles:input_type -> slipway.v1.ListRolesRequest
+	40,  // 145: slipway.v1.IdentityService.ListApiTokens:input_type -> slipway.v1.ListApiTokensRequest
+	42,  // 146: slipway.v1.IdentityService.CreateApiToken:input_type -> slipway.v1.CreateApiTokenRequest
+	44,  // 147: slipway.v1.IdentityService.RevokeApiToken:input_type -> slipway.v1.RevokeApiTokenRequest
+	46,  // 148: slipway.v1.IdentityService.ListAuditEvents:input_type -> slipway.v1.ListAuditEventsRequest
+	56,  // 149: slipway.v1.IdentityService.VerifyEmail:input_type -> slipway.v1.VerifyEmailRequest
+	58,  // 150: slipway.v1.IdentityService.ResendVerification:input_type -> slipway.v1.ResendVerificationRequest
+	60,  // 151: slipway.v1.IdentityService.RequestPasswordReset:input_type -> slipway.v1.RequestPasswordResetRequest
+	62,  // 152: slipway.v1.IdentityService.ResetPassword:input_type -> slipway.v1.ResetPasswordRequest
+	64,  // 153: slipway.v1.IdentityService.ChangePassword:input_type -> slipway.v1.ChangePasswordRequest
+	66,  // 154: slipway.v1.IdentityService.UpdateProfile:input_type -> slipway.v1.UpdateProfileRequest
+	68,  // 155: slipway.v1.IdentityService.SignOutEverywhere:input_type -> slipway.v1.SignOutEverywhereRequest
+	70,  // 156: slipway.v1.IdentityService.DeleteAccount:input_type -> slipway.v1.DeleteAccountRequest
+	72,  // 157: slipway.v1.IdentityService.SwitchOrganization:input_type -> slipway.v1.SwitchOrganizationRequest
+	75,  // 158: slipway.v1.IdentityService.ListLinkedIdentities:input_type -> slipway.v1.ListLinkedIdentitiesRequest
+	77,  // 159: slipway.v1.IdentityService.UnlinkIdentity:input_type -> slipway.v1.UnlinkIdentityRequest
+	79,  // 160: slipway.v1.IdentityService.GetMfaStatus:input_type -> slipway.v1.GetMfaStatusRequest
+	81,  // 161: slipway.v1.IdentityService.BeginTotpEnrollment:input_type -> slipway.v1.BeginTotpEnrollmentRequest
+	83,  // 162: slipway.v1.IdentityService.ConfirmTotpEnrollment:input_type -> slipway.v1.ConfirmTotpEnrollmentRequest
+	85,  // 163: slipway.v1.IdentityService.RegenerateRecoveryCodes:input_type -> slipway.v1.RegenerateRecoveryCodesRequest
+	87,  // 164: slipway.v1.IdentityService.DisableMfa:input_type -> slipway.v1.DisableMfaRequest
+	90,  // 165: slipway.v1.IdentityService.ListWebAuthnCredentials:input_type -> slipway.v1.ListWebAuthnCredentialsRequest
+	92,  // 166: slipway.v1.IdentityService.BeginWebAuthnRegistration:input_type -> slipway.v1.BeginWebAuthnRegistrationRequest
+	94,  // 167: slipway.v1.IdentityService.FinishWebAuthnRegistration:input_type -> slipway.v1.FinishWebAuthnRegistrationRequest
+	96,  // 168: slipway.v1.IdentityService.DeleteWebAuthnCredential:input_type -> slipway.v1.DeleteWebAuthnCredentialRequest
+	98,  // 169: slipway.v1.IdentityService.BeginWebAuthnLogin:input_type -> slipway.v1.BeginWebAuthnLoginRequest
+	100, // 170: slipway.v1.IdentityService.FinishWebAuthnLogin:input_type -> slipway.v1.FinishWebAuthnLoginRequest
+	103, // 171: slipway.v1.IdentityService.GetInvitation:input_type -> slipway.v1.GetInvitationRequest
+	105, // 172: slipway.v1.IdentityService.AcceptInvitation:input_type -> slipway.v1.AcceptInvitationRequest
+	107, // 173: slipway.v1.IdentityService.ListInvitations:input_type -> slipway.v1.ListInvitationsRequest
+	109, // 174: slipway.v1.IdentityService.RevokeInvitation:input_type -> slipway.v1.RevokeInvitationRequest
+	20,  // 175: slipway.v1.ProjectService.ListProjects:input_type -> slipway.v1.ListProjectsRequest
+	22,  // 176: slipway.v1.ProjectService.CreateProject:input_type -> slipway.v1.CreateProjectRequest
+	24,  // 177: slipway.v1.ProjectService.GetProject:input_type -> slipway.v1.GetProjectRequest
+	26,  // 178: slipway.v1.ProjectService.UpdateProject:input_type -> slipway.v1.UpdateProjectRequest
+	28,  // 179: slipway.v1.ProjectService.DeleteProject:input_type -> slipway.v1.DeleteProjectRequest
+	199, // 180: slipway.v1.ProjectService.GetBadgeKey:input_type -> slipway.v1.GetBadgeKeyRequest
+	201, // 181: slipway.v1.ProjectService.RegenerateBadgeKey:input_type -> slipway.v1.RegenerateBadgeKeyRequest
+	113, // 182: slipway.v1.TeamService.ListTeams:input_type -> slipway.v1.ListTeamsRequest
+	115, // 183: slipway.v1.TeamService.CreateTeam:input_type -> slipway.v1.CreateTeamRequest
+	117, // 184: slipway.v1.TeamService.GetTeam:input_type -> slipway.v1.GetTeamRequest
+	119, // 185: slipway.v1.TeamService.UpdateTeam:input_type -> slipway.v1.UpdateTeamRequest
+	121, // 186: slipway.v1.TeamService.DeleteTeam:input_type -> slipway.v1.DeleteTeamRequest
+	123, // 187: slipway.v1.TeamService.ListTeamMembers:input_type -> slipway.v1.ListTeamMembersRequest
+	125, // 188: slipway.v1.TeamService.AddTeamMember:input_type -> slipway.v1.AddTeamMemberRequest
+	127, // 189: slipway.v1.TeamService.RemoveTeamMember:input_type -> slipway.v1.RemoveTeamMemberRequest
+	131, // 190: slipway.v1.RoleService.ListPermissions:input_type -> slipway.v1.ListPermissionsRequest
+	133, // 191: slipway.v1.RoleService.CreateRole:input_type -> slipway.v1.CreateRoleRequest
+	135, // 192: slipway.v1.RoleService.GetRole:input_type -> slipway.v1.GetRoleRequest
+	137, // 193: slipway.v1.RoleService.UpdateRole:input_type -> slipway.v1.UpdateRoleRequest
+	139, // 194: slipway.v1.RoleService.DeleteRole:input_type -> slipway.v1.DeleteRoleRequest
+	141, // 195: slipway.v1.RoleService.ListRoleBindings:input_type -> slipway.v1.ListRoleBindingsRequest
+	143, // 196: slipway.v1.RoleService.CreateRoleBinding:input_type -> slipway.v1.CreateRoleBindingRequest
+	145, // 197: slipway.v1.RoleService.DeleteRoleBinding:input_type -> slipway.v1.DeleteRoleBindingRequest
+	147, // 198: slipway.v1.RoleService.CheckPermissions:input_type -> slipway.v1.CheckPermissionsRequest
+	150, // 199: slipway.v1.ServiceAccountService.ListServiceAccounts:input_type -> slipway.v1.ListServiceAccountsRequest
+	152, // 200: slipway.v1.ServiceAccountService.CreateServiceAccount:input_type -> slipway.v1.CreateServiceAccountRequest
+	154, // 201: slipway.v1.ServiceAccountService.GetServiceAccount:input_type -> slipway.v1.GetServiceAccountRequest
+	156, // 202: slipway.v1.ServiceAccountService.UpdateServiceAccount:input_type -> slipway.v1.UpdateServiceAccountRequest
+	158, // 203: slipway.v1.ServiceAccountService.DeleteServiceAccount:input_type -> slipway.v1.DeleteServiceAccountRequest
+	160, // 204: slipway.v1.ServiceAccountService.ListServiceAccountTokens:input_type -> slipway.v1.ListServiceAccountTokensRequest
+	162, // 205: slipway.v1.ServiceAccountService.CreateServiceAccountToken:input_type -> slipway.v1.CreateServiceAccountTokenRequest
+	164, // 206: slipway.v1.ServiceAccountService.RevokeServiceAccountToken:input_type -> slipway.v1.RevokeServiceAccountTokenRequest
+	166, // 207: slipway.v1.AuditService.QueryAuditEvents:input_type -> slipway.v1.QueryAuditEventsRequest
+	168, // 208: slipway.v1.AuditService.VerifyAuditChain:input_type -> slipway.v1.VerifyAuditChainRequest
+	170, // 209: slipway.v1.AuditService.GetAuditRetention:input_type -> slipway.v1.GetAuditRetentionRequest
+	173, // 210: slipway.v1.SsoService.ListSsoConnections:input_type -> slipway.v1.ListSsoConnectionsRequest
+	175, // 211: slipway.v1.SsoService.CreateSsoConnection:input_type -> slipway.v1.CreateSsoConnectionRequest
+	177, // 212: slipway.v1.SsoService.UpdateSsoConnection:input_type -> slipway.v1.UpdateSsoConnectionRequest
+	179, // 213: slipway.v1.SsoService.DeleteSsoConnection:input_type -> slipway.v1.DeleteSsoConnectionRequest
+	181, // 214: slipway.v1.SsoService.GetSamlServiceProvider:input_type -> slipway.v1.GetSamlServiceProviderRequest
+	184, // 215: slipway.v1.SsoService.ListOrgDomains:input_type -> slipway.v1.ListOrgDomainsRequest
+	186, // 216: slipway.v1.SsoService.AddOrgDomain:input_type -> slipway.v1.AddOrgDomainRequest
+	188, // 217: slipway.v1.SsoService.ConfirmOrgDomain:input_type -> slipway.v1.ConfirmOrgDomainRequest
+	190, // 218: slipway.v1.SsoService.DeleteOrgDomain:input_type -> slipway.v1.DeleteOrgDomainRequest
+	193, // 219: slipway.v1.SsoService.ListScimTokens:input_type -> slipway.v1.ListScimTokensRequest
+	195, // 220: slipway.v1.SsoService.CreateScimToken:input_type -> slipway.v1.CreateScimTokenRequest
+	197, // 221: slipway.v1.SsoService.RevokeScimToken:input_type -> slipway.v1.RevokeScimTokenRequest
+	9,   // 222: slipway.v1.IdentityService.WhoAmI:output_type -> slipway.v1.WhoAmIResponse
+	49,  // 223: slipway.v1.IdentityService.Login:output_type -> slipway.v1.LoginResponse
+	51,  // 224: slipway.v1.IdentityService.Logout:output_type -> slipway.v1.LogoutResponse
+	53,  // 225: slipway.v1.IdentityService.Signup:output_type -> slipway.v1.SignupResponse
+	55,  // 226: slipway.v1.IdentityService.ListAuthProviders:output_type -> slipway.v1.ListAuthProvidersResponse
+	11,  // 227: slipway.v1.IdentityService.ListOrganizations:output_type -> slipway.v1.ListOrganizationsResponse
+	13,  // 228: slipway.v1.IdentityService.CreateOrganization:output_type -> slipway.v1.CreateOrganizationResponse
+	15,  // 229: slipway.v1.IdentityService.GetOrganization:output_type -> slipway.v1.GetOrganizationResponse
+	17,  // 230: slipway.v1.IdentityService.UpdateOrganization:output_type -> slipway.v1.UpdateOrganizationResponse
+	19,  // 231: slipway.v1.IdentityService.DeleteOrganization:output_type -> slipway.v1.DeleteOrganizationResponse
+	31,  // 232: slipway.v1.IdentityService.ListMembers:output_type -> slipway.v1.ListMembersResponse
+	33,  // 233: slipway.v1.IdentityService.InviteMember:output_type -> slipway.v1.InviteMemberResponse
+	35,  // 234: slipway.v1.IdentityService.UpdateMemberRole:output_type -> slipway.v1.UpdateMemberRoleResponse
+	37,  // 235: slipway.v1.IdentityService.RemoveMember:output_type -> slipway.v1.RemoveMemberResponse
+	39,  // 236: slipway.v1.IdentityService.ListRoles:output_type -> slipway.v1.ListRolesResponse
+	41,  // 237: slipway.v1.IdentityService.ListApiTokens:output_type -> slipway.v1.ListApiTokensResponse
+	43,  // 238: slipway.v1.IdentityService.CreateApiToken:output_type -> slipway.v1.CreateApiTokenResponse
+	45,  // 239: slipway.v1.IdentityService.RevokeApiToken:output_type -> slipway.v1.RevokeApiTokenResponse
+	47,  // 240: slipway.v1.IdentityService.ListAuditEvents:output_type -> slipway.v1.ListAuditEventsResponse
+	57,  // 241: slipway.v1.IdentityService.VerifyEmail:output_type -> slipway.v1.VerifyEmailResponse
+	59,  // 242: slipway.v1.IdentityService.ResendVerification:output_type -> slipway.v1.ResendVerificationResponse
+	61,  // 243: slipway.v1.IdentityService.RequestPasswordReset:output_type -> slipway.v1.RequestPasswordResetResponse
+	63,  // 244: slipway.v1.IdentityService.ResetPassword:output_type -> slipway.v1.ResetPasswordResponse
+	65,  // 245: slipway.v1.IdentityService.ChangePassword:output_type -> slipway.v1.ChangePasswordResponse
+	67,  // 246: slipway.v1.IdentityService.UpdateProfile:output_type -> slipway.v1.UpdateProfileResponse
+	69,  // 247: slipway.v1.IdentityService.SignOutEverywhere:output_type -> slipway.v1.SignOutEverywhereResponse
+	71,  // 248: slipway.v1.IdentityService.DeleteAccount:output_type -> slipway.v1.DeleteAccountResponse
+	73,  // 249: slipway.v1.IdentityService.SwitchOrganization:output_type -> slipway.v1.SwitchOrganizationResponse
+	76,  // 250: slipway.v1.IdentityService.ListLinkedIdentities:output_type -> slipway.v1.ListLinkedIdentitiesResponse
+	78,  // 251: slipway.v1.IdentityService.UnlinkIdentity:output_type -> slipway.v1.UnlinkIdentityResponse
+	80,  // 252: slipway.v1.IdentityService.GetMfaStatus:output_type -> slipway.v1.GetMfaStatusResponse
+	82,  // 253: slipway.v1.IdentityService.BeginTotpEnrollment:output_type -> slipway.v1.BeginTotpEnrollmentResponse
+	84,  // 254: slipway.v1.IdentityService.ConfirmTotpEnrollment:output_type -> slipway.v1.ConfirmTotpEnrollmentResponse
+	86,  // 255: slipway.v1.IdentityService.RegenerateRecoveryCodes:output_type -> slipway.v1.RegenerateRecoveryCodesResponse
+	88,  // 256: slipway.v1.IdentityService.DisableMfa:output_type -> slipway.v1.DisableMfaResponse
+	91,  // 257: slipway.v1.IdentityService.ListWebAuthnCredentials:output_type -> slipway.v1.ListWebAuthnCredentialsResponse
+	93,  // 258: slipway.v1.IdentityService.BeginWebAuthnRegistration:output_type -> slipway.v1.BeginWebAuthnRegistrationResponse
+	95,  // 259: slipway.v1.IdentityService.FinishWebAuthnRegistration:output_type -> slipway.v1.FinishWebAuthnRegistrationResponse
+	97,  // 260: slipway.v1.IdentityService.DeleteWebAuthnCredential:output_type -> slipway.v1.DeleteWebAuthnCredentialResponse
+	99,  // 261: slipway.v1.IdentityService.BeginWebAuthnLogin:output_type -> slipway.v1.BeginWebAuthnLoginResponse
+	101, // 262: slipway.v1.IdentityService.FinishWebAuthnLogin:output_type -> slipway.v1.FinishWebAuthnLoginResponse
+	104, // 263: slipway.v1.IdentityService.GetInvitation:output_type -> slipway.v1.GetInvitationResponse
+	106, // 264: slipway.v1.IdentityService.AcceptInvitation:output_type -> slipway.v1.AcceptInvitationResponse
+	108, // 265: slipway.v1.IdentityService.ListInvitations:output_type -> slipway.v1.ListInvitationsResponse
+	110, // 266: slipway.v1.IdentityService.RevokeInvitation:output_type -> slipway.v1.RevokeInvitationResponse
+	21,  // 267: slipway.v1.ProjectService.ListProjects:output_type -> slipway.v1.ListProjectsResponse
+	23,  // 268: slipway.v1.ProjectService.CreateProject:output_type -> slipway.v1.CreateProjectResponse
+	25,  // 269: slipway.v1.ProjectService.GetProject:output_type -> slipway.v1.GetProjectResponse
+	27,  // 270: slipway.v1.ProjectService.UpdateProject:output_type -> slipway.v1.UpdateProjectResponse
+	29,  // 271: slipway.v1.ProjectService.DeleteProject:output_type -> slipway.v1.DeleteProjectResponse
+	200, // 272: slipway.v1.ProjectService.GetBadgeKey:output_type -> slipway.v1.GetBadgeKeyResponse
+	202, // 273: slipway.v1.ProjectService.RegenerateBadgeKey:output_type -> slipway.v1.RegenerateBadgeKeyResponse
+	114, // 274: slipway.v1.TeamService.ListTeams:output_type -> slipway.v1.ListTeamsResponse
+	116, // 275: slipway.v1.TeamService.CreateTeam:output_type -> slipway.v1.CreateTeamResponse
+	118, // 276: slipway.v1.TeamService.GetTeam:output_type -> slipway.v1.GetTeamResponse
+	120, // 277: slipway.v1.TeamService.UpdateTeam:output_type -> slipway.v1.UpdateTeamResponse
+	122, // 278: slipway.v1.TeamService.DeleteTeam:output_type -> slipway.v1.DeleteTeamResponse
+	124, // 279: slipway.v1.TeamService.ListTeamMembers:output_type -> slipway.v1.ListTeamMembersResponse
+	126, // 280: slipway.v1.TeamService.AddTeamMember:output_type -> slipway.v1.AddTeamMemberResponse
+	128, // 281: slipway.v1.TeamService.RemoveTeamMember:output_type -> slipway.v1.RemoveTeamMemberResponse
+	132, // 282: slipway.v1.RoleService.ListPermissions:output_type -> slipway.v1.ListPermissionsResponse
+	134, // 283: slipway.v1.RoleService.CreateRole:output_type -> slipway.v1.CreateRoleResponse
+	136, // 284: slipway.v1.RoleService.GetRole:output_type -> slipway.v1.GetRoleResponse
+	138, // 285: slipway.v1.RoleService.UpdateRole:output_type -> slipway.v1.UpdateRoleResponse
+	140, // 286: slipway.v1.RoleService.DeleteRole:output_type -> slipway.v1.DeleteRoleResponse
+	142, // 287: slipway.v1.RoleService.ListRoleBindings:output_type -> slipway.v1.ListRoleBindingsResponse
+	144, // 288: slipway.v1.RoleService.CreateRoleBinding:output_type -> slipway.v1.CreateRoleBindingResponse
+	146, // 289: slipway.v1.RoleService.DeleteRoleBinding:output_type -> slipway.v1.DeleteRoleBindingResponse
+	148, // 290: slipway.v1.RoleService.CheckPermissions:output_type -> slipway.v1.CheckPermissionsResponse
+	151, // 291: slipway.v1.ServiceAccountService.ListServiceAccounts:output_type -> slipway.v1.ListServiceAccountsResponse
+	153, // 292: slipway.v1.ServiceAccountService.CreateServiceAccount:output_type -> slipway.v1.CreateServiceAccountResponse
+	155, // 293: slipway.v1.ServiceAccountService.GetServiceAccount:output_type -> slipway.v1.GetServiceAccountResponse
+	157, // 294: slipway.v1.ServiceAccountService.UpdateServiceAccount:output_type -> slipway.v1.UpdateServiceAccountResponse
+	159, // 295: slipway.v1.ServiceAccountService.DeleteServiceAccount:output_type -> slipway.v1.DeleteServiceAccountResponse
+	161, // 296: slipway.v1.ServiceAccountService.ListServiceAccountTokens:output_type -> slipway.v1.ListServiceAccountTokensResponse
+	163, // 297: slipway.v1.ServiceAccountService.CreateServiceAccountToken:output_type -> slipway.v1.CreateServiceAccountTokenResponse
+	165, // 298: slipway.v1.ServiceAccountService.RevokeServiceAccountToken:output_type -> slipway.v1.RevokeServiceAccountTokenResponse
+	167, // 299: slipway.v1.AuditService.QueryAuditEvents:output_type -> slipway.v1.QueryAuditEventsResponse
+	169, // 300: slipway.v1.AuditService.VerifyAuditChain:output_type -> slipway.v1.VerifyAuditChainResponse
+	171, // 301: slipway.v1.AuditService.GetAuditRetention:output_type -> slipway.v1.GetAuditRetentionResponse
+	174, // 302: slipway.v1.SsoService.ListSsoConnections:output_type -> slipway.v1.ListSsoConnectionsResponse
+	176, // 303: slipway.v1.SsoService.CreateSsoConnection:output_type -> slipway.v1.CreateSsoConnectionResponse
+	178, // 304: slipway.v1.SsoService.UpdateSsoConnection:output_type -> slipway.v1.UpdateSsoConnectionResponse
+	180, // 305: slipway.v1.SsoService.DeleteSsoConnection:output_type -> slipway.v1.DeleteSsoConnectionResponse
+	182, // 306: slipway.v1.SsoService.GetSamlServiceProvider:output_type -> slipway.v1.GetSamlServiceProviderResponse
+	185, // 307: slipway.v1.SsoService.ListOrgDomains:output_type -> slipway.v1.ListOrgDomainsResponse
+	187, // 308: slipway.v1.SsoService.AddOrgDomain:output_type -> slipway.v1.AddOrgDomainResponse
+	189, // 309: slipway.v1.SsoService.ConfirmOrgDomain:output_type -> slipway.v1.ConfirmOrgDomainResponse
+	191, // 310: slipway.v1.SsoService.DeleteOrgDomain:output_type -> slipway.v1.DeleteOrgDomainResponse
+	194, // 311: slipway.v1.SsoService.ListScimTokens:output_type -> slipway.v1.ListScimTokensResponse
+	196, // 312: slipway.v1.SsoService.CreateScimToken:output_type -> slipway.v1.CreateScimTokenResponse
+	198, // 313: slipway.v1.SsoService.RevokeScimToken:output_type -> slipway.v1.RevokeScimTokenResponse
+	222, // [222:314] is the sub-list for method output_type
+	130, // [130:222] is the sub-list for method input_type
+	130, // [130:130] is the sub-list for extension type_name
+	130, // [130:130] is the sub-list for extension extendee
+	0,   // [0:130] is the sub-list for field type_name
 }
 
 func init() { file_slipway_v1_identity_proto_init() }
@@ -11605,7 +11886,7 @@ func file_slipway_v1_identity_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_slipway_v1_identity_proto_rawDesc), len(file_slipway_v1_identity_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   201,
+			NumMessages:   205,
 			NumExtensions: 0,
 			NumServices:   7,
 		},

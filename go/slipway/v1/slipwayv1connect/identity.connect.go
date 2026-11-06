@@ -59,6 +59,9 @@ const (
 	// IdentityServiceUpdateOrganizationProcedure is the procedure name of the IdentityService's
 	// UpdateOrganization RPC.
 	IdentityServiceUpdateOrganizationProcedure = "/slipway.v1.IdentityService/UpdateOrganization"
+	// IdentityServiceDeleteOrganizationProcedure is the procedure name of the IdentityService's
+	// DeleteOrganization RPC.
+	IdentityServiceDeleteOrganizationProcedure = "/slipway.v1.IdentityService/DeleteOrganization"
 	// IdentityServiceListMembersProcedure is the procedure name of the IdentityService's ListMembers
 	// RPC.
 	IdentityServiceListMembersProcedure = "/slipway.v1.IdentityService/ListMembers"
@@ -106,6 +109,9 @@ const (
 	// IdentityServiceSignOutEverywhereProcedure is the procedure name of the IdentityService's
 	// SignOutEverywhere RPC.
 	IdentityServiceSignOutEverywhereProcedure = "/slipway.v1.IdentityService/SignOutEverywhere"
+	// IdentityServiceDeleteAccountProcedure is the procedure name of the IdentityService's
+	// DeleteAccount RPC.
+	IdentityServiceDeleteAccountProcedure = "/slipway.v1.IdentityService/DeleteAccount"
 	// IdentityServiceSwitchOrganizationProcedure is the procedure name of the IdentityService's
 	// SwitchOrganization RPC.
 	IdentityServiceSwitchOrganizationProcedure = "/slipway.v1.IdentityService/SwitchOrganization"
@@ -348,6 +354,13 @@ var (
 			Procedure:  IdentityServiceUpdateOrganizationProcedure,
 		}
 	})
+	identityServiceDeleteOrganizationSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_identity_proto.Services().ByName("IdentityService").Methods().ByName("DeleteOrganization"),
+			Procedure:  IdentityServiceDeleteOrganizationProcedure,
+		}
+	})
 	identityServiceListMembersSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeUnary,
@@ -458,6 +471,13 @@ var (
 			StreamType: connect.StreamTypeUnary,
 			Schema:     v1.File_slipway_v1_identity_proto.Services().ByName("IdentityService").Methods().ByName("SignOutEverywhere"),
 			Procedure:  IdentityServiceSignOutEverywhereProcedure,
+		}
+	})
+	identityServiceDeleteAccountSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_identity_proto.Services().ByName("IdentityService").Methods().ByName("DeleteAccount"),
+			Procedure:  IdentityServiceDeleteAccountProcedure,
 		}
 	})
 	identityServiceSwitchOrganizationSpec = sync.OnceValue(func() connect.Spec {
@@ -599,6 +619,7 @@ type IdentityServiceClient interface {
 	CreateOrganization(context.Context, *v1.CreateOrganizationRequest) (*v1.CreateOrganizationResponse, error)
 	GetOrganization(context.Context, *v1.GetOrganizationRequest) (*v1.GetOrganizationResponse, error)
 	UpdateOrganization(context.Context, *v1.UpdateOrganizationRequest) (*v1.UpdateOrganizationResponse, error)
+	DeleteOrganization(context.Context, *v1.DeleteOrganizationRequest) (*v1.DeleteOrganizationResponse, error)
 	ListMembers(context.Context, *v1.ListMembersRequest) (*v1.ListMembersResponse, error)
 	InviteMember(context.Context, *v1.InviteMemberRequest) (*v1.InviteMemberResponse, error)
 	UpdateMemberRole(context.Context, *v1.UpdateMemberRoleRequest) (*v1.UpdateMemberRoleResponse, error)
@@ -615,6 +636,7 @@ type IdentityServiceClient interface {
 	ChangePassword(context.Context, *v1.ChangePasswordRequest) (*v1.ChangePasswordResponse, error)
 	UpdateProfile(context.Context, *v1.UpdateProfileRequest) (*v1.UpdateProfileResponse, error)
 	SignOutEverywhere(context.Context, *v1.SignOutEverywhereRequest) (*v1.SignOutEverywhereResponse, error)
+	DeleteAccount(context.Context, *v1.DeleteAccountRequest) (*v1.DeleteAccountResponse, error)
 	SwitchOrganization(context.Context, *v1.SwitchOrganizationRequest) (*v1.SwitchOrganizationResponse, error)
 	ListLinkedIdentities(context.Context, *v1.ListLinkedIdentitiesRequest) (*v1.ListLinkedIdentitiesResponse, error)
 	UnlinkIdentity(context.Context, *v1.UnlinkIdentityRequest) (*v1.UnlinkIdentityResponse, error)
@@ -652,6 +674,7 @@ type IdentityServiceHandler interface {
 	CreateOrganization(context.Context, *v1.CreateOrganizationRequest) (*v1.CreateOrganizationResponse, error)
 	GetOrganization(context.Context, *v1.GetOrganizationRequest) (*v1.GetOrganizationResponse, error)
 	UpdateOrganization(context.Context, *v1.UpdateOrganizationRequest) (*v1.UpdateOrganizationResponse, error)
+	DeleteOrganization(context.Context, *v1.DeleteOrganizationRequest) (*v1.DeleteOrganizationResponse, error)
 	ListMembers(context.Context, *v1.ListMembersRequest) (*v1.ListMembersResponse, error)
 	InviteMember(context.Context, *v1.InviteMemberRequest) (*v1.InviteMemberResponse, error)
 	UpdateMemberRole(context.Context, *v1.UpdateMemberRoleRequest) (*v1.UpdateMemberRoleResponse, error)
@@ -668,6 +691,7 @@ type IdentityServiceHandler interface {
 	ChangePassword(context.Context, *v1.ChangePasswordRequest) (*v1.ChangePasswordResponse, error)
 	UpdateProfile(context.Context, *v1.UpdateProfileRequest) (*v1.UpdateProfileResponse, error)
 	SignOutEverywhere(context.Context, *v1.SignOutEverywhereRequest) (*v1.SignOutEverywhereResponse, error)
+	DeleteAccount(context.Context, *v1.DeleteAccountRequest) (*v1.DeleteAccountResponse, error)
 	SwitchOrganization(context.Context, *v1.SwitchOrganizationRequest) (*v1.SwitchOrganizationResponse, error)
 	ListLinkedIdentities(context.Context, *v1.ListLinkedIdentitiesRequest) (*v1.ListLinkedIdentitiesResponse, error)
 	UnlinkIdentity(context.Context, *v1.UnlinkIdentityRequest) (*v1.UnlinkIdentityResponse, error)
@@ -702,6 +726,7 @@ func RegisterIdentityServiceHandler(server *connect.Server, svc IdentityServiceH
 		connect.Method{Spec: identityServiceCreateOrganizationSpec(), Handler: adapter.createOrganization},
 		connect.Method{Spec: identityServiceGetOrganizationSpec(), Handler: adapter.getOrganization},
 		connect.Method{Spec: identityServiceUpdateOrganizationSpec(), Handler: adapter.updateOrganization},
+		connect.Method{Spec: identityServiceDeleteOrganizationSpec(), Handler: adapter.deleteOrganization},
 		connect.Method{Spec: identityServiceListMembersSpec(), Handler: adapter.listMembers},
 		connect.Method{Spec: identityServiceInviteMemberSpec(), Handler: adapter.inviteMember},
 		connect.Method{Spec: identityServiceUpdateMemberRoleSpec(), Handler: adapter.updateMemberRole},
@@ -718,6 +743,7 @@ func RegisterIdentityServiceHandler(server *connect.Server, svc IdentityServiceH
 		connect.Method{Spec: identityServiceChangePasswordSpec(), Handler: adapter.changePassword},
 		connect.Method{Spec: identityServiceUpdateProfileSpec(), Handler: adapter.updateProfile},
 		connect.Method{Spec: identityServiceSignOutEverywhereSpec(), Handler: adapter.signOutEverywhere},
+		connect.Method{Spec: identityServiceDeleteAccountSpec(), Handler: adapter.deleteAccount},
 		connect.Method{Spec: identityServiceSwitchOrganizationSpec(), Handler: adapter.switchOrganization},
 		connect.Method{Spec: identityServiceListLinkedIdentitiesSpec(), Handler: adapter.listLinkedIdentities},
 		connect.Method{Spec: identityServiceUnlinkIdentitySpec(), Handler: adapter.unlinkIdentity},
@@ -776,6 +802,10 @@ func (UnimplementedIdentityServiceHandler) GetOrganization(context.Context, *v1.
 
 func (UnimplementedIdentityServiceHandler) UpdateOrganization(context.Context, *v1.UpdateOrganizationRequest) (*v1.UpdateOrganizationResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.IdentityService.UpdateOrganization is not implemented")
+}
+
+func (UnimplementedIdentityServiceHandler) DeleteOrganization(context.Context, *v1.DeleteOrganizationRequest) (*v1.DeleteOrganizationResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.IdentityService.DeleteOrganization is not implemented")
 }
 
 func (UnimplementedIdentityServiceHandler) ListMembers(context.Context, *v1.ListMembersRequest) (*v1.ListMembersResponse, error) {
@@ -840,6 +870,10 @@ func (UnimplementedIdentityServiceHandler) UpdateProfile(context.Context, *v1.Up
 
 func (UnimplementedIdentityServiceHandler) SignOutEverywhere(context.Context, *v1.SignOutEverywhereRequest) (*v1.SignOutEverywhereResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.IdentityService.SignOutEverywhere is not implemented")
+}
+
+func (UnimplementedIdentityServiceHandler) DeleteAccount(context.Context, *v1.DeleteAccountRequest) (*v1.DeleteAccountResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.IdentityService.DeleteAccount is not implemented")
 }
 
 func (UnimplementedIdentityServiceHandler) SwitchOrganization(context.Context, *v1.SwitchOrganizationRequest) (*v1.SwitchOrganizationResponse, error) {
@@ -990,6 +1024,14 @@ func (c *identityServiceClient) UpdateOrganization(ctx context.Context, req *v1.
 	return &res, nil
 }
 
+func (c *identityServiceClient) DeleteOrganization(ctx context.Context, req *v1.DeleteOrganizationRequest) (*v1.DeleteOrganizationResponse, error) {
+	var res v1.DeleteOrganizationResponse
+	if err := c.client.CallUnary(ctx, identityServiceDeleteOrganizationSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
 func (c *identityServiceClient) ListMembers(ctx context.Context, req *v1.ListMembersRequest) (*v1.ListMembersResponse, error) {
 	var res v1.ListMembersResponse
 	if err := c.client.CallUnary(ctx, identityServiceListMembersSpec(), req, &res); err != nil {
@@ -1113,6 +1155,14 @@ func (c *identityServiceClient) UpdateProfile(ctx context.Context, req *v1.Updat
 func (c *identityServiceClient) SignOutEverywhere(ctx context.Context, req *v1.SignOutEverywhereRequest) (*v1.SignOutEverywhereResponse, error) {
 	var res v1.SignOutEverywhereResponse
 	if err := c.client.CallUnary(ctx, identityServiceSignOutEverywhereSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *identityServiceClient) DeleteAccount(ctx context.Context, req *v1.DeleteAccountRequest) (*v1.DeleteAccountResponse, error) {
+	var res v1.DeleteAccountResponse
+	if err := c.client.CallUnary(ctx, identityServiceDeleteAccountSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -1372,6 +1422,18 @@ func (h identityServiceHandler) updateOrganization(ctx context.Context, _ connec
 	return stream.Send(res)
 }
 
+func (h identityServiceHandler) deleteOrganization(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeleteOrganizationRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteOrganization(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
 func (h identityServiceHandler) listMembers(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
 	var req v1.ListMembersRequest
 	if err := stream.Receive(&req); err != nil {
@@ -1558,6 +1620,18 @@ func (h identityServiceHandler) signOutEverywhere(ctx context.Context, _ connect
 		return err
 	}
 	res, err := h.svc.SignOutEverywhere(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h identityServiceHandler) deleteAccount(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeleteAccountRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteAccount(ctx, &req)
 	if err != nil {
 		return err
 	}

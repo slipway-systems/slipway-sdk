@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package slipway.v1;
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 import "slipway/v1/common.proto";
@@ -113,6 +114,9 @@ message WhoAmIResponse {
   // The current org requires a second factor this session has not verified: every RPC except the enrolment ones is
   // refused until the caller sets one up (or, when one is already enrolled, signs in again with it).
   bool mfa_setup_required = 9;
+  // How long a deleted organisation can be restored before its data is erased: the instance's grace period
+  // (SLIPWAY_ORG_DELETION_GRACE, 7 days by default), for the deletion warnings.
+  google.protobuf.Duration org_deletion_grace = 10;
 }
 
 message ListOrganizationsRequest { PageRequest page = 1; }
@@ -121,8 +125,24 @@ message CreateOrganizationRequest { string slug = 1; string name = 2; }
 message CreateOrganizationResponse { Organization organization = 1; }
 message GetOrganizationRequest { string id = 1; }
 message GetOrganizationResponse { Organization organization = 1; }
+// update_mask "slug" changes the organisation's slug (owners: org.delete); the old slug keeps working as a redirect and
+// no other organisation can take it. An empty mask never changes the slug.
 message UpdateOrganizationRequest { Organization organization = 1; google.protobuf.FieldMask update_mask = 2; }
 message UpdateOrganizationResponse { Organization organization = 1; }
+
+// DeleteOrganization deletes the active organisation (org.delete). It is disabled at once: sign-ins, API tokens, runners,
+// schedules and webhooks stop and runs in progress are cancelled. Its data is purged after the grace period, during
+// which an operator can restore it. The caller proves who they are like any destructive step: the organisation's slug
+// typed out, the account password (when it has one) and an authenticator code (when it has an authenticator app).
+message DeleteOrganizationRequest {
+  string organization_id = 1;  // must be the active organisation
+  string confirm_slug = 2;     // the organisation's slug, typed by the caller
+  string current_password = 3;
+  string code = 4;             // authenticator or recovery code
+}
+message DeleteOrganizationResponse {
+  google.protobuf.Timestamp purge_after = 1; // when the data is deleted for good
+}
 
 message ListProjectsRequest { PageRequest page = 1; }
 message ListProjectsResponse { repeated Project items = 1; PageResponse page = 2; }
@@ -180,6 +200,11 @@ message SignupRequest {
   string org_slug = 5;          // optional; derived from org_name when empty
   string invitation_token = 6;  // join the inviting org instead of creating one
 }
+// On an instance that sends email, an open sign-up (no invitation_token) creates nothing yet: it emails a
+// confirmation link and answers with only verification_sent, the same answer whether or not the address already has
+// an account (that account's owner is emailed instead). The account, its organisation and a session are created when
+// the link is opened (VerifyEmail). With an invitation, or on an instance without a mail transport, the account is
+// created at once: user and organization are set and the response starts a session.
 message SignupResponse { User user = 1; Organization organization = 2; bool verification_sent = 3; }
 message ListAuthProvidersRequest {}
 message ListAuthProvidersResponse {
@@ -197,7 +222,13 @@ message ListAuthProvidersResponse {
 // ---- Account lifecycle -------------------------------------------------------------------------------------------
 
 message VerifyEmailRequest { string token = 1; }
-message VerifyEmailResponse { User user = 1; }
+message VerifyEmailResponse {
+  User user = 1;
+  // Set when the link confirmed an open sign-up: the account and this organisation were just created, and the
+  // response started a session for them (signed_in).
+  Organization organization = 2;
+  bool signed_in = 3;
+}
 message ResendVerificationRequest {}
 message ResendVerificationResponse {}
 message RequestPasswordResetRequest { string email = 1; }
@@ -210,6 +241,15 @@ message UpdateProfileRequest { User user = 1; google.protobuf.FieldMask update_m
 message UpdateProfileResponse { User user = 1; }
 message SignOutEverywhereRequest {}
 message SignOutEverywhereResponse {}
+
+// DeleteAccount closes the caller's own account: it leaves every organisation, its sessions and API tokens end and its
+// address and name are erased. Refused while the caller is the only owner of an organisation.
+message DeleteAccountRequest {
+  string confirm_email = 1; // the account's address, typed by the caller
+  string current_password = 2;
+  string code = 3;          // authenticator or recovery code
+}
+message DeleteAccountResponse {}
 message SwitchOrganizationRequest { string organization_id = 1; } // id or slug
 message SwitchOrganizationResponse { Organization organization = 1; }
 
@@ -292,6 +332,7 @@ service IdentityService {
   rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse);
   rpc GetOrganization(GetOrganizationRequest) returns (GetOrganizationResponse);
   rpc UpdateOrganization(UpdateOrganizationRequest) returns (UpdateOrganizationResponse);
+  rpc DeleteOrganization(DeleteOrganizationRequest) returns (DeleteOrganizationResponse);
 
   rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
   rpc InviteMember(InviteMemberRequest) returns (InviteMemberResponse);
@@ -312,6 +353,7 @@ service IdentityService {
   rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
   rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
   rpc SignOutEverywhere(SignOutEverywhereRequest) returns (SignOutEverywhereResponse);
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
   rpc SwitchOrganization(SwitchOrganizationRequest) returns (SwitchOrganizationResponse);
   rpc ListLinkedIdentities(ListLinkedIdentitiesRequest) returns (ListLinkedIdentitiesResponse);
   rpc UnlinkIdentity(UnlinkIdentityRequest) returns (UnlinkIdentityResponse);

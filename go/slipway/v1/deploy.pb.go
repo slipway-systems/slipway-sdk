@@ -5619,8 +5619,11 @@ type PreviewDeploymentRequest struct {
 	StrategyConfig   *structpb.Struct       `protobuf:"bytes,5,opt,name=strategy_config,json=strategyConfig,proto3" json:"strategy_config,omitempty"`
 	Tenant           string                 `protobuf:"bytes,6,opt,name=tenant,proto3" json:"tenant,omitempty"`
 	OverrideFreeze   bool                   `protobuf:"varint,7,opt,name=override_freeze,json=overrideFreeze,proto3" json:"override_freeze,omitempty"` // evaluate the freeze gate as if the caller asked to override it
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Preview a rollback of this deployment instead: its tenant and infrastructure, the rollback strategy (unless
+	// strategy is set), and no lifecycle check when the release already succeeded there (see rollback).
+	RollbackOfDeploymentId string `protobuf:"bytes,8,opt,name=rollback_of_deployment_id,json=rollbackOfDeploymentId,proto3" json:"rollback_of_deployment_id,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *PreviewDeploymentRequest) Reset() {
@@ -5702,6 +5705,13 @@ func (x *PreviewDeploymentRequest) GetOverrideFreeze() bool {
 	return false
 }
 
+func (x *PreviewDeploymentRequest) GetRollbackOfDeploymentId() string {
+	if x != nil {
+		return x.RollbackOfDeploymentId
+	}
+	return ""
+}
+
 type PreviewDeploymentResponse struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	Strategy          string                 `protobuf:"bytes,1,opt,name=strategy,proto3" json:"strategy,omitempty"`
@@ -5716,8 +5726,11 @@ type PreviewDeploymentResponse struct {
 	LifecycleReason   string                 `protobuf:"bytes,10,opt,name=lifecycle_reason,json=lifecycleReason,proto3" json:"lifecycle_reason,omitempty"`
 	Release           *Release               `protobuf:"bytes,11,opt,name=release,proto3" json:"release,omitempty"`
 	Current           *Deployment            `protobuf:"bytes,12,opt,name=current,proto3" json:"current,omitempty"` // what is deployed there now, if anything
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// True for a rollback preview whose release already succeeded at this target: it deploys as triggered_by
+	// rollback and skips lifecycle ordering. Every other protection rule (gates, approvals) still applies.
+	Rollback      bool `protobuf:"varint,13,opt,name=rollback,proto3" json:"rollback,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PreviewDeploymentResponse) Reset() {
@@ -5832,6 +5845,13 @@ func (x *PreviewDeploymentResponse) GetCurrent() *Deployment {
 		return x.Current
 	}
 	return nil
+}
+
+func (x *PreviewDeploymentResponse) GetRollback() bool {
+	if x != nil {
+		return x.Rollback
+	}
+	return false
 }
 
 type GetDeploymentRequest struct {
@@ -6449,10 +6469,15 @@ type RollbackDeploymentRequest struct {
 	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                                    // the deployment to roll back
 	TargetReleaseId string                 `protobuf:"bytes,2,opt,name=target_release_id,json=targetReleaseId,proto3" json:"target_release_id,omitempty"` // default: the release of the previous successful deployment
 	Reason          string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
-	Strategy        string                 `protobuf:"bytes,4,opt,name=strategy,proto3" json:"strategy,omitempty"` // default: the strategy of the deployment being rolled back
+	Strategy        string                 `protobuf:"bytes,4,opt,name=strategy,proto3" json:"strategy,omitempty"` // default: rolling, or recreate where the infrastructure cannot roll
 	StrategyConfig  *structpb.Struct       `protobuf:"bytes,5,opt,name=strategy_config,json=strategyConfig,proto3" json:"strategy_config,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// A rollback goes through the environment's protection rules like any deployment. To roll back through an
+	// active freeze that allows emergency overrides, set override_freeze with a reason: needs
+	// deployments.override_freeze and is audited (deployment.freeze_overridden).
+	OverrideFreeze bool   `protobuf:"varint,6,opt,name=override_freeze,json=overrideFreeze,proto3" json:"override_freeze,omitempty"`
+	OverrideReason string `protobuf:"bytes,7,opt,name=override_reason,json=overrideReason,proto3" json:"override_reason,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *RollbackDeploymentRequest) Reset() {
@@ -6518,6 +6543,20 @@ func (x *RollbackDeploymentRequest) GetStrategyConfig() *structpb.Struct {
 		return x.StrategyConfig
 	}
 	return nil
+}
+
+func (x *RollbackDeploymentRequest) GetOverrideFreeze() bool {
+	if x != nil {
+		return x.OverrideFreeze
+	}
+	return false
+}
+
+func (x *RollbackDeploymentRequest) GetOverrideReason() string {
+	if x != nil {
+		return x.OverrideReason
+	}
+	return ""
 }
 
 type RollbackDeploymentResponse struct {
@@ -14161,7 +14200,7 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\x18CreateDeploymentResponse\x126\n" +
 	"\n" +
 	"deployment\x18\x01 \x01(\v2\x16.slipway.v1.DeploymentR\n" +
-	"deployment\"\xac\x02\n" +
+	"deployment\"\xe7\x02\n" +
 	"\x18PreviewDeploymentRequest\x12\x1d\n" +
 	"\n" +
 	"release_id\x18\x01 \x01(\tR\treleaseId\x12%\n" +
@@ -14170,7 +14209,8 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\bstrategy\x18\x04 \x01(\tR\bstrategy\x12@\n" +
 	"\x0fstrategy_config\x18\x05 \x01(\v2\x17.google.protobuf.StructR\x0estrategyConfig\x12\x16\n" +
 	"\x06tenant\x18\x06 \x01(\tR\x06tenant\x12'\n" +
-	"\x0foverride_freeze\x18\a \x01(\bR\x0eoverrideFreeze\"\xcb\x04\n" +
+	"\x0foverride_freeze\x18\a \x01(\bR\x0eoverrideFreeze\x129\n" +
+	"\x19rollback_of_deployment_id\x18\b \x01(\tR\x16rollbackOfDeploymentId\"\xe7\x04\n" +
 	"\x19PreviewDeploymentResponse\x12\x1a\n" +
 	"\bstrategy\x18\x01 \x01(\tR\bstrategy\x12+\n" +
 	"\x11infrastructure_id\x18\x02 \x01(\tR\x10infrastructureId\x120\n" +
@@ -14184,7 +14224,8 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\x10lifecycle_reason\x18\n" +
 	" \x01(\tR\x0flifecycleReason\x12-\n" +
 	"\arelease\x18\v \x01(\v2\x13.slipway.v1.ReleaseR\arelease\x120\n" +
-	"\acurrent\x18\f \x01(\v2\x16.slipway.v1.DeploymentR\acurrent\"&\n" +
+	"\acurrent\x18\f \x01(\v2\x16.slipway.v1.DeploymentR\acurrent\x12\x1a\n" +
+	"\brollback\x18\r \x01(\bR\brollback\"&\n" +
 	"\x14GetDeploymentRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"O\n" +
 	"\x15GetDeploymentResponse\x126\n" +
@@ -14232,13 +14273,15 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\x17RetryDeploymentResponse\x126\n" +
 	"\n" +
 	"deployment\x18\x01 \x01(\v2\x16.slipway.v1.DeploymentR\n" +
-	"deployment\"\xcd\x01\n" +
+	"deployment\"\x9f\x02\n" +
 	"\x19RollbackDeploymentRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12*\n" +
 	"\x11target_release_id\x18\x02 \x01(\tR\x0ftargetReleaseId\x12\x16\n" +
 	"\x06reason\x18\x03 \x01(\tR\x06reason\x12\x1a\n" +
 	"\bstrategy\x18\x04 \x01(\tR\bstrategy\x12@\n" +
-	"\x0fstrategy_config\x18\x05 \x01(\v2\x17.google.protobuf.StructR\x0estrategyConfig\"T\n" +
+	"\x0fstrategy_config\x18\x05 \x01(\v2\x17.google.protobuf.StructR\x0estrategyConfig\x12'\n" +
+	"\x0foverride_freeze\x18\x06 \x01(\bR\x0eoverrideFreeze\x12'\n" +
+	"\x0foverride_reason\x18\a \x01(\tR\x0eoverrideReason\"T\n" +
 	"\x1aRollbackDeploymentResponse\x126\n" +
 	"\n" +
 	"deployment\x18\x01 \x01(\v2\x16.slipway.v1.DeploymentR\n" +

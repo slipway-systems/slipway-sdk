@@ -743,6 +743,9 @@ message PreviewDeploymentRequest {
   google.protobuf.Struct strategy_config = 5;
   string tenant = 6;
   bool override_freeze = 7; // evaluate the freeze gate as if the caller asked to override it
+  // Preview a rollback of this deployment instead: its tenant and infrastructure, the rollback strategy (unless
+  // strategy is set), and no lifecycle check when the release already succeeded there (see rollback).
+  string rollback_of_deployment_id = 8;
 }
 message PreviewDeploymentResponse {
   string strategy = 1;
@@ -757,6 +760,9 @@ message PreviewDeploymentResponse {
   string lifecycle_reason = 10;
   Release release = 11;
   Deployment current = 12; // what is deployed there now, if anything
+  // True for a rollback preview whose release already succeeded at this target: it deploys as triggered_by
+  // rollback and skips lifecycle ordering. Every other protection rule (gates, approvals) still applies.
+  bool rollback = 13;
 }
 
 message GetDeploymentRequest { string id = 1; }
@@ -795,8 +801,13 @@ message RollbackDeploymentRequest {
   string id = 1;               // the deployment to roll back
   string target_release_id = 2; // default: the release of the previous successful deployment
   string reason = 3;
-  string strategy = 4;          // default: the strategy of the deployment being rolled back
+  string strategy = 4;          // default: rolling, or recreate where the infrastructure cannot roll
   google.protobuf.Struct strategy_config = 5;
+  // A rollback goes through the environment's protection rules like any deployment. To roll back through an
+  // active freeze that allows emergency overrides, set override_freeze with a reason: needs
+  // deployments.override_freeze and is audited (deployment.freeze_overridden).
+  bool override_freeze = 6;
+  string override_reason = 7;
 }
 message RollbackDeploymentResponse { Deployment deployment = 1; }
 message WatchDeploymentRequest { string id = 1; }
