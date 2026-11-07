@@ -551,7 +551,7 @@ export type CacheEntry = Message<"slipway.v1.CacheEntry"> & {
   key: string;
 
   /**
-   * branch name or "project"
+   * "project", "branch:<repo>:<name>", "pr:<repo>#<number>", "tag:<repo>:<name>" or "run:<id>"
    *
    * @generated from field: string scope = 4;
    */
@@ -4426,7 +4426,7 @@ export type LookupCacheRequest = Message<"slipway.v1.LookupCacheRequest"> & {
   restoreKeys: string[];
 
   /**
-   * branch scope; project scope is always searched as fallback
+   * ignored: the server derives the scopes from the run (its own, then "project")
    *
    * @generated from field: string scope = 4;
    */
@@ -4504,6 +4504,8 @@ export type ReserveCacheRequest = Message<"slipway.v1.ReserveCacheRequest"> & {
   key: string;
 
   /**
+   * ignored: the server derives the scope from the run
+   *
    * @generated from field: string scope = 3;
    */
   scope: string;

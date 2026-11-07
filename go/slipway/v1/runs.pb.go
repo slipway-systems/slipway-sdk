@@ -1497,7 +1497,7 @@ type CacheEntry struct {
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	ProjectId     string                 `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
 	Key           string                 `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
-	Scope         string                 `protobuf:"bytes,4,opt,name=scope,proto3" json:"scope,omitempty"` // branch name or "project"
+	Scope         string                 `protobuf:"bytes,4,opt,name=scope,proto3" json:"scope,omitempty"` // "project", "branch:<repo>:<name>", "pr:<repo>#<number>", "tag:<repo>:<name>" or "run:<id>"
 	Size          int64                  `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
 	Sha256        string                 `protobuf:"bytes,6,opt,name=sha256,proto3" json:"sha256,omitempty"`
 	HitCount      int64                  `protobuf:"varint,7,opt,name=hit_count,json=hitCount,proto3" json:"hit_count,omitempty"`
@@ -9576,7 +9576,7 @@ type LookupCacheRequest struct {
 	Job           *JobRef                `protobuf:"bytes,1,opt,name=job,proto3" json:"job,omitempty"`
 	Key           string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
 	RestoreKeys   []string               `protobuf:"bytes,3,rep,name=restore_keys,json=restoreKeys,proto3" json:"restore_keys,omitempty"` // prefix match, newest first
-	Scope         string                 `protobuf:"bytes,4,opt,name=scope,proto3" json:"scope,omitempty"`                                // branch scope; project scope is always searched as fallback
+	Scope         string                 `protobuf:"bytes,4,opt,name=scope,proto3" json:"scope,omitempty"`                                // ignored: the server derives the scopes from the run (its own, then "project")
 	Version       string                 `protobuf:"bytes,5,opt,name=version,proto3" json:"version,omitempty"`                            // hash of paths+compression; entries must match
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -9735,7 +9735,7 @@ type ReserveCacheRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Job           *JobRef                `protobuf:"bytes,1,opt,name=job,proto3" json:"job,omitempty"`
 	Key           string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
-	Scope         string                 `protobuf:"bytes,3,opt,name=scope,proto3" json:"scope,omitempty"`
+	Scope         string                 `protobuf:"bytes,3,opt,name=scope,proto3" json:"scope,omitempty"` // ignored: the server derives the scope from the run
 	Version       string                 `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
 	Size          int64                  `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
 	unknownFields protoimpl.UnknownFields

@@ -212,7 +212,7 @@ message CacheEntry {
   string id = 1;
   string project_id = 2;
   string key = 3;
-  string scope = 4; // branch name or "project"
+  string scope = 4; // "project", "branch:<repo>:<name>", "pr:<repo>#<number>", "tag:<repo>:<name>" or "run:<id>"
   int64 size = 5;
   string sha256 = 6;
   int64 hit_count = 7;
@@ -965,7 +965,7 @@ message LookupCacheRequest {
   JobRef job = 1;
   string key = 2;
   repeated string restore_keys = 3; // prefix match, newest first
-  string scope = 4;                 // branch scope; project scope is always searched as fallback
+  string scope = 4;                 // ignored: the server derives the scopes from the run (its own, then "project")
   string version = 5;               // hash of paths+compression; entries must match
 }
 message LookupCacheResponse {
@@ -979,7 +979,7 @@ message LookupCacheResponse {
 message ReserveCacheRequest {
   JobRef job = 1;
   string key = 2;
-  string scope = 3;
+  string scope = 3;                 // ignored: the server derives the scope from the run
   string version = 4;
   int64 size = 5;
 }
