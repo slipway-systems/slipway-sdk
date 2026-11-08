@@ -1,6 +1,6 @@
 {
   "name": "@slipway-systems/sdk",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "TypeScript client for the Slipway API, for browsers and Node",
   "license": "Apache-2.0",
   "homepage": "https://slipway.systems/docs/api/",
