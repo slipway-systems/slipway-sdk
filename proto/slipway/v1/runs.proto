@@ -319,6 +319,9 @@ message Runner {
   // The labels the runner process reports (its configuration, replaced on every connect). The rest of `labels` were
   // added through UpdateRunner and survive restarts; a reported label can only be removed in the runner's configuration.
   repeated string reported_labels = 17;
+  // An ephemeral runner (`slipway runner --ephemeral`) takes one job, then deregisters: it is removed from the list once
+  // it has gone, and its coming and going raises no runner.online/runner.offline event.
+  bool ephemeral = 18;
 }
 
 message RegistrationToken {
@@ -747,7 +750,16 @@ service RunnerService {
   rpc AddAnnotations(AddAnnotationsRequest) returns (AddAnnotationsResponse);
   rpc IssueJobToken(IssueJobTokenRequest) returns (IssueJobTokenResponse);
   rpc GetRunnerDownload(GetRunnerDownloadRequest) returns (GetRunnerDownloadResponse);
+  // Deregister removes the calling runner (runner token) once it holds no job: an ephemeral runner calls it after its
+  // one job, just before it exits. A runner that still holds a job is refused (FailedPrecondition); the control plane
+  // removes an ephemeral runner itself once it has gone and holds no job. Control planes older than this RPC answer
+  // Unimplemented, and the runner's row stays until an admin deletes it. Only an ephemeral runner may deregister itself;
+  // a lasting one is refused (PermissionDenied) and is removed by an admin (RunnerPoolService.DeleteRunner).
+  rpc Deregister(DeregisterRequest) returns (DeregisterResponse);
 }
+
+message DeregisterRequest {}
+message DeregisterResponse {}
 
 // GetRunnerDownloadRequest asks for the runner build to run: always the control plane's own version.
 message GetRunnerDownloadRequest {
@@ -770,6 +782,10 @@ message RegisterRequest {
   string version = 6;
   int32 capacity = 7; // max concurrent jobs
   RunnerExecutor executor = 8;
+  // ephemeral registers a runner that takes exactly one job, then deregisters and exits (`slipway runner --ephemeral`):
+  // the control plane offers it no second job, emits no runner.online/runner.offline events for it, and removes its row
+  // once it deregisters or has gone. Control planes older than this field ignore it (see Welcome.ephemeral).
+  bool ephemeral = 9;
 }
 message RegisterResponse {
   string runner_id = 1;
@@ -864,6 +880,10 @@ message Welcome {
   // retrying on. Kind "log" refuses the named step's log from that chunk on; kind "log_job" says no chunk of the job
   // attempt will be stored any more. Control planes without it leave job-level chunks and refusals unanswered.
   bool job_logs_acked = 8;
+  // ephemeral confirms that the control plane registered this runner as ephemeral (RegisterRequest.ephemeral). Unset
+  // from a control plane that does not know the field: the runner then keeps itself to one job by draining once it has
+  // taken it, and its row stays (offline) after it exits.
+  bool ephemeral = 9;
 }
 message JobAssignment {
   JobRef job = 1;

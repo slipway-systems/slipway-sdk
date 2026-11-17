@@ -165,6 +165,8 @@ const (
 	// RunnerServiceGetRunnerDownloadProcedure is the procedure name of the RunnerService's
 	// GetRunnerDownload RPC.
 	RunnerServiceGetRunnerDownloadProcedure = "/slipway.v1.RunnerService/GetRunnerDownload"
+	// RunnerServiceDeregisterProcedure is the procedure name of the RunnerService's Deregister RPC.
+	RunnerServiceDeregisterProcedure = "/slipway.v1.RunnerService/Deregister"
 )
 
 var (
@@ -1838,6 +1840,13 @@ var (
 			Procedure:  RunnerServiceGetRunnerDownloadProcedure,
 		}
 	})
+	runnerServiceDeregisterSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_runs_proto.Services().ByName("RunnerService").Methods().ByName("Deregister"),
+			Procedure:  RunnerServiceDeregisterProcedure,
+		}
+	})
 )
 
 // RunnerServiceClient is a client for the slipway.v1.RunnerService service.
@@ -1856,6 +1865,12 @@ type RunnerServiceClient interface {
 	AddAnnotations(context.Context, *v1.AddAnnotationsRequest) (*v1.AddAnnotationsResponse, error)
 	IssueJobToken(context.Context, *v1.IssueJobTokenRequest) (*v1.IssueJobTokenResponse, error)
 	GetRunnerDownload(context.Context, *v1.GetRunnerDownloadRequest) (*v1.GetRunnerDownloadResponse, error)
+	// Deregister removes the calling runner (runner token) once it holds no job: an ephemeral runner calls it after its
+	// one job, just before it exits. A runner that still holds a job is refused (FailedPrecondition); the control plane
+	// removes an ephemeral runner itself once it has gone and holds no job. Control planes older than this RPC answer
+	// Unimplemented, and the runner's row stays until an admin deletes it. Only an ephemeral runner may deregister itself;
+	// a lasting one is refused (PermissionDenied) and is removed by an admin (RunnerPoolService.DeleteRunner).
+	Deregister(context.Context, *v1.DeregisterRequest) (*v1.DeregisterResponse, error)
 }
 
 // NewRunnerServiceClient constructs a client for the slipway.v1.RunnerService service. Multiple
@@ -1916,6 +1931,12 @@ type RunnerServiceHandler interface {
 	AddAnnotations(context.Context, *v1.AddAnnotationsRequest) (*v1.AddAnnotationsResponse, error)
 	IssueJobToken(context.Context, *v1.IssueJobTokenRequest) (*v1.IssueJobTokenResponse, error)
 	GetRunnerDownload(context.Context, *v1.GetRunnerDownloadRequest) (*v1.GetRunnerDownloadResponse, error)
+	// Deregister removes the calling runner (runner token) once it holds no job: an ephemeral runner calls it after its
+	// one job, just before it exits. A runner that still holds a job is refused (FailedPrecondition); the control plane
+	// removes an ephemeral runner itself once it has gone and holds no job. Control planes older than this RPC answer
+	// Unimplemented, and the runner's row stays until an admin deletes it. Only an ephemeral runner may deregister itself;
+	// a lasting one is refused (PermissionDenied) and is removed by an admin (RunnerPoolService.DeleteRunner).
+	Deregister(context.Context, *v1.DeregisterRequest) (*v1.DeregisterResponse, error)
 }
 
 // RegisterRunnerServiceHandler registers svc as the slipway.v1.RunnerService implementation on
@@ -1935,6 +1956,7 @@ func RegisterRunnerServiceHandler(server *connect.Server, svc RunnerServiceHandl
 		connect.Method{Spec: runnerServiceAddAnnotationsSpec(), Handler: adapter.addAnnotations},
 		connect.Method{Spec: runnerServiceIssueJobTokenSpec(), Handler: adapter.issueJobToken},
 		connect.Method{Spec: runnerServiceGetRunnerDownloadSpec(), Handler: adapter.getRunnerDownload},
+		connect.Method{Spec: runnerServiceDeregisterSpec(), Handler: adapter.deregister},
 	)
 }
 
@@ -2011,6 +2033,10 @@ func (UnimplementedRunnerServiceHandler) IssueJobToken(context.Context, *v1.Issu
 
 func (UnimplementedRunnerServiceHandler) GetRunnerDownload(context.Context, *v1.GetRunnerDownloadRequest) (*v1.GetRunnerDownloadResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.RunnerService.GetRunnerDownload is not implemented")
+}
+
+func (UnimplementedRunnerServiceHandler) Deregister(context.Context, *v1.DeregisterRequest) (*v1.DeregisterResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.RunnerService.Deregister is not implemented")
 }
 
 type runnerServiceClient struct {
@@ -2108,6 +2134,14 @@ func (c *runnerServiceClient) IssueJobToken(ctx context.Context, req *v1.IssueJo
 func (c *runnerServiceClient) GetRunnerDownload(ctx context.Context, req *v1.GetRunnerDownloadRequest) (*v1.GetRunnerDownloadResponse, error) {
 	var res v1.GetRunnerDownloadResponse
 	if err := c.client.CallUnary(ctx, runnerServiceGetRunnerDownloadSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *runnerServiceClient) Deregister(ctx context.Context, req *v1.DeregisterRequest) (*v1.DeregisterResponse, error) {
+	var res v1.DeregisterResponse
+	if err := c.client.CallUnary(ctx, runnerServiceDeregisterSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -2245,6 +2279,18 @@ func (h runnerServiceHandler) getRunnerDownload(ctx context.Context, _ connect.S
 		return err
 	}
 	res, err := h.svc.GetRunnerDownload(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h runnerServiceHandler) deregister(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeregisterRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.Deregister(ctx, &req)
 	if err != nil {
 		return err
 	}

@@ -321,6 +321,19 @@ message ListInvitationsResponse { repeated Invitation items = 1; }
 message RevokeInvitationRequest { string id = 1; }
 message RevokeInvitationResponse {}
 
+// ---- Feedback ----------------------------------------------------------------------------------------------------
+
+// SendFeedback sends a message from the signed-in user to the instance operator ("Send feedback" in the app). Any
+// member of the active organisation may send it; it is limited to 5 an hour per user. The message is stored with the
+// user, the organisation, the category and the page path, and emailed to SLIPWAY_FEEDBACK_EMAIL when that is set, with
+// Reply-To the user's verified address. Validation failures name the field (message, category, path).
+message SendFeedbackRequest {
+  string message = 1;  // 10 to 5000 characters after trimming
+  string category = 2; // "" | bug | idea | question | other
+  string path = 3;     // the page's path ("/acme/pipelines"), never a query string or fragment; "" for none
+}
+message SendFeedbackResponse { string id = 1; } // fb_…
+
 service IdentityService {
   rpc WhoAmI(WhoAmIRequest) returns (WhoAmIResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
@@ -374,6 +387,8 @@ service IdentityService {
   rpc AcceptInvitation(AcceptInvitationRequest) returns (AcceptInvitationResponse);
   rpc ListInvitations(ListInvitationsRequest) returns (ListInvitationsResponse);
   rpc RevokeInvitation(RevokeInvitationRequest) returns (RevokeInvitationResponse);
+
+  rpc SendFeedback(SendFeedbackRequest) returns (SendFeedbackResponse);
 }
 
 service ProjectService {
