@@ -11,8 +11,9 @@ import "slipway/v1/common.proto";
 // Deploy domain contract: environments, releases, deployments, approvals and runbooks. String enums are documented inline
 // (values are stable snake_case identifiers) so the UI can switch on them without generated enum plumbing.
 //
-// Permissions (checked by the handlers): deployments.read, deployments.create, environments.deploy:<env>,
-// deployments.approve, deployments.cancel, deployments.force, deployments.override_freeze, releases.read,
+// Permissions (checked by the handlers): deployments.read, environments.deploy:<env>, deployments.promote:<env>,
+// deployments.rollback:<env>, deployments.approve, deployments.cancel, deployments.force,
+// deployments.override_freeze, infrastructure.check, releases.read,
 // releases.create, releases.manage, environments.read, environments.manage, variables.read, variables.manage,
 // runbooks.read, runbooks.manage, runbooks.run:<env>, services.read, services.manage.
 
@@ -615,8 +616,8 @@ message DoraBucket {
 message DoraServiceMetrics {
   string service_id = 1;
   string environment_id = 2;
-  int64 deployments = 3;
-  int64 failed = 4;
+  int64 deployments = 3; // successful deployments, as deployment_frequency.total counts them
+  int64 failed = 4;      // deployments that failed or were rolled back
   double deployments_per_day = 5;
 }
 
@@ -826,6 +827,8 @@ message GetDoraMetricsRequest {
   google.protobuf.Timestamp to = 5;
   string bucket = 6; // hour | day | week | month (default day)
   bool include_non_production = 7;
+  // IANA time zone the series buckets are cut in (default UTC), so a day or week starts at the viewer's midnight.
+  string time_zone = 8;
 }
 message GetDoraMetricsResponse { DoraMetrics metrics = 1; }
 

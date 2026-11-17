@@ -75,6 +75,11 @@ message Pipeline {
   // pushes and pull requests that carry the file, never for default-branch, scheduled or release events, until
   // the file reaches the default branch.
   string branch = 22;
+  // file_removed is set on a repository pipeline whose file is no longer on the default branch (deleted, or its
+  // `name:` changed and the pipeline could not be renamed). Such a pipeline is disabled and runs for no event, including
+  // pushes and pull requests whose revision still has the file; the file reaching the default branch enables it again.
+  // It cannot be enabled by hand.
+  bool file_removed = 23;
 }
 
 // ---- Validation and schema ---------------------------------------------------------------------------------------
@@ -94,6 +99,24 @@ message ValidatePipelineResponse {
   int32 error_count = 6;
   int32 warning_count = 7;
   string formatted_yaml = 8;            // canonical formatting of the document (comments and key order preserved)
+}
+
+// ---- Import -------------------------------------------------------------------------------------------------------
+
+// ImportPipelineRequest converts another CI system's pipeline file into a Slipway pipeline. Nothing is stored: the
+// caller reviews the result and commits it to `.slipway/` or saves it with CreatePipeline.
+message ImportPipelineRequest {
+  string format = 1;      // the source format: "github-actions" (a GitHub Actions workflow)
+  string source_yaml = 2; // the file to convert (at most 512 KiB)
+  string file_name = 3;   // optional: the file's path (".github/workflows/ci.yml"); names the pipeline when it has no name
+}
+message ImportPipelineResponse {
+  string yaml = 1; // the Slipway pipeline, with "# TODO(import):" comments where a person must look
+  // The import findings (codes GHA001-GHA011, file = file_name, positions in source_yaml) followed by the validation
+  // findings of yaml (SLPxxx, file = the pipeline's path under .slipway/, positions in yaml).
+  repeated PipelineDiagnostic diagnostics = 2;
+  bool valid = 3;       // yaml has no error-level findings
+  int32 todo_count = 4; // number of "# TODO(import):" comments in yaml
 }
 
 message GetSchemaRequest {}
@@ -218,6 +241,8 @@ message PublishTemplateResponse {
 service PipelineService {
   rpc ValidatePipeline(ValidatePipelineRequest) returns (ValidatePipelineResponse);
   rpc GetSchema(GetSchemaRequest) returns (GetSchemaResponse);
+  // ImportPipeline converts a pipeline file of another CI system (a GitHub Actions workflow) into Slipway's format.
+  rpc ImportPipeline(ImportPipelineRequest) returns (ImportPipelineResponse);
 
   rpc ListPipelines(ListPipelinesRequest) returns (ListPipelinesResponse);
   rpc GetPipeline(GetPipelineRequest) returns (GetPipelineResponse);

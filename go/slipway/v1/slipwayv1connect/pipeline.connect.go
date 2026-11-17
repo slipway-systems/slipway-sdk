@@ -29,6 +29,9 @@ const (
 	PipelineServiceValidatePipelineProcedure = "/slipway.v1.PipelineService/ValidatePipeline"
 	// PipelineServiceGetSchemaProcedure is the procedure name of the PipelineService's GetSchema RPC.
 	PipelineServiceGetSchemaProcedure = "/slipway.v1.PipelineService/GetSchema"
+	// PipelineServiceImportPipelineProcedure is the procedure name of the PipelineService's
+	// ImportPipeline RPC.
+	PipelineServiceImportPipelineProcedure = "/slipway.v1.PipelineService/ImportPipeline"
 	// PipelineServiceListPipelinesProcedure is the procedure name of the PipelineService's
 	// ListPipelines RPC.
 	PipelineServiceListPipelinesProcedure = "/slipway.v1.PipelineService/ListPipelines"
@@ -68,6 +71,13 @@ var (
 			StreamType: connect.StreamTypeUnary,
 			Schema:     v1.File_slipway_v1_pipeline_proto.Services().ByName("PipelineService").Methods().ByName("GetSchema"),
 			Procedure:  PipelineServiceGetSchemaProcedure,
+		}
+	})
+	pipelineServiceImportPipelineSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_pipeline_proto.Services().ByName("PipelineService").Methods().ByName("ImportPipeline"),
+			Procedure:  PipelineServiceImportPipelineProcedure,
 		}
 	})
 	pipelineServiceListPipelinesSpec = sync.OnceValue(func() connect.Spec {
@@ -132,6 +142,8 @@ var (
 type PipelineServiceClient interface {
 	ValidatePipeline(context.Context, *v1.ValidatePipelineRequest) (*v1.ValidatePipelineResponse, error)
 	GetSchema(context.Context, *v1.GetSchemaRequest) (*v1.GetSchemaResponse, error)
+	// ImportPipeline converts a pipeline file of another CI system (a GitHub Actions workflow) into Slipway's format.
+	ImportPipeline(context.Context, *v1.ImportPipelineRequest) (*v1.ImportPipelineResponse, error)
 	ListPipelines(context.Context, *v1.ListPipelinesRequest) (*v1.ListPipelinesResponse, error)
 	GetPipeline(context.Context, *v1.GetPipelineRequest) (*v1.GetPipelineResponse, error)
 	CreatePipeline(context.Context, *v1.CreatePipelineRequest) (*v1.CreatePipelineResponse, error)
@@ -152,6 +164,8 @@ func NewPipelineServiceClient(client *connect.Client) PipelineServiceClient {
 type PipelineServiceHandler interface {
 	ValidatePipeline(context.Context, *v1.ValidatePipelineRequest) (*v1.ValidatePipelineResponse, error)
 	GetSchema(context.Context, *v1.GetSchemaRequest) (*v1.GetSchemaResponse, error)
+	// ImportPipeline converts a pipeline file of another CI system (a GitHub Actions workflow) into Slipway's format.
+	ImportPipeline(context.Context, *v1.ImportPipelineRequest) (*v1.ImportPipelineResponse, error)
 	ListPipelines(context.Context, *v1.ListPipelinesRequest) (*v1.ListPipelinesResponse, error)
 	GetPipeline(context.Context, *v1.GetPipelineRequest) (*v1.GetPipelineResponse, error)
 	CreatePipeline(context.Context, *v1.CreatePipelineRequest) (*v1.CreatePipelineResponse, error)
@@ -169,6 +183,7 @@ func RegisterPipelineServiceHandler(server *connect.Server, svc PipelineServiceH
 	server.Register(
 		connect.Method{Spec: pipelineServiceValidatePipelineSpec(), Handler: adapter.validatePipeline},
 		connect.Method{Spec: pipelineServiceGetSchemaSpec(), Handler: adapter.getSchema},
+		connect.Method{Spec: pipelineServiceImportPipelineSpec(), Handler: adapter.importPipeline},
 		connect.Method{Spec: pipelineServiceListPipelinesSpec(), Handler: adapter.listPipelines},
 		connect.Method{Spec: pipelineServiceGetPipelineSpec(), Handler: adapter.getPipeline},
 		connect.Method{Spec: pipelineServiceCreatePipelineSpec(), Handler: adapter.createPipeline},
@@ -189,6 +204,10 @@ func (UnimplementedPipelineServiceHandler) ValidatePipeline(context.Context, *v1
 
 func (UnimplementedPipelineServiceHandler) GetSchema(context.Context, *v1.GetSchemaRequest) (*v1.GetSchemaResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.PipelineService.GetSchema is not implemented")
+}
+
+func (UnimplementedPipelineServiceHandler) ImportPipeline(context.Context, *v1.ImportPipelineRequest) (*v1.ImportPipelineResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.PipelineService.ImportPipeline is not implemented")
 }
 
 func (UnimplementedPipelineServiceHandler) ListPipelines(context.Context, *v1.ListPipelinesRequest) (*v1.ListPipelinesResponse, error) {
@@ -238,6 +257,14 @@ func (c *pipelineServiceClient) ValidatePipeline(ctx context.Context, req *v1.Va
 func (c *pipelineServiceClient) GetSchema(ctx context.Context, req *v1.GetSchemaRequest) (*v1.GetSchemaResponse, error) {
 	var res v1.GetSchemaResponse
 	if err := c.client.CallUnary(ctx, pipelineServiceGetSchemaSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *pipelineServiceClient) ImportPipeline(ctx context.Context, req *v1.ImportPipelineRequest) (*v1.ImportPipelineResponse, error) {
+	var res v1.ImportPipelineResponse
+	if err := c.client.CallUnary(ctx, pipelineServiceImportPipelineSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -327,6 +354,18 @@ func (h pipelineServiceHandler) getSchema(ctx context.Context, _ connect.Spec, s
 		return err
 	}
 	res, err := h.svc.GetSchema(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h pipelineServiceHandler) importPipeline(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ImportPipelineRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ImportPipeline(ctx, &req)
 	if err != nil {
 		return err
 	}

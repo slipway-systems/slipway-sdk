@@ -180,6 +180,10 @@ const (
 	KeyRotationMode_KEY_ROTATION_MODE_UNSPECIFIED KeyRotationMode = 0
 	KeyRotationMode_KEY_ROTATION_MODE_KEK         KeyRotationMode = 1 // rotate the KMS key and re-wrap every DEK (cheap, ciphertexts untouched)
 	KeyRotationMode_KEY_ROTATION_MODE_DEK         KeyRotationMode = 2 // mint a new DEK; existing secrets are re-encrypted lazily or via reencrypt
+	// Mint no key: re-encrypt everything still under a retired DEK (secret versions, provider and integration
+	// credentials, other sealed data) onto the active one. This finishes a DEK rotation; repeat while
+	// secrets_remaining > 0.
+	KeyRotationMode_KEY_ROTATION_MODE_REENCRYPT KeyRotationMode = 3
 )
 
 // Enum value maps for KeyRotationMode.
@@ -188,11 +192,13 @@ var (
 		0: "KEY_ROTATION_MODE_UNSPECIFIED",
 		1: "KEY_ROTATION_MODE_KEK",
 		2: "KEY_ROTATION_MODE_DEK",
+		3: "KEY_ROTATION_MODE_REENCRYPT",
 	}
 	KeyRotationMode_value = map[string]int32{
 		"KEY_ROTATION_MODE_UNSPECIFIED": 0,
 		"KEY_ROTATION_MODE_KEK":         1,
 		"KEY_ROTATION_MODE_DEK":         2,
+		"KEY_ROTATION_MODE_REENCRYPT":   3,
 	}
 )
 
@@ -1114,8 +1120,9 @@ func (*DeleteSecretResponse) Descriptor() ([]byte, []int) {
 	return file_slipway_v1_secrets_proto_rawDescGZIP(), []int{11}
 }
 
-// RotateSecretRequest creates a new version. With new_value set the secret value is replaced; without it the
-// current value is re-encrypted under the active DEK (a no-op for external references).
+// RotateSecretRequest with new_value (or new_external_ref) set creates a new version holding it. Without either, no
+// version is created: the current version is re-encrypted in place under the active DEK (a no-op for external
+// references).
 type RotateSecretRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -1529,10 +1536,11 @@ func (x *ImportSecretsRequest) GetAllowedEnvironments() []string {
 }
 
 type ImportSecretResult struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"` // created | updated | skipped | invalid
-	Message       string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// created | updated | skipped | invalid (the entry is wrong) | failed (it could not be saved; retry)
+	Status        string `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	Message       string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1595,6 +1603,7 @@ type ImportSecretsResponse struct {
 	Skipped       int32                  `protobuf:"varint,3,opt,name=skipped,proto3" json:"skipped,omitempty"`
 	Invalid       int32                  `protobuf:"varint,4,opt,name=invalid,proto3" json:"invalid,omitempty"`
 	Results       []*ImportSecretResult  `protobuf:"bytes,5,rep,name=results,proto3" json:"results,omitempty"`
+	Failed        int32                  `protobuf:"varint,6,opt,name=failed,proto3" json:"failed,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1662,6 +1671,13 @@ func (x *ImportSecretsResponse) GetResults() []*ImportSecretResult {
 		return x.Results
 	}
 	return nil
+}
+
+func (x *ImportSecretsResponse) GetFailed() int32 {
+	if x != nil {
+		return x.Failed
+	}
+	return 0
 }
 
 // SecretProviderField describes one config or credential input for a provider so the UI can render a form.
@@ -2538,10 +2554,11 @@ func (*GetKeyringRequest) Descriptor() ([]byte, []int) {
 }
 
 type GetKeyringResponse struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
-	Keyring              *SecretKeyring         `protobuf:"bytes,1,opt,name=keyring,proto3" json:"keyring,omitempty"`
-	ByokEntitled         bool                   `protobuf:"varint,2,opt,name=byok_entitled,json=byokEntitled,proto3" json:"byok_entitled,omitempty"` // plan allows customer-managed keys
-	SecretsOnRetiredKeys int64                  `protobuf:"varint,3,opt,name=secrets_on_retired_keys,json=secretsOnRetiredKeys,proto3" json:"secrets_on_retired_keys,omitempty"`
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Keyring      *SecretKeyring         `protobuf:"bytes,1,opt,name=keyring,proto3" json:"keyring,omitempty"`
+	ByokEntitled bool                   `protobuf:"varint,2,opt,name=byok_entitled,json=byokEntitled,proto3" json:"byok_entitled,omitempty"` // plan allows customer-managed keys
+	// Secret versions, provider and integration credentials and other sealed data still encrypted by a retired DEK.
+	SecretsOnRetiredKeys int64 `protobuf:"varint,3,opt,name=secrets_on_retired_keys,json=secretsOnRetiredKeys,proto3" json:"secrets_on_retired_keys,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -2720,9 +2737,11 @@ func (x *ConfigureKeyringResponse) GetDeksRewrapped() int32 {
 }
 
 type RotateKeyringRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Mode          KeyRotationMode        `protobuf:"varint,1,opt,name=mode,proto3,enum=slipway.v1.KeyRotationMode" json:"mode,omitempty"`
-	Reencrypt     bool                   `protobuf:"varint,2,opt,name=reencrypt,proto3" json:"reencrypt,omitempty"` // DEK mode: also re-encrypt existing secrets now (bounded batch)
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Mode  KeyRotationMode        `protobuf:"varint,1,opt,name=mode,proto3,enum=slipway.v1.KeyRotationMode" json:"mode,omitempty"`
+	// DEK mode: also re-encrypt existing data now, as KEY_ROTATION_MODE_REENCRYPT does (time-bounded; see
+	// secrets_remaining).
+	Reencrypt     bool `protobuf:"varint,2,opt,name=reencrypt,proto3" json:"reencrypt,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2959,13 +2978,14 @@ const file_slipway_v1_secrets_proto_rawDesc = "" +
 	"\x12ImportSecretResult\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage\"\xb9\x01\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\xd1\x01\n" +
 	"\x15ImportSecretsResponse\x12\x18\n" +
 	"\acreated\x18\x01 \x01(\x05R\acreated\x12\x18\n" +
 	"\aupdated\x18\x02 \x01(\x05R\aupdated\x12\x18\n" +
 	"\askipped\x18\x03 \x01(\x05R\askipped\x12\x18\n" +
 	"\ainvalid\x18\x04 \x01(\x05R\ainvalid\x128\n" +
-	"\aresults\x18\x05 \x03(\v2\x1e.slipway.v1.ImportSecretResultR\aresults\"\xd2\x01\n" +
+	"\aresults\x18\x05 \x03(\v2\x1e.slipway.v1.ImportSecretResultR\aresults\x12\x16\n" +
+	"\x06failed\x18\x06 \x01(\x05R\x06failed\"\xd2\x01\n" +
 	"\x13SecretProviderField\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\tR\x05label\x12 \n" +
@@ -3090,11 +3110,12 @@ const file_slipway_v1_secrets_proto_rawDesc = "" +
 	"\x12SecretImportFormat\x12$\n" +
 	" SECRET_IMPORT_FORMAT_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bSECRET_IMPORT_FORMAT_DOTENV\x10\x01\x12\x1d\n" +
-	"\x19SECRET_IMPORT_FORMAT_JSON\x10\x02*j\n" +
+	"\x19SECRET_IMPORT_FORMAT_JSON\x10\x02*\x8b\x01\n" +
 	"\x0fKeyRotationMode\x12!\n" +
 	"\x1dKEY_ROTATION_MODE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15KEY_ROTATION_MODE_KEK\x10\x01\x12\x19\n" +
-	"\x15KEY_ROTATION_MODE_DEK\x10\x022\xa5\v\n" +
+	"\x15KEY_ROTATION_MODE_DEK\x10\x02\x12\x1f\n" +
+	"\x1bKEY_ROTATION_MODE_REENCRYPT\x10\x032\xa5\v\n" +
 	"\rSecretService\x12N\n" +
 	"\vListSecrets\x12\x1e.slipway.v1.ListSecretsRequest\x1a\x1f.slipway.v1.ListSecretsResponse\x12H\n" +
 	"\tGetSecret\x12\x1c.slipway.v1.GetSecretRequest\x1a\x1d.slipway.v1.GetSecretResponse\x12Q\n" +

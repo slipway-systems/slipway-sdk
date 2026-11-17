@@ -31,7 +31,7 @@ type Entitlements struct {
 	ConcurrentJobsSelfHosted     int64                  `protobuf:"varint,4,opt,name=concurrent_jobs_self_hosted,json=concurrentJobsSelfHosted,proto3" json:"concurrent_jobs_self_hosted,omitempty"`
 	ConcurrentJobsHosted         int64                  `protobuf:"varint,5,opt,name=concurrent_jobs_hosted,json=concurrentJobsHosted,proto3" json:"concurrent_jobs_hosted,omitempty"`
 	EnvironmentsPerProject       int64                  `protobuf:"varint,6,opt,name=environments_per_project,json=environmentsPerProject,proto3" json:"environments_per_project,omitempty"`
-	DeploymentStrategies         []string               `protobuf:"bytes,7,rep,name=deployment_strategies,json=deploymentStrategies,proto3" json:"deployment_strategies,omitempty"` // recreate, rolling, bluegreen, canary, progressive, release_trains, custom
+	DeploymentStrategies         []string               `protobuf:"bytes,7,rep,name=deployment_strategies,json=deploymentStrategies,proto3" json:"deployment_strategies,omitempty"` // recreate, rolling, bluegreen, canary, progressive
 	PolicyGates                  int64                  `protobuf:"varint,8,opt,name=policy_gates,json=policyGates,proto3" json:"policy_gates,omitempty"`                           // CEL policies
 	ChangeManagement             bool                   `protobuf:"varint,9,opt,name=change_management,json=changeManagement,proto3" json:"change_management,omitempty"`            // ServiceNow / Jira change requests
 	Sso                          bool                   `protobuf:"varint,10,opt,name=sso,proto3" json:"sso,omitempty"`
@@ -39,15 +39,15 @@ type Entitlements struct {
 	CustomRbac                   bool                   `protobuf:"varint,12,opt,name=custom_rbac,json=customRbac,proto3" json:"custom_rbac,omitempty"`
 	AuditRetentionDays           int64                  `protobuf:"varint,13,opt,name=audit_retention_days,json=auditRetentionDays,proto3" json:"audit_retention_days,omitempty"`
 	AuditExport                  bool                   `protobuf:"varint,14,opt,name=audit_export,json=auditExport,proto3" json:"audit_export,omitempty"`
-	AuditStreaming               bool                   `protobuf:"varint,15,opt,name=audit_streaming,json=auditStreaming,proto3" json:"audit_streaming,omitempty"`
+	AuditStreaming               bool                   `protobuf:"varint,15,opt,name=audit_streaming,json=auditStreaming,proto3" json:"audit_streaming,omitempty"` // always false: audit log streaming is not built
 	LogRetentionDays             int64                  `protobuf:"varint,16,opt,name=log_retention_days,json=logRetentionDays,proto3" json:"log_retention_days,omitempty"`
 	ArtifactRetentionDays        int64                  `protobuf:"varint,17,opt,name=artifact_retention_days,json=artifactRetentionDays,proto3" json:"artifact_retention_days,omitempty"`
 	SecretsByok                  bool                   `protobuf:"varint,18,opt,name=secrets_byok,json=secretsByok,proto3" json:"secrets_byok,omitempty"`
-	SecretsHsm                   bool                   `protobuf:"varint,19,opt,name=secrets_hsm,json=secretsHsm,proto3" json:"secrets_hsm,omitempty"`
-	SignedProvenance             bool                   `protobuf:"varint,20,opt,name=signed_provenance,json=signedProvenance,proto3" json:"signed_provenance,omitempty"`
-	SupportTier                  string                 `protobuf:"bytes,21,opt,name=support_tier,json=supportTier,proto3" json:"support_tier,omitempty"`             // community | email | priority | enterprise
-	SupportResponse              string                 `protobuf:"bytes,22,opt,name=support_response,json=supportResponse,proto3" json:"support_response,omitempty"` // human readable response target
-	UptimeSla                    string                 `protobuf:"bytes,23,opt,name=uptime_sla,json=uptimeSla,proto3" json:"uptime_sla,omitempty"`                   // "" | "99.9%" | "99.95%"
+	SecretsHsm                   bool                   `protobuf:"varint,19,opt,name=secrets_hsm,json=secretsHsm,proto3" json:"secrets_hsm,omitempty"`                   // always false: there are no HSM-backed keys
+	SignedProvenance             bool                   `protobuf:"varint,20,opt,name=signed_provenance,json=signedProvenance,proto3" json:"signed_provenance,omitempty"` // server-recorded release provenance (run, job, commit); nothing is signed
+	SupportTier                  string                 `protobuf:"bytes,21,opt,name=support_tier,json=supportTier,proto3" json:"support_tier,omitempty"`                 // community | email | priority | enterprise
+	SupportResponse              string                 `protobuf:"bytes,22,opt,name=support_response,json=supportResponse,proto3" json:"support_response,omitempty"`     // human readable response target
+	UptimeSla                    string                 `protobuf:"bytes,23,opt,name=uptime_sla,json=uptimeSla,proto3" json:"uptime_sla,omitempty"`                       // "" | "99.9%" | "99.95%"
 	DedicatedCell                bool                   `protobuf:"varint,24,opt,name=dedicated_cell,json=dedicatedCell,proto3" json:"dedicated_cell,omitempty"`
 	Negotiated                   bool                   `protobuf:"varint,25,opt,name=negotiated,proto3" json:"negotiated,omitempty"` // limits are contract-specific (enterprise)
 	// Longest a job may run on a Slipway-hosted runner; self-hosted runners only have the plan's general job limit.
@@ -382,12 +382,12 @@ type BillingSubscription struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // Stripe subscription id, empty when none
 	Plan               string                 `protobuf:"bytes,2,opt,name=plan,proto3" json:"plan,omitempty"`
-	Status             string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"` // none | trialing | active | past_due | canceled | unpaid | incomplete | admin
+	Status             string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"` // none | admin | a Stripe status: trialing | active | past_due | canceled | unpaid | incomplete | incomplete_expired | paused
 	CurrentPeriodStart *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=current_period_start,json=currentPeriodStart,proto3" json:"current_period_start,omitempty"`
 	CurrentPeriodEnd   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=current_period_end,json=currentPeriodEnd,proto3" json:"current_period_end,omitempty"`
 	TrialEnd           *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=trial_end,json=trialEnd,proto3" json:"trial_end,omitempty"`
 	CancelAtPeriodEnd  bool                   `protobuf:"varint,7,opt,name=cancel_at_period_end,json=cancelAtPeriodEnd,proto3" json:"cancel_at_period_end,omitempty"`
-	TrialAvailable     bool                   `protobuf:"varint,8,opt,name=trial_available,json=trialAvailable,proto3" json:"trial_available,omitempty"`             // org has never used its Business trial
+	TrialAvailable     bool                   `protobuf:"varint,8,opt,name=trial_available,json=trialAvailable,proto3" json:"trial_available,omitempty"`             // org has never used its Business trial and has no live subscription
 	PlanSource         string                 `protobuf:"bytes,9,opt,name=plan_source,json=planSource,proto3" json:"plan_source,omitempty"`                          // default | stripe | admin
 	HasBillingAccount  bool                   `protobuf:"varint,10,opt,name=has_billing_account,json=hasBillingAccount,proto3" json:"has_billing_account,omitempty"` // a Stripe customer exists (portal available)
 	unknownFields      protoimpl.UnknownFields
@@ -1468,7 +1468,7 @@ type CreateCheckoutSessionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PlanId        string                 `protobuf:"bytes,1,opt,name=plan_id,json=planId,proto3" json:"plan_id,omitempty"`              // team | business
 	StartTrial    bool                   `protobuf:"varint,2,opt,name=start_trial,json=startTrial,proto3" json:"start_trial,omitempty"` // honoured only for plans with a trial and when the org has not used it
-	ReturnPath    string                 `protobuf:"bytes,3,opt,name=return_path,json=returnPath,proto3" json:"return_path,omitempty"`  // optional app-relative path (must start with "/"); defaults to /settings/billing
+	ReturnPath    string                 `protobuf:"bytes,3,opt,name=return_path,json=returnPath,proto3" json:"return_path,omitempty"`  // optional app-relative path (must start with "/"); defaults to /billing
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

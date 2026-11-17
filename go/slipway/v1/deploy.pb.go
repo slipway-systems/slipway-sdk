@@ -4716,8 +4716,8 @@ type DoraServiceMetrics struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	ServiceId         string                 `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
 	EnvironmentId     string                 `protobuf:"bytes,2,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
-	Deployments       int64                  `protobuf:"varint,3,opt,name=deployments,proto3" json:"deployments,omitempty"`
-	Failed            int64                  `protobuf:"varint,4,opt,name=failed,proto3" json:"failed,omitempty"`
+	Deployments       int64                  `protobuf:"varint,3,opt,name=deployments,proto3" json:"deployments,omitempty"` // successful deployments, as deployment_frequency.total counts them
+	Failed            int64                  `protobuf:"varint,4,opt,name=failed,proto3" json:"failed,omitempty"`           // deployments that failed or were rolled back
 	DeploymentsPerDay float64                `protobuf:"fixed64,5,opt,name=deployments_per_day,json=deploymentsPerDay,proto3" json:"deployments_per_day,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
@@ -6796,8 +6796,10 @@ type GetDoraMetricsRequest struct {
 	To                   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=to,proto3" json:"to,omitempty"`
 	Bucket               string                 `protobuf:"bytes,6,opt,name=bucket,proto3" json:"bucket,omitempty"` // hour | day | week | month (default day)
 	IncludeNonProduction bool                   `protobuf:"varint,7,opt,name=include_non_production,json=includeNonProduction,proto3" json:"include_non_production,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// IANA time zone the series buckets are cut in (default UTC), so a day or week starts at the viewer's midnight.
+	TimeZone      string `protobuf:"bytes,8,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetDoraMetricsRequest) Reset() {
@@ -6877,6 +6879,13 @@ func (x *GetDoraMetricsRequest) GetIncludeNonProduction() bool {
 		return x.IncludeNonProduction
 	}
 	return false
+}
+
+func (x *GetDoraMetricsRequest) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
 }
 
 type GetDoraMetricsResponse struct {
@@ -14296,7 +14305,7 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\x1bListVerificationRunsRequest\x12#\n" +
 	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\"Q\n" +
 	"\x1cListVerificationRunsResponse\x121\n" +
-	"\x05items\x18\x01 \x03(\v2\x1b.slipway.v1.VerificationRunR\x05items\"\xa6\x02\n" +
+	"\x05items\x18\x01 \x03(\v2\x1b.slipway.v1.VerificationRunR\x05items\"\xc3\x02\n" +
 	"\x15GetDoraMetricsRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\x12\x1d\n" +
@@ -14306,7 +14315,8 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\x04from\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
 	"\x02to\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12\x16\n" +
 	"\x06bucket\x18\x06 \x01(\tR\x06bucket\x124\n" +
-	"\x16include_non_production\x18\a \x01(\bR\x14includeNonProduction\"K\n" +
+	"\x16include_non_production\x18\a \x01(\bR\x14includeNonProduction\x12\x1b\n" +
+	"\ttime_zone\x18\b \x01(\tR\btimeZone\"K\n" +
 	"\x16GetDoraMetricsResponse\x121\n" +
 	"\ametrics\x18\x01 \x01(\v2\x17.slipway.v1.DoraMetricsR\ametrics\"\xdb\x04\n" +
 	"\x14CreateReleaseRequest\x12\x1d\n" +

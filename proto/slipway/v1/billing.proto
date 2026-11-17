@@ -20,7 +20,7 @@ message Entitlements {
   int64 concurrent_jobs_self_hosted = 4;
   int64 concurrent_jobs_hosted = 5;
   int64 environments_per_project = 6;
-  repeated string deployment_strategies = 7; // recreate, rolling, bluegreen, canary, progressive, release_trains, custom
+  repeated string deployment_strategies = 7; // recreate, rolling, bluegreen, canary, progressive
   int64 policy_gates = 8;                 // CEL policies
   bool change_management = 9;             // ServiceNow / Jira change requests
   bool sso = 10;
@@ -28,12 +28,12 @@ message Entitlements {
   bool custom_rbac = 12;
   int64 audit_retention_days = 13;
   bool audit_export = 14;
-  bool audit_streaming = 15;
+  bool audit_streaming = 15;              // always false: audit log streaming is not built
   int64 log_retention_days = 16;
   int64 artifact_retention_days = 17;
   bool secrets_byok = 18;
-  bool secrets_hsm = 19;
-  bool signed_provenance = 20;
+  bool secrets_hsm = 19;                  // always false: there are no HSM-backed keys
+  bool signed_provenance = 20;            // server-recorded release provenance (run, job, commit); nothing is signed
   string support_tier = 21;               // community | email | priority | enterprise
   string support_response = 22;           // human readable response target
   string uptime_sla = 23;                 // "" | "99.9%" | "99.95%"
@@ -60,12 +60,12 @@ message Plan {
 message BillingSubscription {
   string id = 1;                          // Stripe subscription id, empty when none
   string plan = 2;
-  string status = 3;                      // none | trialing | active | past_due | canceled | unpaid | incomplete | admin
+  string status = 3;                      // none | admin | a Stripe status: trialing | active | past_due | canceled | unpaid | incomplete | incomplete_expired | paused
   google.protobuf.Timestamp current_period_start = 4;
   google.protobuf.Timestamp current_period_end = 5;
   google.protobuf.Timestamp trial_end = 6;
   bool cancel_at_period_end = 7;
-  bool trial_available = 8;               // org has never used its Business trial
+  bool trial_available = 8;               // org has never used its Business trial and has no live subscription
   string plan_source = 9;                 // default | stripe | admin
   bool has_billing_account = 10;          // a Stripe customer exists (portal available)
 }
@@ -157,7 +157,7 @@ message GetUsageResponse {
 message CreateCheckoutSessionRequest {
   string plan_id = 1;      // team | business
   bool start_trial = 2;    // honoured only for plans with a trial and when the org has not used it
-  string return_path = 3;  // optional app-relative path (must start with "/"); defaults to /settings/billing
+  string return_path = 3;  // optional app-relative path (must start with "/"); defaults to /billing
 }
 message CreateCheckoutSessionResponse {
   string url = 1;

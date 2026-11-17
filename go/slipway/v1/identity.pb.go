@@ -8694,8 +8694,17 @@ func (x *QueryAuditEventsResponse) GetPage() *PageResponse {
 	return nil
 }
 
+// VerifyAuditChain verifies the organisation's audit hash chain in pages, oldest event first, so that no single request
+// walks a long chain. A full verification calls it with each response's next_page_token until that is empty. Each page
+// re-reads the last event the previous page verified and checks the link from it, so the pages verify exactly what one
+// walk of the whole chain would.
 type VerifyAuditChainRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// page_token resumes a verification from the previous response's next_page_token; empty starts at the oldest event.
+	// The token is opaque, sealed by the server and valid only for the organisation it was issued to.
+	PageToken string `protobuf:"bytes,1,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	// page_size caps the events this call verifies: 0 means 10,000, and larger values than 50,000 are capped.
+	PageSize      int32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -8730,14 +8739,34 @@ func (*VerifyAuditChainRequest) Descriptor() ([]byte, []int) {
 	return file_slipway_v1_identity_proto_rawDescGZIP(), []int{168}
 }
 
+func (x *VerifyAuditChainRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+func (x *VerifyAuditChainRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
 type VerifyAuditChainResponse struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Ok              bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
-	EventsChecked   int64                  `protobuf:"varint,2,opt,name=events_checked,json=eventsChecked,proto3" json:"events_checked,omitempty"`
-	FirstBadEventId string                 `protobuf:"bytes,3,opt,name=first_bad_event_id,json=firstBadEventId,proto3" json:"first_bad_event_id,omitempty"`
-	Reason          string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ok is true only when the whole chain verified: on the response that finishes it (next_page_token empty). While a
+	// next_page_token is returned ok is false and first_bad_event_id empty (reason says the verification is not
+	// finished); an event that fails verification ends it with ok false and first_bad_event_id and reason set.
+	Ok bool `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	// events_checked counts the events verified so far in this verification, across its pages.
+	EventsChecked   int64  `protobuf:"varint,2,opt,name=events_checked,json=eventsChecked,proto3" json:"events_checked,omitempty"`
+	FirstBadEventId string `protobuf:"bytes,3,opt,name=first_bad_event_id,json=firstBadEventId,proto3" json:"first_bad_event_id,omitempty"`
+	Reason          string `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	// next_page_token is set while ok and events remain to verify; empty when the whole chain is verified.
+	NextPageToken string `protobuf:"bytes,5,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *VerifyAuditChainResponse) Reset() {
@@ -8794,6 +8823,13 @@ func (x *VerifyAuditChainResponse) GetFirstBadEventId() string {
 func (x *VerifyAuditChainResponse) GetReason() string {
 	if x != nil {
 		return x.Reason
+	}
+	return ""
+}
+
+func (x *VerifyAuditChainResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
 	}
 	return ""
 }
@@ -11095,13 +11131,17 @@ const file_slipway_v1_identity_proto_rawDesc = "" +
 	"\x05until\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\x05until\"v\n" +
 	"\x18QueryAuditEventsResponse\x12,\n" +
 	"\x05items\x18\x01 \x03(\v2\x16.slipway.v1.AuditEventR\x05items\x12,\n" +
-	"\x04page\x18\x02 \x01(\v2\x18.slipway.v1.PageResponseR\x04page\"\x19\n" +
-	"\x17VerifyAuditChainRequest\"\x96\x01\n" +
+	"\x04page\x18\x02 \x01(\v2\x18.slipway.v1.PageResponseR\x04page\"U\n" +
+	"\x17VerifyAuditChainRequest\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x01 \x01(\tR\tpageToken\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"\xbe\x01\n" +
 	"\x18VerifyAuditChainResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12%\n" +
 	"\x0eevents_checked\x18\x02 \x01(\x03R\reventsChecked\x12+\n" +
 	"\x12first_bad_event_id\x18\x03 \x01(\tR\x0ffirstBadEventId\x12\x16\n" +
-	"\x06reason\x18\x04 \x01(\tR\x06reason\"\x1a\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\x12&\n" +
+	"\x0fnext_page_token\x18\x05 \x01(\tR\rnextPageToken\"\x1a\n" +
 	"\x18GetAuditRetentionRequest\"\xb5\x01\n" +
 	"\x19GetAuditRetentionResponse\x12%\n" +
 	"\x0eretention_days\x18\x01 \x01(\x05R\rretentionDays\x12%\n" +

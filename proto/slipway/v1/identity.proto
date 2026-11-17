@@ -541,8 +541,29 @@ message QueryAuditEventsRequest {
   google.protobuf.Timestamp until = 8;
 }
 message QueryAuditEventsResponse { repeated AuditEvent items = 1; PageResponse page = 2; }
-message VerifyAuditChainRequest {}
-message VerifyAuditChainResponse { bool ok = 1; int64 events_checked = 2; string first_bad_event_id = 3; string reason = 4; }
+// VerifyAuditChain verifies the organisation's audit hash chain in pages, oldest event first, so that no single request
+// walks a long chain. A full verification calls it with each response's next_page_token until that is empty. Each page
+// re-reads the last event the previous page verified and checks the link from it, so the pages verify exactly what one
+// walk of the whole chain would.
+message VerifyAuditChainRequest {
+  // page_token resumes a verification from the previous response's next_page_token; empty starts at the oldest event.
+  // The token is opaque, sealed by the server and valid only for the organisation it was issued to.
+  string page_token = 1;
+  // page_size caps the events this call verifies: 0 means 10,000, and larger values than 50,000 are capped.
+  int32 page_size = 2;
+}
+message VerifyAuditChainResponse {
+  // ok is true only when the whole chain verified: on the response that finishes it (next_page_token empty). While a
+  // next_page_token is returned ok is false and first_bad_event_id empty (reason says the verification is not
+  // finished); an event that fails verification ends it with ok false and first_bad_event_id and reason set.
+  bool ok = 1;
+  // events_checked counts the events verified so far in this verification, across its pages.
+  int64 events_checked = 2;
+  string first_bad_event_id = 3;
+  string reason = 4;
+  // next_page_token is set while ok and events remain to verify; empty when the whole chain is verified.
+  string next_page_token = 5;
+}
 message GetAuditRetentionRequest {}
 message GetAuditRetentionResponse { int32 retention_days = 1; bool export_enabled = 2; bool streaming_enabled = 3; string export_url = 4; } // retention_days 0 = unlimited
 

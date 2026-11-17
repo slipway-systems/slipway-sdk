@@ -254,7 +254,7 @@ message NotificationDelivery {
   string event_id = 4;
   string event_type = 5;
   int32 attempt = 6;
-  string status = 7; // pending | succeeded | retrying | dead
+  string status = 7; // pending | succeeded | retrying | dead | skipped (the provider had nothing to do; error says why)
   string error = 8;
   google.protobuf.Timestamp next_attempt_at = 9;
   google.protobuf.Timestamp delivered_at = 10;
@@ -476,6 +476,8 @@ message OutboundWebhook {
   string created_by = 12;
   google.protobuf.Timestamp created_at = 13;
   google.protobuf.Timestamp updated_at = 14;
+  // Set when the platform switched the webhook off because its deliveries kept failing; enabling it clears it.
+  string disabled_reason = 15;
 }
 
 message WebhookDelivery {
