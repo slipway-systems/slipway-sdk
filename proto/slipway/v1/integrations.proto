@@ -478,6 +478,9 @@ message OutboundWebhook {
   google.protobuf.Timestamp updated_at = 14;
   // Set when the platform switched the webhook off because its deliveries kept failing; enabling it clears it.
   string disabled_reason = 15;
+  // Set for 24 hours after RotateWebhookSecret: until then every delivery is also signed with the secret the rotation
+  // replaced (a second v1 signature), so receivers that still hold it keep accepting deliveries while they are updated.
+  google.protobuf.Timestamp previous_secret_expires_at = 16;
 }
 
 message WebhookDelivery {
@@ -580,6 +583,8 @@ service WebhookService {
   rpc CreateWebhook(CreateWebhookRequest) returns (CreateWebhookResponse);
   rpc UpdateWebhook(UpdateWebhookRequest) returns (UpdateWebhookResponse);
   rpc DeleteWebhook(DeleteWebhookRequest) returns (DeleteWebhookResponse);
+  // Replaces the signing secret and returns the new one (shown once). The replaced secret keeps signing deliveries,
+  // next to the new one, for 24 hours (OutboundWebhook.previous_secret_expires_at).
   rpc RotateWebhookSecret(RotateWebhookSecretRequest) returns (RotateWebhookSecretResponse);
   rpc ListWebhookDeliveries(ListWebhookDeliveriesRequest) returns (ListWebhookDeliveriesResponse);
   rpc GetWebhookDelivery(GetWebhookDeliveryRequest) returns (GetWebhookDeliveryResponse);

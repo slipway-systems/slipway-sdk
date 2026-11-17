@@ -155,6 +155,9 @@ message RunJob {
   repeated string runs_on = 7;
   string pool_id = 8;
   string runner_id = 9;
+  // The runner's name when it took the job, kept with the job: it outlives the runner (an ephemeral runner is removed
+  // once it deregisters). Empty when the job has no runner, or for jobs assigned by an older control plane to a runner
+  // since deleted; clients then show runner_id.
   string runner_name = 10;
   int32 attempt = 11;
   int32 max_attempts = 12;
@@ -174,6 +177,7 @@ message RunJob {
   repeated RunStep steps = 26; // populated by GetRun / GetJob only (latest attempt)
   string matrix_group = 27;    // base job name shared by all matrix siblings
   string waiting_reason = 28;  // why a pending or queued job is not running yet; empty once it runs
+  bool runner_ephemeral = 29;  // the runner took only this job (`slipway runner --ephemeral`); it is gone once the job has ended
 }
 
 message RunStep {

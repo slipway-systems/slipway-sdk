@@ -953,16 +953,19 @@ func (x *Run) GetWaitingReason() string {
 }
 
 type RunJob struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // job_…
-	RunId           string                 `protobuf:"bytes,2,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
-	Name            string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	DisplayName     string                 `protobuf:"bytes,4,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
-	Stage           string                 `protobuf:"bytes,5,opt,name=stage,proto3" json:"stage,omitempty"`
-	Status          RunJobStatus           `protobuf:"varint,6,opt,name=status,proto3,enum=slipway.v1.RunJobStatus" json:"status,omitempty"`
-	RunsOn          []string               `protobuf:"bytes,7,rep,name=runs_on,json=runsOn,proto3" json:"runs_on,omitempty"`
-	PoolId          string                 `protobuf:"bytes,8,opt,name=pool_id,json=poolId,proto3" json:"pool_id,omitempty"`
-	RunnerId        string                 `protobuf:"bytes,9,opt,name=runner_id,json=runnerId,proto3" json:"runner_id,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // job_…
+	RunId       string                 `protobuf:"bytes,2,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	Name        string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	DisplayName string                 `protobuf:"bytes,4,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Stage       string                 `protobuf:"bytes,5,opt,name=stage,proto3" json:"stage,omitempty"`
+	Status      RunJobStatus           `protobuf:"varint,6,opt,name=status,proto3,enum=slipway.v1.RunJobStatus" json:"status,omitempty"`
+	RunsOn      []string               `protobuf:"bytes,7,rep,name=runs_on,json=runsOn,proto3" json:"runs_on,omitempty"`
+	PoolId      string                 `protobuf:"bytes,8,opt,name=pool_id,json=poolId,proto3" json:"pool_id,omitempty"`
+	RunnerId    string                 `protobuf:"bytes,9,opt,name=runner_id,json=runnerId,proto3" json:"runner_id,omitempty"`
+	// The runner's name when it took the job, kept with the job: it outlives the runner (an ephemeral runner is removed
+	// once it deregisters). Empty when the job has no runner, or for jobs assigned by an older control plane to a runner
+	// since deleted; clients then show runner_id.
 	RunnerName      string                 `protobuf:"bytes,10,opt,name=runner_name,json=runnerName,proto3" json:"runner_name,omitempty"`
 	Attempt         int32                  `protobuf:"varint,11,opt,name=attempt,proto3" json:"attempt,omitempty"`
 	MaxAttempts     int32                  `protobuf:"varint,12,opt,name=max_attempts,json=maxAttempts,proto3" json:"max_attempts,omitempty"`
@@ -979,9 +982,10 @@ type RunJob struct {
 	FinishedAt      *timestamppb.Timestamp `protobuf:"bytes,23,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
 	Duration        *durationpb.Duration   `protobuf:"bytes,24,opt,name=duration,proto3" json:"duration,omitempty"`
 	Timeout         *durationpb.Duration   `protobuf:"bytes,25,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	Steps           []*RunStep             `protobuf:"bytes,26,rep,name=steps,proto3" json:"steps,omitempty"`                                      // populated by GetRun / GetJob only (latest attempt)
-	MatrixGroup     string                 `protobuf:"bytes,27,opt,name=matrix_group,json=matrixGroup,proto3" json:"matrix_group,omitempty"`       // base job name shared by all matrix siblings
-	WaitingReason   string                 `protobuf:"bytes,28,opt,name=waiting_reason,json=waitingReason,proto3" json:"waiting_reason,omitempty"` // why a pending or queued job is not running yet; empty once it runs
+	Steps           []*RunStep             `protobuf:"bytes,26,rep,name=steps,proto3" json:"steps,omitempty"`                                             // populated by GetRun / GetJob only (latest attempt)
+	MatrixGroup     string                 `protobuf:"bytes,27,opt,name=matrix_group,json=matrixGroup,proto3" json:"matrix_group,omitempty"`              // base job name shared by all matrix siblings
+	WaitingReason   string                 `protobuf:"bytes,28,opt,name=waiting_reason,json=waitingReason,proto3" json:"waiting_reason,omitempty"`        // why a pending or queued job is not running yet; empty once it runs
+	RunnerEphemeral bool                   `protobuf:"varint,29,opt,name=runner_ephemeral,json=runnerEphemeral,proto3" json:"runner_ephemeral,omitempty"` // the runner took only this job (`slipway runner --ephemeral`); it is gone once the job has ended
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1210,6 +1214,13 @@ func (x *RunJob) GetWaitingReason() string {
 		return x.WaitingReason
 	}
 	return ""
+}
+
+func (x *RunJob) GetRunnerEphemeral() bool {
+	if x != nil {
+		return x.RunnerEphemeral
+	}
+	return false
 }
 
 type RunStep struct {
@@ -10607,7 +10618,7 @@ const file_slipway_v1_runs_proto_rawDesc = "" +
 	"jobsFailed\x12!\n" +
 	"\fjobs_running\x18\x18 \x01(\x05R\vjobsRunning\x12&\n" +
 	"\x04jobs\x18\x19 \x03(\v2\x12.slipway.v1.RunJobR\x04jobs\x12%\n" +
-	"\x0ewaiting_reason\x18\x1a \x01(\tR\rwaitingReason\"\xaa\b\n" +
+	"\x0ewaiting_reason\x18\x1a \x01(\tR\rwaitingReason\"\xd5\b\n" +
 	"\x06RunJob\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
 	"\x06run_id\x18\x02 \x01(\tR\x05runId\x12\x12\n" +
@@ -10640,7 +10651,8 @@ const file_slipway_v1_runs_proto_rawDesc = "" +
 	"\atimeout\x18\x19 \x01(\v2\x19.google.protobuf.DurationR\atimeout\x12)\n" +
 	"\x05steps\x18\x1a \x03(\v2\x13.slipway.v1.RunStepR\x05steps\x12!\n" +
 	"\fmatrix_group\x18\x1b \x01(\tR\vmatrixGroup\x12%\n" +
-	"\x0ewaiting_reason\x18\x1c \x01(\tR\rwaitingReason\"\xe4\x03\n" +
+	"\x0ewaiting_reason\x18\x1c \x01(\tR\rwaitingReason\x12)\n" +
+	"\x10runner_ephemeral\x18\x1d \x01(\bR\x0frunnerEphemeral\"\xe4\x03\n" +
 	"\aRunStep\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
 	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x12\x18\n" +

@@ -4035,8 +4035,11 @@ type OutboundWebhook struct {
 	UpdatedAt      *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	// Set when the platform switched the webhook off because its deliveries kept failing; enabling it clears it.
 	DisabledReason string `protobuf:"bytes,15,opt,name=disabled_reason,json=disabledReason,proto3" json:"disabled_reason,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Set for 24 hours after RotateWebhookSecret: until then every delivery is also signed with the secret the rotation
+	// replaced (a second v1 signature), so receivers that still hold it keep accepting deliveries while they are updated.
+	PreviousSecretExpiresAt *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=previous_secret_expires_at,json=previousSecretExpiresAt,proto3" json:"previous_secret_expires_at,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *OutboundWebhook) Reset() {
@@ -4172,6 +4175,13 @@ func (x *OutboundWebhook) GetDisabledReason() string {
 		return x.DisabledReason
 	}
 	return ""
+}
+
+func (x *OutboundWebhook) GetPreviousSecretExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PreviousSecretExpiresAt
+	}
+	return nil
 }
 
 type WebhookDelivery struct {
@@ -5591,7 +5601,7 @@ const file_slipway_v1_integrations_proto_rawDesc = "" +
 	"\x05items\x18\x01 \x03(\v2\x14.slipway.v1.ChatLinkR\x05items\"'\n" +
 	"\x15DeleteChatLinkRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x18\n" +
-	"\x16DeleteChatLinkResponse\"\x83\x05\n" +
+	"\x16DeleteChatLinkResponse\"\xdc\x05\n" +
 	"\x0fOutboundWebhook\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x10\n" +
@@ -5614,7 +5624,8 @@ const file_slipway_v1_integrations_proto_rawDesc = "" +
 	"created_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
 	"updated_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12'\n" +
-	"\x0fdisabled_reason\x18\x0f \x01(\tR\x0edisabledReason\x1a:\n" +
+	"\x0fdisabled_reason\x18\x0f \x01(\tR\x0edisabledReason\x12W\n" +
+	"\x1aprevious_secret_expires_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\x17previousSecretExpiresAt\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x88\x04\n" +
@@ -5902,98 +5913,99 @@ var file_slipway_v1_integrations_proto_depIdxs = []int32{
 	90,  // 61: slipway.v1.OutboundWebhook.last_delivery_at:type_name -> google.protobuf.Timestamp
 	90,  // 62: slipway.v1.OutboundWebhook.created_at:type_name -> google.protobuf.Timestamp
 	90,  // 63: slipway.v1.OutboundWebhook.updated_at:type_name -> google.protobuf.Timestamp
-	89,  // 64: slipway.v1.WebhookDelivery.payload:type_name -> google.protobuf.Struct
-	90,  // 65: slipway.v1.WebhookDelivery.next_attempt_at:type_name -> google.protobuf.Timestamp
-	90,  // 66: slipway.v1.WebhookDelivery.created_at:type_name -> google.protobuf.Timestamp
-	91,  // 67: slipway.v1.ListWebhooksRequest.page:type_name -> slipway.v1.PageRequest
-	62,  // 68: slipway.v1.ListWebhooksResponse.items:type_name -> slipway.v1.OutboundWebhook
-	92,  // 69: slipway.v1.ListWebhooksResponse.page:type_name -> slipway.v1.PageResponse
-	62,  // 70: slipway.v1.GetWebhookResponse.webhook:type_name -> slipway.v1.OutboundWebhook
-	62,  // 71: slipway.v1.CreateWebhookRequest.webhook:type_name -> slipway.v1.OutboundWebhook
-	62,  // 72: slipway.v1.CreateWebhookResponse.webhook:type_name -> slipway.v1.OutboundWebhook
-	62,  // 73: slipway.v1.UpdateWebhookRequest.webhook:type_name -> slipway.v1.OutboundWebhook
-	93,  // 74: slipway.v1.UpdateWebhookRequest.update_mask:type_name -> google.protobuf.FieldMask
-	62,  // 75: slipway.v1.UpdateWebhookResponse.webhook:type_name -> slipway.v1.OutboundWebhook
-	62,  // 76: slipway.v1.RotateWebhookSecretResponse.webhook:type_name -> slipway.v1.OutboundWebhook
-	91,  // 77: slipway.v1.ListWebhookDeliveriesRequest.page:type_name -> slipway.v1.PageRequest
-	63,  // 78: slipway.v1.ListWebhookDeliveriesResponse.items:type_name -> slipway.v1.WebhookDelivery
-	92,  // 79: slipway.v1.ListWebhookDeliveriesResponse.page:type_name -> slipway.v1.PageResponse
-	63,  // 80: slipway.v1.GetWebhookDeliveryResponse.delivery:type_name -> slipway.v1.WebhookDelivery
-	63,  // 81: slipway.v1.RedeliverWebhookResponse.delivery:type_name -> slipway.v1.WebhookDelivery
-	63,  // 82: slipway.v1.PingWebhookResponse.delivery:type_name -> slipway.v1.WebhookDelivery
-	5,   // 83: slipway.v1.IntegrationService.ListProviders:input_type -> slipway.v1.ListProvidersRequest
-	7,   // 84: slipway.v1.IntegrationService.ListIntegrations:input_type -> slipway.v1.ListIntegrationsRequest
-	9,   // 85: slipway.v1.IntegrationService.GetIntegration:input_type -> slipway.v1.GetIntegrationRequest
-	11,  // 86: slipway.v1.IntegrationService.StartInstall:input_type -> slipway.v1.StartInstallRequest
-	13,  // 87: slipway.v1.IntegrationService.CompleteInstall:input_type -> slipway.v1.CompleteInstallRequest
-	15,  // 88: slipway.v1.IntegrationService.Install:input_type -> slipway.v1.InstallRequest
-	17,  // 89: slipway.v1.IntegrationService.UpdateIntegration:input_type -> slipway.v1.UpdateIntegrationRequest
-	19,  // 90: slipway.v1.IntegrationService.TestIntegration:input_type -> slipway.v1.TestIntegrationRequest
-	24,  // 91: slipway.v1.IntegrationService.UninstallIntegration:input_type -> slipway.v1.UninstallIntegrationRequest
-	21,  // 92: slipway.v1.IntegrationService.ListTargets:input_type -> slipway.v1.ListTargetsRequest
-	27,  // 93: slipway.v1.IntegrationService.ListSubscriptions:input_type -> slipway.v1.ListSubscriptionsRequest
-	29,  // 94: slipway.v1.IntegrationService.CreateSubscription:input_type -> slipway.v1.CreateSubscriptionRequest
-	31,  // 95: slipway.v1.IntegrationService.UpdateSubscription:input_type -> slipway.v1.UpdateSubscriptionRequest
-	33,  // 96: slipway.v1.IntegrationService.DeleteSubscription:input_type -> slipway.v1.DeleteSubscriptionRequest
-	35,  // 97: slipway.v1.IntegrationService.SendTest:input_type -> slipway.v1.SendTestRequest
-	38,  // 98: slipway.v1.IntegrationService.ListNotificationDeliveries:input_type -> slipway.v1.ListNotificationDeliveriesRequest
-	41,  // 99: slipway.v1.IntegrationService.ListRegistryRepositories:input_type -> slipway.v1.ListRegistryRepositoriesRequest
-	43,  // 100: slipway.v1.IntegrationService.ListRegistryTags:input_type -> slipway.v1.ListRegistryTagsRequest
-	49,  // 101: slipway.v1.IntegrationService.IngestScanReport:input_type -> slipway.v1.IngestScanReportRequest
-	51,  // 102: slipway.v1.IntegrationService.ListScanReports:input_type -> slipway.v1.ListScanReportsRequest
-	53,  // 103: slipway.v1.IntegrationService.GetScanReport:input_type -> slipway.v1.GetScanReportRequest
-	56,  // 104: slipway.v1.IntegrationService.CreateChatLinkCode:input_type -> slipway.v1.CreateChatLinkCodeRequest
-	58,  // 105: slipway.v1.IntegrationService.ListChatLinks:input_type -> slipway.v1.ListChatLinksRequest
-	60,  // 106: slipway.v1.IntegrationService.DeleteChatLink:input_type -> slipway.v1.DeleteChatLinkRequest
-	64,  // 107: slipway.v1.WebhookService.ListWebhooks:input_type -> slipway.v1.ListWebhooksRequest
-	66,  // 108: slipway.v1.WebhookService.GetWebhook:input_type -> slipway.v1.GetWebhookRequest
-	68,  // 109: slipway.v1.WebhookService.CreateWebhook:input_type -> slipway.v1.CreateWebhookRequest
-	70,  // 110: slipway.v1.WebhookService.UpdateWebhook:input_type -> slipway.v1.UpdateWebhookRequest
-	72,  // 111: slipway.v1.WebhookService.DeleteWebhook:input_type -> slipway.v1.DeleteWebhookRequest
-	74,  // 112: slipway.v1.WebhookService.RotateWebhookSecret:input_type -> slipway.v1.RotateWebhookSecretRequest
-	76,  // 113: slipway.v1.WebhookService.ListWebhookDeliveries:input_type -> slipway.v1.ListWebhookDeliveriesRequest
-	78,  // 114: slipway.v1.WebhookService.GetWebhookDelivery:input_type -> slipway.v1.GetWebhookDeliveryRequest
-	80,  // 115: slipway.v1.WebhookService.RedeliverWebhook:input_type -> slipway.v1.RedeliverWebhookRequest
-	82,  // 116: slipway.v1.WebhookService.PingWebhook:input_type -> slipway.v1.PingWebhookRequest
-	6,   // 117: slipway.v1.IntegrationService.ListProviders:output_type -> slipway.v1.ListProvidersResponse
-	8,   // 118: slipway.v1.IntegrationService.ListIntegrations:output_type -> slipway.v1.ListIntegrationsResponse
-	10,  // 119: slipway.v1.IntegrationService.GetIntegration:output_type -> slipway.v1.GetIntegrationResponse
-	12,  // 120: slipway.v1.IntegrationService.StartInstall:output_type -> slipway.v1.StartInstallResponse
-	14,  // 121: slipway.v1.IntegrationService.CompleteInstall:output_type -> slipway.v1.CompleteInstallResponse
-	16,  // 122: slipway.v1.IntegrationService.Install:output_type -> slipway.v1.InstallResponse
-	18,  // 123: slipway.v1.IntegrationService.UpdateIntegration:output_type -> slipway.v1.UpdateIntegrationResponse
-	20,  // 124: slipway.v1.IntegrationService.TestIntegration:output_type -> slipway.v1.TestIntegrationResponse
-	25,  // 125: slipway.v1.IntegrationService.UninstallIntegration:output_type -> slipway.v1.UninstallIntegrationResponse
-	23,  // 126: slipway.v1.IntegrationService.ListTargets:output_type -> slipway.v1.ListTargetsResponse
-	28,  // 127: slipway.v1.IntegrationService.ListSubscriptions:output_type -> slipway.v1.ListSubscriptionsResponse
-	30,  // 128: slipway.v1.IntegrationService.CreateSubscription:output_type -> slipway.v1.CreateSubscriptionResponse
-	32,  // 129: slipway.v1.IntegrationService.UpdateSubscription:output_type -> slipway.v1.UpdateSubscriptionResponse
-	34,  // 130: slipway.v1.IntegrationService.DeleteSubscription:output_type -> slipway.v1.DeleteSubscriptionResponse
-	36,  // 131: slipway.v1.IntegrationService.SendTest:output_type -> slipway.v1.SendTestResponse
-	39,  // 132: slipway.v1.IntegrationService.ListNotificationDeliveries:output_type -> slipway.v1.ListNotificationDeliveriesResponse
-	42,  // 133: slipway.v1.IntegrationService.ListRegistryRepositories:output_type -> slipway.v1.ListRegistryRepositoriesResponse
-	44,  // 134: slipway.v1.IntegrationService.ListRegistryTags:output_type -> slipway.v1.ListRegistryTagsResponse
-	50,  // 135: slipway.v1.IntegrationService.IngestScanReport:output_type -> slipway.v1.IngestScanReportResponse
-	52,  // 136: slipway.v1.IntegrationService.ListScanReports:output_type -> slipway.v1.ListScanReportsResponse
-	54,  // 137: slipway.v1.IntegrationService.GetScanReport:output_type -> slipway.v1.GetScanReportResponse
-	57,  // 138: slipway.v1.IntegrationService.CreateChatLinkCode:output_type -> slipway.v1.CreateChatLinkCodeResponse
-	59,  // 139: slipway.v1.IntegrationService.ListChatLinks:output_type -> slipway.v1.ListChatLinksResponse
-	61,  // 140: slipway.v1.IntegrationService.DeleteChatLink:output_type -> slipway.v1.DeleteChatLinkResponse
-	65,  // 141: slipway.v1.WebhookService.ListWebhooks:output_type -> slipway.v1.ListWebhooksResponse
-	67,  // 142: slipway.v1.WebhookService.GetWebhook:output_type -> slipway.v1.GetWebhookResponse
-	69,  // 143: slipway.v1.WebhookService.CreateWebhook:output_type -> slipway.v1.CreateWebhookResponse
-	71,  // 144: slipway.v1.WebhookService.UpdateWebhook:output_type -> slipway.v1.UpdateWebhookResponse
-	73,  // 145: slipway.v1.WebhookService.DeleteWebhook:output_type -> slipway.v1.DeleteWebhookResponse
-	75,  // 146: slipway.v1.WebhookService.RotateWebhookSecret:output_type -> slipway.v1.RotateWebhookSecretResponse
-	77,  // 147: slipway.v1.WebhookService.ListWebhookDeliveries:output_type -> slipway.v1.ListWebhookDeliveriesResponse
-	79,  // 148: slipway.v1.WebhookService.GetWebhookDelivery:output_type -> slipway.v1.GetWebhookDeliveryResponse
-	81,  // 149: slipway.v1.WebhookService.RedeliverWebhook:output_type -> slipway.v1.RedeliverWebhookResponse
-	83,  // 150: slipway.v1.WebhookService.PingWebhook:output_type -> slipway.v1.PingWebhookResponse
-	117, // [117:151] is the sub-list for method output_type
-	83,  // [83:117] is the sub-list for method input_type
-	83,  // [83:83] is the sub-list for extension type_name
-	83,  // [83:83] is the sub-list for extension extendee
-	0,   // [0:83] is the sub-list for field type_name
+	90,  // 64: slipway.v1.OutboundWebhook.previous_secret_expires_at:type_name -> google.protobuf.Timestamp
+	89,  // 65: slipway.v1.WebhookDelivery.payload:type_name -> google.protobuf.Struct
+	90,  // 66: slipway.v1.WebhookDelivery.next_attempt_at:type_name -> google.protobuf.Timestamp
+	90,  // 67: slipway.v1.WebhookDelivery.created_at:type_name -> google.protobuf.Timestamp
+	91,  // 68: slipway.v1.ListWebhooksRequest.page:type_name -> slipway.v1.PageRequest
+	62,  // 69: slipway.v1.ListWebhooksResponse.items:type_name -> slipway.v1.OutboundWebhook
+	92,  // 70: slipway.v1.ListWebhooksResponse.page:type_name -> slipway.v1.PageResponse
+	62,  // 71: slipway.v1.GetWebhookResponse.webhook:type_name -> slipway.v1.OutboundWebhook
+	62,  // 72: slipway.v1.CreateWebhookRequest.webhook:type_name -> slipway.v1.OutboundWebhook
+	62,  // 73: slipway.v1.CreateWebhookResponse.webhook:type_name -> slipway.v1.OutboundWebhook
+	62,  // 74: slipway.v1.UpdateWebhookRequest.webhook:type_name -> slipway.v1.OutboundWebhook
+	93,  // 75: slipway.v1.UpdateWebhookRequest.update_mask:type_name -> google.protobuf.FieldMask
+	62,  // 76: slipway.v1.UpdateWebhookResponse.webhook:type_name -> slipway.v1.OutboundWebhook
+	62,  // 77: slipway.v1.RotateWebhookSecretResponse.webhook:type_name -> slipway.v1.OutboundWebhook
+	91,  // 78: slipway.v1.ListWebhookDeliveriesRequest.page:type_name -> slipway.v1.PageRequest
+	63,  // 79: slipway.v1.ListWebhookDeliveriesResponse.items:type_name -> slipway.v1.WebhookDelivery
+	92,  // 80: slipway.v1.ListWebhookDeliveriesResponse.page:type_name -> slipway.v1.PageResponse
+	63,  // 81: slipway.v1.GetWebhookDeliveryResponse.delivery:type_name -> slipway.v1.WebhookDelivery
+	63,  // 82: slipway.v1.RedeliverWebhookResponse.delivery:type_name -> slipway.v1.WebhookDelivery
+	63,  // 83: slipway.v1.PingWebhookResponse.delivery:type_name -> slipway.v1.WebhookDelivery
+	5,   // 84: slipway.v1.IntegrationService.ListProviders:input_type -> slipway.v1.ListProvidersRequest
+	7,   // 85: slipway.v1.IntegrationService.ListIntegrations:input_type -> slipway.v1.ListIntegrationsRequest
+	9,   // 86: slipway.v1.IntegrationService.GetIntegration:input_type -> slipway.v1.GetIntegrationRequest
+	11,  // 87: slipway.v1.IntegrationService.StartInstall:input_type -> slipway.v1.StartInstallRequest
+	13,  // 88: slipway.v1.IntegrationService.CompleteInstall:input_type -> slipway.v1.CompleteInstallRequest
+	15,  // 89: slipway.v1.IntegrationService.Install:input_type -> slipway.v1.InstallRequest
+	17,  // 90: slipway.v1.IntegrationService.UpdateIntegration:input_type -> slipway.v1.UpdateIntegrationRequest
+	19,  // 91: slipway.v1.IntegrationService.TestIntegration:input_type -> slipway.v1.TestIntegrationRequest
+	24,  // 92: slipway.v1.IntegrationService.UninstallIntegration:input_type -> slipway.v1.UninstallIntegrationRequest
+	21,  // 93: slipway.v1.IntegrationService.ListTargets:input_type -> slipway.v1.ListTargetsRequest
+	27,  // 94: slipway.v1.IntegrationService.ListSubscriptions:input_type -> slipway.v1.ListSubscriptionsRequest
+	29,  // 95: slipway.v1.IntegrationService.CreateSubscription:input_type -> slipway.v1.CreateSubscriptionRequest
+	31,  // 96: slipway.v1.IntegrationService.UpdateSubscription:input_type -> slipway.v1.UpdateSubscriptionRequest
+	33,  // 97: slipway.v1.IntegrationService.DeleteSubscription:input_type -> slipway.v1.DeleteSubscriptionRequest
+	35,  // 98: slipway.v1.IntegrationService.SendTest:input_type -> slipway.v1.SendTestRequest
+	38,  // 99: slipway.v1.IntegrationService.ListNotificationDeliveries:input_type -> slipway.v1.ListNotificationDeliveriesRequest
+	41,  // 100: slipway.v1.IntegrationService.ListRegistryRepositories:input_type -> slipway.v1.ListRegistryRepositoriesRequest
+	43,  // 101: slipway.v1.IntegrationService.ListRegistryTags:input_type -> slipway.v1.ListRegistryTagsRequest
+	49,  // 102: slipway.v1.IntegrationService.IngestScanReport:input_type -> slipway.v1.IngestScanReportRequest
+	51,  // 103: slipway.v1.IntegrationService.ListScanReports:input_type -> slipway.v1.ListScanReportsRequest
+	53,  // 104: slipway.v1.IntegrationService.GetScanReport:input_type -> slipway.v1.GetScanReportRequest
+	56,  // 105: slipway.v1.IntegrationService.CreateChatLinkCode:input_type -> slipway.v1.CreateChatLinkCodeRequest
+	58,  // 106: slipway.v1.IntegrationService.ListChatLinks:input_type -> slipway.v1.ListChatLinksRequest
+	60,  // 107: slipway.v1.IntegrationService.DeleteChatLink:input_type -> slipway.v1.DeleteChatLinkRequest
+	64,  // 108: slipway.v1.WebhookService.ListWebhooks:input_type -> slipway.v1.ListWebhooksRequest
+	66,  // 109: slipway.v1.WebhookService.GetWebhook:input_type -> slipway.v1.GetWebhookRequest
+	68,  // 110: slipway.v1.WebhookService.CreateWebhook:input_type -> slipway.v1.CreateWebhookRequest
+	70,  // 111: slipway.v1.WebhookService.UpdateWebhook:input_type -> slipway.v1.UpdateWebhookRequest
+	72,  // 112: slipway.v1.WebhookService.DeleteWebhook:input_type -> slipway.v1.DeleteWebhookRequest
+	74,  // 113: slipway.v1.WebhookService.RotateWebhookSecret:input_type -> slipway.v1.RotateWebhookSecretRequest
+	76,  // 114: slipway.v1.WebhookService.ListWebhookDeliveries:input_type -> slipway.v1.ListWebhookDeliveriesRequest
+	78,  // 115: slipway.v1.WebhookService.GetWebhookDelivery:input_type -> slipway.v1.GetWebhookDeliveryRequest
+	80,  // 116: slipway.v1.WebhookService.RedeliverWebhook:input_type -> slipway.v1.RedeliverWebhookRequest
+	82,  // 117: slipway.v1.WebhookService.PingWebhook:input_type -> slipway.v1.PingWebhookRequest
+	6,   // 118: slipway.v1.IntegrationService.ListProviders:output_type -> slipway.v1.ListProvidersResponse
+	8,   // 119: slipway.v1.IntegrationService.ListIntegrations:output_type -> slipway.v1.ListIntegrationsResponse
+	10,  // 120: slipway.v1.IntegrationService.GetIntegration:output_type -> slipway.v1.GetIntegrationResponse
+	12,  // 121: slipway.v1.IntegrationService.StartInstall:output_type -> slipway.v1.StartInstallResponse
+	14,  // 122: slipway.v1.IntegrationService.CompleteInstall:output_type -> slipway.v1.CompleteInstallResponse
+	16,  // 123: slipway.v1.IntegrationService.Install:output_type -> slipway.v1.InstallResponse
+	18,  // 124: slipway.v1.IntegrationService.UpdateIntegration:output_type -> slipway.v1.UpdateIntegrationResponse
+	20,  // 125: slipway.v1.IntegrationService.TestIntegration:output_type -> slipway.v1.TestIntegrationResponse
+	25,  // 126: slipway.v1.IntegrationService.UninstallIntegration:output_type -> slipway.v1.UninstallIntegrationResponse
+	23,  // 127: slipway.v1.IntegrationService.ListTargets:output_type -> slipway.v1.ListTargetsResponse
+	28,  // 128: slipway.v1.IntegrationService.ListSubscriptions:output_type -> slipway.v1.ListSubscriptionsResponse
+	30,  // 129: slipway.v1.IntegrationService.CreateSubscription:output_type -> slipway.v1.CreateSubscriptionResponse
+	32,  // 130: slipway.v1.IntegrationService.UpdateSubscription:output_type -> slipway.v1.UpdateSubscriptionResponse
+	34,  // 131: slipway.v1.IntegrationService.DeleteSubscription:output_type -> slipway.v1.DeleteSubscriptionResponse
+	36,  // 132: slipway.v1.IntegrationService.SendTest:output_type -> slipway.v1.SendTestResponse
+	39,  // 133: slipway.v1.IntegrationService.ListNotificationDeliveries:output_type -> slipway.v1.ListNotificationDeliveriesResponse
+	42,  // 134: slipway.v1.IntegrationService.ListRegistryRepositories:output_type -> slipway.v1.ListRegistryRepositoriesResponse
+	44,  // 135: slipway.v1.IntegrationService.ListRegistryTags:output_type -> slipway.v1.ListRegistryTagsResponse
+	50,  // 136: slipway.v1.IntegrationService.IngestScanReport:output_type -> slipway.v1.IngestScanReportResponse
+	52,  // 137: slipway.v1.IntegrationService.ListScanReports:output_type -> slipway.v1.ListScanReportsResponse
+	54,  // 138: slipway.v1.IntegrationService.GetScanReport:output_type -> slipway.v1.GetScanReportResponse
+	57,  // 139: slipway.v1.IntegrationService.CreateChatLinkCode:output_type -> slipway.v1.CreateChatLinkCodeResponse
+	59,  // 140: slipway.v1.IntegrationService.ListChatLinks:output_type -> slipway.v1.ListChatLinksResponse
+	61,  // 141: slipway.v1.IntegrationService.DeleteChatLink:output_type -> slipway.v1.DeleteChatLinkResponse
+	65,  // 142: slipway.v1.WebhookService.ListWebhooks:output_type -> slipway.v1.ListWebhooksResponse
+	67,  // 143: slipway.v1.WebhookService.GetWebhook:output_type -> slipway.v1.GetWebhookResponse
+	69,  // 144: slipway.v1.WebhookService.CreateWebhook:output_type -> slipway.v1.CreateWebhookResponse
+	71,  // 145: slipway.v1.WebhookService.UpdateWebhook:output_type -> slipway.v1.UpdateWebhookResponse
+	73,  // 146: slipway.v1.WebhookService.DeleteWebhook:output_type -> slipway.v1.DeleteWebhookResponse
+	75,  // 147: slipway.v1.WebhookService.RotateWebhookSecret:output_type -> slipway.v1.RotateWebhookSecretResponse
+	77,  // 148: slipway.v1.WebhookService.ListWebhookDeliveries:output_type -> slipway.v1.ListWebhookDeliveriesResponse
+	79,  // 149: slipway.v1.WebhookService.GetWebhookDelivery:output_type -> slipway.v1.GetWebhookDeliveryResponse
+	81,  // 150: slipway.v1.WebhookService.RedeliverWebhook:output_type -> slipway.v1.RedeliverWebhookResponse
+	83,  // 151: slipway.v1.WebhookService.PingWebhook:output_type -> slipway.v1.PingWebhookResponse
+	118, // [118:152] is the sub-list for method output_type
+	84,  // [84:118] is the sub-list for method input_type
+	84,  // [84:84] is the sub-list for extension type_name
+	84,  // [84:84] is the sub-list for extension extendee
+	0,   // [0:84] is the sub-list for field type_name
 }
 
 func init() { file_slipway_v1_integrations_proto_init() }

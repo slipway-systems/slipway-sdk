@@ -1061,6 +1061,8 @@ type WebhookServiceClient interface {
 	CreateWebhook(context.Context, *v1.CreateWebhookRequest) (*v1.CreateWebhookResponse, error)
 	UpdateWebhook(context.Context, *v1.UpdateWebhookRequest) (*v1.UpdateWebhookResponse, error)
 	DeleteWebhook(context.Context, *v1.DeleteWebhookRequest) (*v1.DeleteWebhookResponse, error)
+	// Replaces the signing secret and returns the new one (shown once). The replaced secret keeps signing deliveries,
+	// next to the new one, for 24 hours (OutboundWebhook.previous_secret_expires_at).
 	RotateWebhookSecret(context.Context, *v1.RotateWebhookSecretRequest) (*v1.RotateWebhookSecretResponse, error)
 	ListWebhookDeliveries(context.Context, *v1.ListWebhookDeliveriesRequest) (*v1.ListWebhookDeliveriesResponse, error)
 	GetWebhookDelivery(context.Context, *v1.GetWebhookDeliveryRequest) (*v1.GetWebhookDeliveryResponse, error)
@@ -1081,6 +1083,8 @@ type WebhookServiceHandler interface {
 	CreateWebhook(context.Context, *v1.CreateWebhookRequest) (*v1.CreateWebhookResponse, error)
 	UpdateWebhook(context.Context, *v1.UpdateWebhookRequest) (*v1.UpdateWebhookResponse, error)
 	DeleteWebhook(context.Context, *v1.DeleteWebhookRequest) (*v1.DeleteWebhookResponse, error)
+	// Replaces the signing secret and returns the new one (shown once). The replaced secret keeps signing deliveries,
+	// next to the new one, for 24 hours (OutboundWebhook.previous_secret_expires_at).
 	RotateWebhookSecret(context.Context, *v1.RotateWebhookSecretRequest) (*v1.RotateWebhookSecretResponse, error)
 	ListWebhookDeliveries(context.Context, *v1.ListWebhookDeliveriesRequest) (*v1.ListWebhookDeliveriesResponse, error)
 	GetWebhookDelivery(context.Context, *v1.GetWebhookDeliveryRequest) (*v1.GetWebhookDeliveryResponse, error)
