@@ -817,6 +817,9 @@ message Heartbeat {
   int32 capacity = 2;
   bool draining = 3;
   string nonce = 4; // echoed in the server's Pong
+  // Set while the runner takes no new jobs for a reason of its own host, saying why (its container engine is not
+  // answering). Not a drain: it clears once the runner can take jobs again. The runner reports capacity 0 meanwhile.
+  string unavailable = 5;
 }
 message JobAccepted { JobRef job = 1; }
 message StepUpdate {

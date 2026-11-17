@@ -8001,11 +8001,14 @@ func (x *Hello) GetDraining() bool {
 }
 
 type Heartbeat struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Running       []*JobRef              `protobuf:"bytes,1,rep,name=running,proto3" json:"running,omitempty"`
-	Capacity      int32                  `protobuf:"varint,2,opt,name=capacity,proto3" json:"capacity,omitempty"`
-	Draining      bool                   `protobuf:"varint,3,opt,name=draining,proto3" json:"draining,omitempty"`
-	Nonce         string                 `protobuf:"bytes,4,opt,name=nonce,proto3" json:"nonce,omitempty"` // echoed in the server's Pong
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Running  []*JobRef              `protobuf:"bytes,1,rep,name=running,proto3" json:"running,omitempty"`
+	Capacity int32                  `protobuf:"varint,2,opt,name=capacity,proto3" json:"capacity,omitempty"`
+	Draining bool                   `protobuf:"varint,3,opt,name=draining,proto3" json:"draining,omitempty"`
+	Nonce    string                 `protobuf:"bytes,4,opt,name=nonce,proto3" json:"nonce,omitempty"` // echoed in the server's Pong
+	// Set while the runner takes no new jobs for a reason of its own host, saying why (its container engine is not
+	// answering). Not a drain: it clears once the runner can take jobs again. The runner reports capacity 0 meanwhile.
+	Unavailable   string `protobuf:"bytes,5,opt,name=unavailable,proto3" json:"unavailable,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -8064,6 +8067,13 @@ func (x *Heartbeat) GetDraining() bool {
 func (x *Heartbeat) GetNonce() string {
 	if x != nil {
 		return x.Nonce
+	}
+	return ""
+}
+
+func (x *Heartbeat) GetUnavailable() string {
+	if x != nil {
+		return x.Unavailable
 	}
 	return ""
 }
@@ -11067,12 +11077,13 @@ const file_slipway_v1_runs_proto_rawDesc = "" +
 	"\x06labels\x18\x03 \x03(\tR\x06labels\x12\x18\n" +
 	"\aversion\x18\x04 \x01(\tR\aversion\x12,\n" +
 	"\arunning\x18\x05 \x03(\v2\x12.slipway.v1.JobRefR\arunning\x12\x1a\n" +
-	"\bdraining\x18\x06 \x01(\bR\bdraining\"\x87\x01\n" +
+	"\bdraining\x18\x06 \x01(\bR\bdraining\"\xa9\x01\n" +
 	"\tHeartbeat\x12,\n" +
 	"\arunning\x18\x01 \x03(\v2\x12.slipway.v1.JobRefR\arunning\x12\x1a\n" +
 	"\bcapacity\x18\x02 \x01(\x05R\bcapacity\x12\x1a\n" +
 	"\bdraining\x18\x03 \x01(\bR\bdraining\x12\x14\n" +
-	"\x05nonce\x18\x04 \x01(\tR\x05nonce\"3\n" +
+	"\x05nonce\x18\x04 \x01(\tR\x05nonce\x12 \n" +
+	"\vunavailable\x18\x05 \x01(\tR\vunavailable\"3\n" +
 	"\vJobAccepted\x12$\n" +
 	"\x03job\x18\x01 \x01(\v2\x12.slipway.v1.JobRefR\x03job\"\xe6\x02\n" +
 	"\n" +
