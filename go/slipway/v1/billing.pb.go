@@ -53,8 +53,11 @@ type Entitlements struct {
 	// Longest a job may run on a Slipway-hosted runner; self-hosted runners only have the plan's general job limit.
 	// 0 or negative: no hosted-specific limit.
 	HostedJobTimeoutMinutes int64 `protobuf:"varint,26,opt,name=hosted_job_timeout_minutes,json=hostedJobTimeoutMinutes,proto3" json:"hosted_job_timeout_minutes,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// Pull-request preview environments that may hold infrastructure at once across the organisation; 0 = not included,
+	// -1 = unlimited.
+	PreviewEnvironments int64 `protobuf:"varint,27,opt,name=preview_environments,json=previewEnvironments,proto3" json:"preview_environments,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *Entitlements) Reset() {
@@ -265,6 +268,13 @@ func (x *Entitlements) GetNegotiated() bool {
 func (x *Entitlements) GetHostedJobTimeoutMinutes() int64 {
 	if x != nil {
 		return x.HostedJobTimeoutMinutes
+	}
+	return 0
+}
+
+func (x *Entitlements) GetPreviewEnvironments() int64 {
+	if x != nil {
+		return x.PreviewEnvironments
 	}
 	return 0
 }
@@ -2065,7 +2075,7 @@ var File_slipway_v1_billing_proto protoreflect.FileDescriptor
 const file_slipway_v1_billing_proto_rawDesc = "" +
 	"\n" +
 	"\x18slipway/v1/billing.proto\x12\n" +
-	"slipway.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x88\t\n" +
+	"slipway.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xbb\t\n" +
 	"\fEntitlements\x126\n" +
 	"\x17hosted_minutes_included\x18\x01 \x01(\x03R\x15hostedMinutesIncluded\x12.\n" +
 	"\x13hosted_overage_mode\x18\x02 \x01(\tR\x11hostedOverageMode\x12F\n" +
@@ -2098,7 +2108,8 @@ const file_slipway_v1_billing_proto_rawDesc = "" +
 	"\n" +
 	"negotiated\x18\x19 \x01(\bR\n" +
 	"negotiated\x12;\n" +
-	"\x1ahosted_job_timeout_minutes\x18\x1a \x01(\x03R\x17hostedJobTimeoutMinutes\"\xae\x02\n" +
+	"\x1ahosted_job_timeout_minutes\x18\x1a \x01(\x03R\x17hostedJobTimeoutMinutes\x121\n" +
+	"\x14preview_environments\x18\x1b \x01(\x03R\x13previewEnvironments\"\xae\x02\n" +
 	"\x04Plan\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +

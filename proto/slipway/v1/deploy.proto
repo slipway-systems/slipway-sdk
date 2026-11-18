@@ -7,6 +7,7 @@ import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "slipway/v1/common.proto";
+import "slipway/v1/deploy_preview.proto";
 
 // Deploy domain contract: environments, releases, deployments, approvals and runbooks. String enums are documented inline
 // (values are stable snake_case identifiers) so the UI can switch on them without generated enum plumbing.
@@ -111,12 +112,16 @@ message Environment {
   string slug = 4;
   string description = 5;
   int32 order = 6;
-  string kind = 7; // dev | test | staging | prod | custom
+  string kind = 7; // dev | test | staging | prod | custom | preview (a pull request's preview environment, read-only)
   string url = 8;
   ProtectionRules protection_rules = 9;
   string default_strategy = 10;
   google.protobuf.Timestamp created_at = 11;
   google.protobuf.Timestamp updated_at = 12;
+  // The preview template of a preview environment (kind preview); empty otherwise (deploy_preview.proto).
+  string preview_of = 13;
+  // Set on a preview template: pipeline jobs bound to it in pull-request runs deploy to their pull request's preview.
+  PreviewSettings preview_settings = 14;
 }
 
 message Infrastructure {
@@ -994,6 +999,12 @@ service EnvironmentService {
 
   rpc CheckDrift(CheckDriftRequest) returns (CheckDriftResponse);
   rpc ListDriftReports(ListDriftReportsRequest) returns (ListDriftReportsResponse);
+
+  // Pull-request preview environments (messages in deploy_preview.proto).
+  rpc GetPreviewSettings(GetPreviewSettingsRequest) returns (GetPreviewSettingsResponse);
+  rpc UpdatePreviewSettings(UpdatePreviewSettingsRequest) returns (UpdatePreviewSettingsResponse);
+  rpc ListPreviewEnvironments(ListPreviewEnvironmentsRequest) returns (ListPreviewEnvironmentsResponse);
+  rpc DestroyPreviewEnvironment(DestroyPreviewEnvironmentRequest) returns (DestroyPreviewEnvironmentResponse);
 }
 
 message CreateEnvironmentRequest {

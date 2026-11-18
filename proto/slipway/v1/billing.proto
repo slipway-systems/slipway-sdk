@@ -42,6 +42,9 @@ message Entitlements {
   // Longest a job may run on a Slipway-hosted runner; self-hosted runners only have the plan's general job limit.
   // 0 or negative: no hosted-specific limit.
   int64 hosted_job_timeout_minutes = 26;
+  // Pull-request preview environments that may hold infrastructure at once across the organisation; 0 = not included,
+  // -1 = unlimited.
+  int64 preview_environments = 27;
 }
 
 // Plan is one entry of the public catalogue.

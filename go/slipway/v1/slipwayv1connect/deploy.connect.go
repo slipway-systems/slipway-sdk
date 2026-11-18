@@ -209,6 +209,18 @@ const (
 	// EnvironmentServiceListDriftReportsProcedure is the procedure name of the EnvironmentService's
 	// ListDriftReports RPC.
 	EnvironmentServiceListDriftReportsProcedure = "/slipway.v1.EnvironmentService/ListDriftReports"
+	// EnvironmentServiceGetPreviewSettingsProcedure is the procedure name of the EnvironmentService's
+	// GetPreviewSettings RPC.
+	EnvironmentServiceGetPreviewSettingsProcedure = "/slipway.v1.EnvironmentService/GetPreviewSettings"
+	// EnvironmentServiceUpdatePreviewSettingsProcedure is the procedure name of the
+	// EnvironmentService's UpdatePreviewSettings RPC.
+	EnvironmentServiceUpdatePreviewSettingsProcedure = "/slipway.v1.EnvironmentService/UpdatePreviewSettings"
+	// EnvironmentServiceListPreviewEnvironmentsProcedure is the procedure name of the
+	// EnvironmentService's ListPreviewEnvironments RPC.
+	EnvironmentServiceListPreviewEnvironmentsProcedure = "/slipway.v1.EnvironmentService/ListPreviewEnvironments"
+	// EnvironmentServiceDestroyPreviewEnvironmentProcedure is the procedure name of the
+	// EnvironmentService's DestroyPreviewEnvironment RPC.
+	EnvironmentServiceDestroyPreviewEnvironmentProcedure = "/slipway.v1.EnvironmentService/DestroyPreviewEnvironment"
 	// ApprovalServiceListApprovalsProcedure is the procedure name of the ApprovalService's
 	// ListApprovals RPC.
 	ApprovalServiceListApprovalsProcedure = "/slipway.v1.ApprovalService/ListApprovals"
@@ -1693,6 +1705,34 @@ var (
 			Procedure:  EnvironmentServiceListDriftReportsProcedure,
 		}
 	})
+	environmentServiceGetPreviewSettingsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_deploy_proto.Services().ByName("EnvironmentService").Methods().ByName("GetPreviewSettings"),
+			Procedure:  EnvironmentServiceGetPreviewSettingsProcedure,
+		}
+	})
+	environmentServiceUpdatePreviewSettingsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_deploy_proto.Services().ByName("EnvironmentService").Methods().ByName("UpdatePreviewSettings"),
+			Procedure:  EnvironmentServiceUpdatePreviewSettingsProcedure,
+		}
+	})
+	environmentServiceListPreviewEnvironmentsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_deploy_proto.Services().ByName("EnvironmentService").Methods().ByName("ListPreviewEnvironments"),
+			Procedure:  EnvironmentServiceListPreviewEnvironmentsProcedure,
+		}
+	})
+	environmentServiceDestroyPreviewEnvironmentSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_deploy_proto.Services().ByName("EnvironmentService").Methods().ByName("DestroyPreviewEnvironment"),
+			Procedure:  EnvironmentServiceDestroyPreviewEnvironmentProcedure,
+		}
+	})
 )
 
 // EnvironmentServiceClient is a client for the slipway.v1.EnvironmentService service.
@@ -1725,6 +1765,11 @@ type EnvironmentServiceClient interface {
 	GetFreezeCalendar(context.Context, *v1.GetFreezeCalendarRequest) (*v1.GetFreezeCalendarResponse, error)
 	CheckDrift(context.Context, *v1.CheckDriftRequest) (*v1.CheckDriftResponse, error)
 	ListDriftReports(context.Context, *v1.ListDriftReportsRequest) (*v1.ListDriftReportsResponse, error)
+	// Pull-request preview environments (messages in deploy_preview.proto).
+	GetPreviewSettings(context.Context, *v1.GetPreviewSettingsRequest) (*v1.GetPreviewSettingsResponse, error)
+	UpdatePreviewSettings(context.Context, *v1.UpdatePreviewSettingsRequest) (*v1.UpdatePreviewSettingsResponse, error)
+	ListPreviewEnvironments(context.Context, *v1.ListPreviewEnvironmentsRequest) (*v1.ListPreviewEnvironmentsResponse, error)
+	DestroyPreviewEnvironment(context.Context, *v1.DestroyPreviewEnvironmentRequest) (*v1.DestroyPreviewEnvironmentResponse, error)
 }
 
 // NewEnvironmentServiceClient constructs a client for the slipway.v1.EnvironmentService service.
@@ -1763,6 +1808,11 @@ type EnvironmentServiceHandler interface {
 	GetFreezeCalendar(context.Context, *v1.GetFreezeCalendarRequest) (*v1.GetFreezeCalendarResponse, error)
 	CheckDrift(context.Context, *v1.CheckDriftRequest) (*v1.CheckDriftResponse, error)
 	ListDriftReports(context.Context, *v1.ListDriftReportsRequest) (*v1.ListDriftReportsResponse, error)
+	// Pull-request preview environments (messages in deploy_preview.proto).
+	GetPreviewSettings(context.Context, *v1.GetPreviewSettingsRequest) (*v1.GetPreviewSettingsResponse, error)
+	UpdatePreviewSettings(context.Context, *v1.UpdatePreviewSettingsRequest) (*v1.UpdatePreviewSettingsResponse, error)
+	ListPreviewEnvironments(context.Context, *v1.ListPreviewEnvironmentsRequest) (*v1.ListPreviewEnvironmentsResponse, error)
+	DestroyPreviewEnvironment(context.Context, *v1.DestroyPreviewEnvironmentRequest) (*v1.DestroyPreviewEnvironmentResponse, error)
 }
 
 // RegisterEnvironmentServiceHandler registers svc as the slipway.v1.EnvironmentService
@@ -1796,6 +1846,10 @@ func RegisterEnvironmentServiceHandler(server *connect.Server, svc EnvironmentSe
 		connect.Method{Spec: environmentServiceGetFreezeCalendarSpec(), Handler: adapter.getFreezeCalendar},
 		connect.Method{Spec: environmentServiceCheckDriftSpec(), Handler: adapter.checkDrift},
 		connect.Method{Spec: environmentServiceListDriftReportsSpec(), Handler: adapter.listDriftReports},
+		connect.Method{Spec: environmentServiceGetPreviewSettingsSpec(), Handler: adapter.getPreviewSettings},
+		connect.Method{Spec: environmentServiceUpdatePreviewSettingsSpec(), Handler: adapter.updatePreviewSettings},
+		connect.Method{Spec: environmentServiceListPreviewEnvironmentsSpec(), Handler: adapter.listPreviewEnvironments},
+		connect.Method{Spec: environmentServiceDestroyPreviewEnvironmentSpec(), Handler: adapter.destroyPreviewEnvironment},
 	)
 }
 
@@ -1904,6 +1958,22 @@ func (UnimplementedEnvironmentServiceHandler) CheckDrift(context.Context, *v1.Ch
 
 func (UnimplementedEnvironmentServiceHandler) ListDriftReports(context.Context, *v1.ListDriftReportsRequest) (*v1.ListDriftReportsResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.EnvironmentService.ListDriftReports is not implemented")
+}
+
+func (UnimplementedEnvironmentServiceHandler) GetPreviewSettings(context.Context, *v1.GetPreviewSettingsRequest) (*v1.GetPreviewSettingsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.EnvironmentService.GetPreviewSettings is not implemented")
+}
+
+func (UnimplementedEnvironmentServiceHandler) UpdatePreviewSettings(context.Context, *v1.UpdatePreviewSettingsRequest) (*v1.UpdatePreviewSettingsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.EnvironmentService.UpdatePreviewSettings is not implemented")
+}
+
+func (UnimplementedEnvironmentServiceHandler) ListPreviewEnvironments(context.Context, *v1.ListPreviewEnvironmentsRequest) (*v1.ListPreviewEnvironmentsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.EnvironmentService.ListPreviewEnvironments is not implemented")
+}
+
+func (UnimplementedEnvironmentServiceHandler) DestroyPreviewEnvironment(context.Context, *v1.DestroyPreviewEnvironmentRequest) (*v1.DestroyPreviewEnvironmentResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.EnvironmentService.DestroyPreviewEnvironment is not implemented")
 }
 
 type environmentServiceClient struct {
@@ -2113,6 +2183,38 @@ func (c *environmentServiceClient) CheckDrift(ctx context.Context, req *v1.Check
 func (c *environmentServiceClient) ListDriftReports(ctx context.Context, req *v1.ListDriftReportsRequest) (*v1.ListDriftReportsResponse, error) {
 	var res v1.ListDriftReportsResponse
 	if err := c.client.CallUnary(ctx, environmentServiceListDriftReportsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *environmentServiceClient) GetPreviewSettings(ctx context.Context, req *v1.GetPreviewSettingsRequest) (*v1.GetPreviewSettingsResponse, error) {
+	var res v1.GetPreviewSettingsResponse
+	if err := c.client.CallUnary(ctx, environmentServiceGetPreviewSettingsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *environmentServiceClient) UpdatePreviewSettings(ctx context.Context, req *v1.UpdatePreviewSettingsRequest) (*v1.UpdatePreviewSettingsResponse, error) {
+	var res v1.UpdatePreviewSettingsResponse
+	if err := c.client.CallUnary(ctx, environmentServiceUpdatePreviewSettingsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *environmentServiceClient) ListPreviewEnvironments(ctx context.Context, req *v1.ListPreviewEnvironmentsRequest) (*v1.ListPreviewEnvironmentsResponse, error) {
+	var res v1.ListPreviewEnvironmentsResponse
+	if err := c.client.CallUnary(ctx, environmentServiceListPreviewEnvironmentsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *environmentServiceClient) DestroyPreviewEnvironment(ctx context.Context, req *v1.DestroyPreviewEnvironmentRequest) (*v1.DestroyPreviewEnvironmentResponse, error) {
+	var res v1.DestroyPreviewEnvironmentResponse
+	if err := c.client.CallUnary(ctx, environmentServiceDestroyPreviewEnvironmentSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -2426,6 +2528,54 @@ func (h environmentServiceHandler) listDriftReports(ctx context.Context, _ conne
 		return err
 	}
 	res, err := h.svc.ListDriftReports(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h environmentServiceHandler) getPreviewSettings(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetPreviewSettingsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetPreviewSettings(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h environmentServiceHandler) updatePreviewSettings(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UpdatePreviewSettingsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdatePreviewSettings(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h environmentServiceHandler) listPreviewEnvironments(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListPreviewEnvironmentsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListPreviewEnvironments(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h environmentServiceHandler) destroyPreviewEnvironment(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DestroyPreviewEnvironmentRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DestroyPreviewEnvironment(ctx, &req)
 	if err != nil {
 		return err
 	}

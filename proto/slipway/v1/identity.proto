@@ -117,6 +117,8 @@ message WhoAmIResponse {
   // How long a deleted organisation can be restored before its data is erased: the instance's grace period
   // (SLIPWAY_ORG_DELETION_GRACE, 7 days by default), for the deletion warnings.
   google.protobuf.Duration org_deletion_grace = 10;
+  // The caller is a visitor of the public read-only demo (StartDemoSession): every write is refused.
+  bool demo = 11;
 }
 
 message ListOrganizationsRequest { PageRequest page = 1; }
@@ -334,6 +336,18 @@ message SendFeedbackRequest {
 }
 message SendFeedbackResponse { string id = 1; } // fb_…
 
+// StartDemoSession signs an anonymous visitor in to the instance's public read-only demo organisation
+// (SLIPWAY_DEMO_ORG): it sets a session cookie for the demo visitor, a member of that organisation only with the viewer
+// role. Every write by a demo session is refused with PERMISSION_DENIED and ErrorInfo reason DEMO_READ_ONLY. not_found
+// when the server has no demo (the setting is unset, or the organisation does not exist or is not marked as a demo).
+// failed_precondition with reason ALREADY_SIGNED_IN when the request carries another valid session, which is left
+// alone; a request that already carries a demo session gets it back. Public; limited to 6 a minute per client address.
+message StartDemoSessionRequest {}
+message StartDemoSessionResponse {
+  string org_slug = 1;
+  string landing_path = 2; // where the web app goes next ("/<org_slug>")
+}
+
 service IdentityService {
   rpc WhoAmI(WhoAmIRequest) returns (WhoAmIResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
@@ -389,6 +403,8 @@ service IdentityService {
   rpc RevokeInvitation(RevokeInvitationRequest) returns (RevokeInvitationResponse);
 
   rpc SendFeedback(SendFeedbackRequest) returns (SendFeedbackResponse);
+
+  rpc StartDemoSession(StartDemoSessionRequest) returns (StartDemoSessionResponse);
 }
 
 service ProjectService {

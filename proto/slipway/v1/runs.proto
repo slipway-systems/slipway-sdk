@@ -366,6 +366,19 @@ service RunService {
   // GetStepTimingStats powers the UI timing view: p50/p95 per job and step over recent successful runs, plus a
   // regression hint comparing the latest run against the baseline.
   rpc GetStepTimingStats(GetStepTimingStatsRequest) returns (GetStepTimingStatsResponse);
+  // Insights (per project, from rollups updated when runs finish; days are UTC). They take request fields only: none
+  // reads page.filter or page.order_by. window_days defaults to 30 and is clamped to 1..90.
+  // GetInsightsSummary: run counts, success rate, approximate p50/p95 run duration, flaky tests and cache hit rate,
+  // for the window and per day.
+  rpc GetInsightsSummary(GetInsightsSummaryRequest) returns (GetInsightsSummaryResponse);
+  // ListFlakyTests: tests that flaked in the window, by flake rate (desc), then test_id.
+  rpc ListFlakyTests(ListFlakyTestsRequest) returns (ListFlakyTestsResponse);
+  // ListSlowTests: tests seen in the window, by average duration (desc), then test_id.
+  rpc ListSlowTests(ListSlowTestsRequest) returns (ListSlowTestsResponse);
+  // ListJobDurations: approximate p50/p95 per job with the change against the previous window.
+  rpc ListJobDurations(ListJobDurationsRequest) returns (ListJobDurationsResponse);
+  // ListCacheStats: cache lookups per pipeline, job and cache, by lookups (desc).
+  rpc ListCacheStats(ListCacheStatsRequest) returns (ListCacheStatsResponse);
 }
 
 message ListRunsRequest {
@@ -500,6 +513,180 @@ message StepTimingStat {
 message GetStepTimingStatsResponse {
   repeated StepTimingStat items = 1;
   int32 runs_considered = 2;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Insights (RunService). Durations are approximate: percentiles come from log histograms with
+// 1.25x buckets (about +/-12%). Rates are 0..1. Days are 00:00 UTC.
+// ---------------------------------------------------------------------------------------------
+
+enum InsightsBranchScope {
+  INSIGHTS_BRANCH_SCOPE_UNSPECIFIED = 0; // ALL
+  INSIGHTS_BRANCH_SCOPE_ALL = 1;
+  // MAINLINE: pushes to the default branch, and manual or scheduled runs (the shared "project" cache scope).
+  INSIGHTS_BRANCH_SCOPE_MAINLINE = 2;
+}
+
+enum FlakeKind {
+  FLAKE_KIND_UNSPECIFIED = 0;
+  FLAKE_KIND_RETRIED = 1;     // passed and failed within one run (a job retry or a rerun)
+  FLAKE_KIND_SAME_COMMIT = 2; // different results on the same commit on the mainline
+  FLAKE_KIND_FLIPPED = 3;     // passed, failed, passed on consecutive mainline runs (links the failing run)
+}
+
+enum JobDurationOrder {
+  JOB_DURATION_ORDER_UNSPECIFIED = 0; // P95
+  JOB_DURATION_ORDER_P95 = 1;
+  JOB_DURATION_ORDER_CHANGE = 2; // change_ratio desc
+}
+
+message GetInsightsSummaryRequest {
+  string project_id = 1;  // default: the credential's project
+  string pipeline_id = 2; // optional: one pipeline of the project
+  int32 window_days = 3;
+  InsightsBranchScope branch_scope = 4; // applies to run counts and durations
+}
+message InsightsDay {
+  google.protobuf.Timestamp day = 1;
+  int32 runs = 2;
+  int32 succeeded = 3;
+  int32 failed = 4;
+  google.protobuf.Duration p50 = 5;
+  google.protobuf.Duration p95 = 6;
+  int32 flaky_tests = 7;
+  int64 cache_lookups = 8;
+  double cache_hit_rate = 9;
+}
+message GetInsightsSummaryResponse {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  int32 runs = 3; // finished runs (succeeded, failed and cancelled), once per run attempt
+  int32 succeeded = 4;
+  int32 failed = 5;
+  double success_rate = 6;          // succeeded / (succeeded + failed)
+  google.protobuf.Duration p50 = 7; // succeeded runs only
+  google.protobuf.Duration p95 = 8;
+  google.protobuf.Duration p50_previous = 9; // the window immediately before
+  int32 flaky_tests = 10;
+  int64 cache_lookups = 11;
+  double cache_hit_rate = 12; // exact hits / lookups
+  repeated InsightsDay days = 13;
+}
+
+message ListFlakyTestsRequest {
+  string project_id = 1;
+  string pipeline_id = 2;
+  int32 window_days = 3;
+  PageRequest page = 4; // page_size and page_token only
+}
+message FlakeOccurrence {
+  string run_id = 1; // the run may have been deleted by history retention since
+  int64 run_number = 2;
+  string job_id = 3;
+  FlakeKind kind = 4;
+  string branch = 5;
+  string sha = 6;
+  google.protobuf.Timestamp at = 7;
+}
+message FlakyTest {
+  string test_id = 1; // test_...
+  string pipeline_id = 2;
+  string pipeline_name = 3;
+  string job_name = 4;
+  string job_display_name = 5;
+  string suite = 6;
+  string classname = 7;
+  string name = 8;
+  string file = 9;
+  int64 runs = 10; // runs the test ran in, in the window
+  int64 executions = 11;
+  int64 failures = 12;
+  int64 flaky_runs = 13; // runs flagged retried or same commit
+  int64 flips = 14;
+  double flake_rate = 15; // min(1, (flaky_runs + flips) / runs)
+  google.protobuf.Timestamp first_flaky_at = 16;
+  google.protobuf.Timestamp last_flaky_at = 17;
+  google.protobuf.Timestamp last_seen_at = 18;
+  TestStatus last_status = 19;
+  repeated FlakeOccurrence recent = 20; // up to 5, newest first
+}
+message ListFlakyTestsResponse {
+  repeated FlakyTest items = 1;
+  PageResponse page = 2;
+}
+
+message ListSlowTestsRequest {
+  string project_id = 1;
+  string pipeline_id = 2;
+  int32 window_days = 3;
+  PageRequest page = 4;
+}
+message SlowTest {
+  string test_id = 1;
+  string pipeline_id = 2;
+  string pipeline_name = 3;
+  string job_display_name = 4;
+  string suite = 5;
+  string classname = 6;
+  string name = 7;
+  google.protobuf.Duration avg_duration = 8; // moving average over recent runs
+  google.protobuf.Duration last_duration = 9;
+  google.protobuf.Duration max_duration = 10; // in the window
+  int64 executions = 11; // in the window
+  google.protobuf.Timestamp last_seen_at = 12;
+}
+message ListSlowTestsResponse {
+  repeated SlowTest items = 1;
+  PageResponse page = 2;
+}
+
+message ListJobDurationsRequest {
+  string project_id = 1;
+  string pipeline_id = 2;
+  int32 window_days = 3;
+  InsightsBranchScope branch_scope = 4;
+  JobDurationOrder order = 5;
+  PageRequest page = 6;
+}
+message JobDuration {
+  string pipeline_id = 1;
+  string pipeline_name = 2;
+  string job_name = 3;
+  string job_display_name = 4;
+  int32 runs = 5;
+  int32 succeeded = 6;
+  int32 failed = 7;
+  google.protobuf.Duration p50 = 8; // succeeded attempts only
+  google.protobuf.Duration p95 = 9;
+  google.protobuf.Duration p50_previous = 10;
+  double change_ratio = 11; // p50 / p50_previous, 0 without a previous p50
+}
+message ListJobDurationsResponse {
+  repeated JobDuration items = 1;
+  PageResponse page = 2;
+}
+
+message ListCacheStatsRequest {
+  string project_id = 1;
+  string pipeline_id = 2;
+  int32 window_days = 3;
+  PageRequest page = 4;
+}
+message CacheStat {
+  string pipeline_id = 1;
+  string pipeline_name = 2;
+  string job_name = 3;
+  string cache_name = 4; // derived from the key: the last restore key, or the key without its hash
+  int64 exact_hits = 5;
+  int64 partial_hits = 6; // restored from a restore key
+  int64 misses = 7;
+  double hit_rate = 8; // exact / lookups
+  double restore_rate = 9; // (exact + partial) / lookups
+  google.protobuf.Timestamp last_day = 10;
+}
+message ListCacheStatsResponse {
+  repeated CacheStat items = 1;
+  PageResponse page = 2;
 }
 
 // ---------------------------------------------------------------------------------------------

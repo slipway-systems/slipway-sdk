@@ -4,6 +4,7 @@ export * from "./gen/slipway/v1/billing_pb.js";
 export * from "./gen/slipway/v1/cli_login_pb.js";
 export * from "./gen/slipway/v1/common_pb.js";
 export * from "./gen/slipway/v1/deploy_pb.js";
+export * from "./gen/slipway/v1/deploy_preview_pb.js";
 export * from "./gen/slipway/v1/identity_pb.js";
 export * from "./gen/slipway/v1/integrations_pb.js";
 export * from "./gen/slipway/v1/notifications_pb.js";

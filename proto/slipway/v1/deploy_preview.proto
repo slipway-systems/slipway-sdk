@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package slipway.v1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "slipway/v1/common.proto";
+
+// Pull-request preview environments (https://slipway.systems/docs/deployments/previews/). An environment with preview
+// settings is a preview template: a pipeline job bound to it in a pull-request run of the repository's own branches
+// deploys to that pull request's preview environment, which Slipway creates, keeps up to date and tears down. Served by
+// EnvironmentService (deploy.proto).
+//
+// Permissions: GetPreviewSettings and ListPreviewEnvironments need environments.read; UpdatePreviewSettings needs
+// environments.manage at the template; DestroyPreviewEnvironment needs environments.deploy at the template or
+// environments.manage. Job tokens may neither update settings nor destroy previews.
+
+// PreviewSettings make an environment a preview template.
+message PreviewSettings {
+  bool enabled = 1;
+  // Limits previews to pull requests of one linked repository; empty means any repository linked to the project.
+  string repository_id = 2;
+  string trigger = 3; // pull_request | label
+  string label = 4;   // required when trigger is label
+  // Names each preview; must contain {number} and render to a DNS label of at most 40 characters. Default pr-{number}.
+  string name_pattern = 5;
+  // The preview's URL, http(s), with {number} and {name} substituted. It is posted on the pull request.
+  string url_pattern = 6;
+  // Patterns for the allowlisted infrastructure config keys (namespace, release_name, workspace, service, app), with
+  // {number} and {name} substituted. Every other key is copied from the template's infrastructure as it is.
+  map<string, string> infrastructure_overrides = 7;
+  google.protobuf.Duration ttl = 8; // idle lifetime after the last deploy, 1h to 30 days; default 7 days
+  int32 max_active = 9;             // previews of this template that may hold infrastructure, 1 to 100; default 10
+  string teardown_runbook_id = 10;  // runs against a preview to remove its infrastructure; empty = nothing to run
+  bool comment_on_pr = 11;          // post and update one comment on the pull request
+}
+
+// PreviewEnvironment is one pull request's preview of a template.
+message PreviewEnvironment {
+  string id = 1; // the preview's environment id (env_...)
+  string project_id = 2;
+  string template_environment_id = 3; // empty once the template is deleted
+  string template_name = 4;
+  string name = 5;
+  string url = 6;
+  string repository_id = 7;
+  int32 pull_request_number = 8;
+  string pull_request_url = 9;
+  string pull_request_title = 10;
+  string head_branch = 11;
+  string head_sha = 12;
+  string status = 13; // active | tearing_down | teardown_failed | destroyed
+  string last_deployment_id = 14;
+  string last_deployment_status = 15;
+  string last_release_version = 16;
+  google.protobuf.Timestamp last_deployed_at = 17;
+  google.protobuf.Timestamp expires_at = 18;
+  google.protobuf.Timestamp closed_at = 19;
+  string teardown_reason = 20; // closed | merged | expired | manual
+  string teardown_runbook_run_id = 21;
+  string teardown_error = 22;
+  google.protobuf.Timestamp created_at = 23;
+  google.protobuf.Timestamp destroyed_at = 24;
+}
+
+message GetPreviewSettingsRequest {
+  string environment_id = 1;
+}
+
+message GetPreviewSettingsResponse {
+  PreviewSettings settings = 1; // unset when the environment is not a preview template
+  // Whether the organisation's plan includes preview environments (false: enabling them is refused).
+  bool entitled = 2;
+}
+
+message UpdatePreviewSettingsRequest {
+  string environment_id = 1;
+  PreviewSettings settings = 2;
+  // Fields of settings to change, against the current settings (or the defaults when the environment is not a
+  // template yet). Creating settings makes the environment a preview template.
+  google.protobuf.FieldMask update_mask = 3;
+  // Clear the settings: the environment stops being a template. Refused while previews of it are not destroyed.
+  bool remove = 4;
+}
+
+message UpdatePreviewSettingsResponse {
+  PreviewSettings settings = 1;
+}
+
+message ListPreviewEnvironmentsRequest {
+  string project_id = 1;
+  string template_environment_id = 2; // optional
+  bool include_destroyed = 3;
+  PageRequest page = 4;
+}
+
+message ListPreviewEnvironmentsResponse {
+  repeated PreviewEnvironment items = 1;
+  PageResponse page = 2;
+}
+
+message DestroyPreviewEnvironmentRequest {
+  string id = 1; // the preview's environment id
+}
+
+message DestroyPreviewEnvironmentResponse {
+  PreviewEnvironment preview = 1;
+}

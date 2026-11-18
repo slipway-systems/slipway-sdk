@@ -647,6 +647,157 @@ func (RerunMode) EnumDescriptor() ([]byte, []int) {
 	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{10}
 }
 
+type InsightsBranchScope int32
+
+const (
+	InsightsBranchScope_INSIGHTS_BRANCH_SCOPE_UNSPECIFIED InsightsBranchScope = 0 // ALL
+	InsightsBranchScope_INSIGHTS_BRANCH_SCOPE_ALL         InsightsBranchScope = 1
+	// MAINLINE: pushes to the default branch, and manual or scheduled runs (the shared "project" cache scope).
+	InsightsBranchScope_INSIGHTS_BRANCH_SCOPE_MAINLINE InsightsBranchScope = 2
+)
+
+// Enum value maps for InsightsBranchScope.
+var (
+	InsightsBranchScope_name = map[int32]string{
+		0: "INSIGHTS_BRANCH_SCOPE_UNSPECIFIED",
+		1: "INSIGHTS_BRANCH_SCOPE_ALL",
+		2: "INSIGHTS_BRANCH_SCOPE_MAINLINE",
+	}
+	InsightsBranchScope_value = map[string]int32{
+		"INSIGHTS_BRANCH_SCOPE_UNSPECIFIED": 0,
+		"INSIGHTS_BRANCH_SCOPE_ALL":         1,
+		"INSIGHTS_BRANCH_SCOPE_MAINLINE":    2,
+	}
+)
+
+func (x InsightsBranchScope) Enum() *InsightsBranchScope {
+	p := new(InsightsBranchScope)
+	*p = x
+	return p
+}
+
+func (x InsightsBranchScope) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (InsightsBranchScope) Descriptor() protoreflect.EnumDescriptor {
+	return file_slipway_v1_runs_proto_enumTypes[11].Descriptor()
+}
+
+func (InsightsBranchScope) Type() protoreflect.EnumType {
+	return &file_slipway_v1_runs_proto_enumTypes[11]
+}
+
+func (x InsightsBranchScope) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use InsightsBranchScope.Descriptor instead.
+func (InsightsBranchScope) EnumDescriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{11}
+}
+
+type FlakeKind int32
+
+const (
+	FlakeKind_FLAKE_KIND_UNSPECIFIED FlakeKind = 0
+	FlakeKind_FLAKE_KIND_RETRIED     FlakeKind = 1 // passed and failed within one run (a job retry or a rerun)
+	FlakeKind_FLAKE_KIND_SAME_COMMIT FlakeKind = 2 // different results on the same commit on the mainline
+	FlakeKind_FLAKE_KIND_FLIPPED     FlakeKind = 3 // passed, failed, passed on consecutive mainline runs (links the failing run)
+)
+
+// Enum value maps for FlakeKind.
+var (
+	FlakeKind_name = map[int32]string{
+		0: "FLAKE_KIND_UNSPECIFIED",
+		1: "FLAKE_KIND_RETRIED",
+		2: "FLAKE_KIND_SAME_COMMIT",
+		3: "FLAKE_KIND_FLIPPED",
+	}
+	FlakeKind_value = map[string]int32{
+		"FLAKE_KIND_UNSPECIFIED": 0,
+		"FLAKE_KIND_RETRIED":     1,
+		"FLAKE_KIND_SAME_COMMIT": 2,
+		"FLAKE_KIND_FLIPPED":     3,
+	}
+)
+
+func (x FlakeKind) Enum() *FlakeKind {
+	p := new(FlakeKind)
+	*p = x
+	return p
+}
+
+func (x FlakeKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FlakeKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_slipway_v1_runs_proto_enumTypes[12].Descriptor()
+}
+
+func (FlakeKind) Type() protoreflect.EnumType {
+	return &file_slipway_v1_runs_proto_enumTypes[12]
+}
+
+func (x FlakeKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use FlakeKind.Descriptor instead.
+func (FlakeKind) EnumDescriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{12}
+}
+
+type JobDurationOrder int32
+
+const (
+	JobDurationOrder_JOB_DURATION_ORDER_UNSPECIFIED JobDurationOrder = 0 // P95
+	JobDurationOrder_JOB_DURATION_ORDER_P95         JobDurationOrder = 1
+	JobDurationOrder_JOB_DURATION_ORDER_CHANGE      JobDurationOrder = 2 // change_ratio desc
+)
+
+// Enum value maps for JobDurationOrder.
+var (
+	JobDurationOrder_name = map[int32]string{
+		0: "JOB_DURATION_ORDER_UNSPECIFIED",
+		1: "JOB_DURATION_ORDER_P95",
+		2: "JOB_DURATION_ORDER_CHANGE",
+	}
+	JobDurationOrder_value = map[string]int32{
+		"JOB_DURATION_ORDER_UNSPECIFIED": 0,
+		"JOB_DURATION_ORDER_P95":         1,
+		"JOB_DURATION_ORDER_CHANGE":      2,
+	}
+)
+
+func (x JobDurationOrder) Enum() *JobDurationOrder {
+	p := new(JobDurationOrder)
+	*p = x
+	return p
+}
+
+func (x JobDurationOrder) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (JobDurationOrder) Descriptor() protoreflect.EnumDescriptor {
+	return file_slipway_v1_runs_proto_enumTypes[13].Descriptor()
+}
+
+func (JobDurationOrder) Type() protoreflect.EnumType {
+	return &file_slipway_v1_runs_proto_enumTypes[13]
+}
+
+func (x JobDurationOrder) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use JobDurationOrder.Descriptor instead.
+func (JobDurationOrder) EnumDescriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{13}
+}
+
 // RunTrigger records why a run exists.
 type RunTrigger struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -4436,6 +4587,1478 @@ func (x *GetStepTimingStatsResponse) GetRunsConsidered() int32 {
 	return 0
 }
 
+type GetInsightsSummaryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`    // default: the credential's project
+	PipelineId    string                 `protobuf:"bytes,2,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"` // optional: one pipeline of the project
+	WindowDays    int32                  `protobuf:"varint,3,opt,name=window_days,json=windowDays,proto3" json:"window_days,omitempty"`
+	BranchScope   InsightsBranchScope    `protobuf:"varint,4,opt,name=branch_scope,json=branchScope,proto3,enum=slipway.v1.InsightsBranchScope" json:"branch_scope,omitempty"` // applies to run counts and durations
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetInsightsSummaryRequest) Reset() {
+	*x = GetInsightsSummaryRequest{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetInsightsSummaryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetInsightsSummaryRequest) ProtoMessage() {}
+
+func (x *GetInsightsSummaryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetInsightsSummaryRequest.ProtoReflect.Descriptor instead.
+func (*GetInsightsSummaryRequest) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *GetInsightsSummaryRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *GetInsightsSummaryRequest) GetPipelineId() string {
+	if x != nil {
+		return x.PipelineId
+	}
+	return ""
+}
+
+func (x *GetInsightsSummaryRequest) GetWindowDays() int32 {
+	if x != nil {
+		return x.WindowDays
+	}
+	return 0
+}
+
+func (x *GetInsightsSummaryRequest) GetBranchScope() InsightsBranchScope {
+	if x != nil {
+		return x.BranchScope
+	}
+	return InsightsBranchScope_INSIGHTS_BRANCH_SCOPE_UNSPECIFIED
+}
+
+type InsightsDay struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Day           *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=day,proto3" json:"day,omitempty"`
+	Runs          int32                  `protobuf:"varint,2,opt,name=runs,proto3" json:"runs,omitempty"`
+	Succeeded     int32                  `protobuf:"varint,3,opt,name=succeeded,proto3" json:"succeeded,omitempty"`
+	Failed        int32                  `protobuf:"varint,4,opt,name=failed,proto3" json:"failed,omitempty"`
+	P50           *durationpb.Duration   `protobuf:"bytes,5,opt,name=p50,proto3" json:"p50,omitempty"`
+	P95           *durationpb.Duration   `protobuf:"bytes,6,opt,name=p95,proto3" json:"p95,omitempty"`
+	FlakyTests    int32                  `protobuf:"varint,7,opt,name=flaky_tests,json=flakyTests,proto3" json:"flaky_tests,omitempty"`
+	CacheLookups  int64                  `protobuf:"varint,8,opt,name=cache_lookups,json=cacheLookups,proto3" json:"cache_lookups,omitempty"`
+	CacheHitRate  float64                `protobuf:"fixed64,9,opt,name=cache_hit_rate,json=cacheHitRate,proto3" json:"cache_hit_rate,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InsightsDay) Reset() {
+	*x = InsightsDay{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InsightsDay) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InsightsDay) ProtoMessage() {}
+
+func (x *InsightsDay) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InsightsDay.ProtoReflect.Descriptor instead.
+func (*InsightsDay) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *InsightsDay) GetDay() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Day
+	}
+	return nil
+}
+
+func (x *InsightsDay) GetRuns() int32 {
+	if x != nil {
+		return x.Runs
+	}
+	return 0
+}
+
+func (x *InsightsDay) GetSucceeded() int32 {
+	if x != nil {
+		return x.Succeeded
+	}
+	return 0
+}
+
+func (x *InsightsDay) GetFailed() int32 {
+	if x != nil {
+		return x.Failed
+	}
+	return 0
+}
+
+func (x *InsightsDay) GetP50() *durationpb.Duration {
+	if x != nil {
+		return x.P50
+	}
+	return nil
+}
+
+func (x *InsightsDay) GetP95() *durationpb.Duration {
+	if x != nil {
+		return x.P95
+	}
+	return nil
+}
+
+func (x *InsightsDay) GetFlakyTests() int32 {
+	if x != nil {
+		return x.FlakyTests
+	}
+	return 0
+}
+
+func (x *InsightsDay) GetCacheLookups() int64 {
+	if x != nil {
+		return x.CacheLookups
+	}
+	return 0
+}
+
+func (x *InsightsDay) GetCacheHitRate() float64 {
+	if x != nil {
+		return x.CacheHitRate
+	}
+	return 0
+}
+
+type GetInsightsSummaryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	From          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	To            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	Runs          int32                  `protobuf:"varint,3,opt,name=runs,proto3" json:"runs,omitempty"` // finished runs (succeeded, failed and cancelled), once per run attempt
+	Succeeded     int32                  `protobuf:"varint,4,opt,name=succeeded,proto3" json:"succeeded,omitempty"`
+	Failed        int32                  `protobuf:"varint,5,opt,name=failed,proto3" json:"failed,omitempty"`
+	SuccessRate   float64                `protobuf:"fixed64,6,opt,name=success_rate,json=successRate,proto3" json:"success_rate,omitempty"` // succeeded / (succeeded + failed)
+	P50           *durationpb.Duration   `protobuf:"bytes,7,opt,name=p50,proto3" json:"p50,omitempty"`                                      // succeeded runs only
+	P95           *durationpb.Duration   `protobuf:"bytes,8,opt,name=p95,proto3" json:"p95,omitempty"`
+	P50Previous   *durationpb.Duration   `protobuf:"bytes,9,opt,name=p50_previous,json=p50Previous,proto3" json:"p50_previous,omitempty"` // the window immediately before
+	FlakyTests    int32                  `protobuf:"varint,10,opt,name=flaky_tests,json=flakyTests,proto3" json:"flaky_tests,omitempty"`
+	CacheLookups  int64                  `protobuf:"varint,11,opt,name=cache_lookups,json=cacheLookups,proto3" json:"cache_lookups,omitempty"`
+	CacheHitRate  float64                `protobuf:"fixed64,12,opt,name=cache_hit_rate,json=cacheHitRate,proto3" json:"cache_hit_rate,omitempty"` // exact hits / lookups
+	Days          []*InsightsDay         `protobuf:"bytes,13,rep,name=days,proto3" json:"days,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetInsightsSummaryResponse) Reset() {
+	*x = GetInsightsSummaryResponse{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetInsightsSummaryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetInsightsSummaryResponse) ProtoMessage() {}
+
+func (x *GetInsightsSummaryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetInsightsSummaryResponse.ProtoReflect.Descriptor instead.
+func (*GetInsightsSummaryResponse) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *GetInsightsSummaryResponse) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *GetInsightsSummaryResponse) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+func (x *GetInsightsSummaryResponse) GetRuns() int32 {
+	if x != nil {
+		return x.Runs
+	}
+	return 0
+}
+
+func (x *GetInsightsSummaryResponse) GetSucceeded() int32 {
+	if x != nil {
+		return x.Succeeded
+	}
+	return 0
+}
+
+func (x *GetInsightsSummaryResponse) GetFailed() int32 {
+	if x != nil {
+		return x.Failed
+	}
+	return 0
+}
+
+func (x *GetInsightsSummaryResponse) GetSuccessRate() float64 {
+	if x != nil {
+		return x.SuccessRate
+	}
+	return 0
+}
+
+func (x *GetInsightsSummaryResponse) GetP50() *durationpb.Duration {
+	if x != nil {
+		return x.P50
+	}
+	return nil
+}
+
+func (x *GetInsightsSummaryResponse) GetP95() *durationpb.Duration {
+	if x != nil {
+		return x.P95
+	}
+	return nil
+}
+
+func (x *GetInsightsSummaryResponse) GetP50Previous() *durationpb.Duration {
+	if x != nil {
+		return x.P50Previous
+	}
+	return nil
+}
+
+func (x *GetInsightsSummaryResponse) GetFlakyTests() int32 {
+	if x != nil {
+		return x.FlakyTests
+	}
+	return 0
+}
+
+func (x *GetInsightsSummaryResponse) GetCacheLookups() int64 {
+	if x != nil {
+		return x.CacheLookups
+	}
+	return 0
+}
+
+func (x *GetInsightsSummaryResponse) GetCacheHitRate() float64 {
+	if x != nil {
+		return x.CacheHitRate
+	}
+	return 0
+}
+
+func (x *GetInsightsSummaryResponse) GetDays() []*InsightsDay {
+	if x != nil {
+		return x.Days
+	}
+	return nil
+}
+
+type ListFlakyTestsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	PipelineId    string                 `protobuf:"bytes,2,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`
+	WindowDays    int32                  `protobuf:"varint,3,opt,name=window_days,json=windowDays,proto3" json:"window_days,omitempty"`
+	Page          *PageRequest           `protobuf:"bytes,4,opt,name=page,proto3" json:"page,omitempty"` // page_size and page_token only
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListFlakyTestsRequest) Reset() {
+	*x = ListFlakyTestsRequest{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListFlakyTestsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFlakyTestsRequest) ProtoMessage() {}
+
+func (x *ListFlakyTestsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFlakyTestsRequest.ProtoReflect.Descriptor instead.
+func (*ListFlakyTestsRequest) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *ListFlakyTestsRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *ListFlakyTestsRequest) GetPipelineId() string {
+	if x != nil {
+		return x.PipelineId
+	}
+	return ""
+}
+
+func (x *ListFlakyTestsRequest) GetWindowDays() int32 {
+	if x != nil {
+		return x.WindowDays
+	}
+	return 0
+}
+
+func (x *ListFlakyTestsRequest) GetPage() *PageRequest {
+	if x != nil {
+		return x.Page
+	}
+	return nil
+}
+
+type FlakeOccurrence struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RunId         string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"` // the run may have been deleted by history retention since
+	RunNumber     int64                  `protobuf:"varint,2,opt,name=run_number,json=runNumber,proto3" json:"run_number,omitempty"`
+	JobId         string                 `protobuf:"bytes,3,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	Kind          FlakeKind              `protobuf:"varint,4,opt,name=kind,proto3,enum=slipway.v1.FlakeKind" json:"kind,omitempty"`
+	Branch        string                 `protobuf:"bytes,5,opt,name=branch,proto3" json:"branch,omitempty"`
+	Sha           string                 `protobuf:"bytes,6,opt,name=sha,proto3" json:"sha,omitempty"`
+	At            *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=at,proto3" json:"at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FlakeOccurrence) Reset() {
+	*x = FlakeOccurrence{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FlakeOccurrence) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FlakeOccurrence) ProtoMessage() {}
+
+func (x *FlakeOccurrence) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FlakeOccurrence.ProtoReflect.Descriptor instead.
+func (*FlakeOccurrence) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{50}
+}
+
+func (x *FlakeOccurrence) GetRunId() string {
+	if x != nil {
+		return x.RunId
+	}
+	return ""
+}
+
+func (x *FlakeOccurrence) GetRunNumber() int64 {
+	if x != nil {
+		return x.RunNumber
+	}
+	return 0
+}
+
+func (x *FlakeOccurrence) GetJobId() string {
+	if x != nil {
+		return x.JobId
+	}
+	return ""
+}
+
+func (x *FlakeOccurrence) GetKind() FlakeKind {
+	if x != nil {
+		return x.Kind
+	}
+	return FlakeKind_FLAKE_KIND_UNSPECIFIED
+}
+
+func (x *FlakeOccurrence) GetBranch() string {
+	if x != nil {
+		return x.Branch
+	}
+	return ""
+}
+
+func (x *FlakeOccurrence) GetSha() string {
+	if x != nil {
+		return x.Sha
+	}
+	return ""
+}
+
+func (x *FlakeOccurrence) GetAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.At
+	}
+	return nil
+}
+
+type FlakyTest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	TestId         string                 `protobuf:"bytes,1,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"` // test_...
+	PipelineId     string                 `protobuf:"bytes,2,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`
+	PipelineName   string                 `protobuf:"bytes,3,opt,name=pipeline_name,json=pipelineName,proto3" json:"pipeline_name,omitempty"`
+	JobName        string                 `protobuf:"bytes,4,opt,name=job_name,json=jobName,proto3" json:"job_name,omitempty"`
+	JobDisplayName string                 `protobuf:"bytes,5,opt,name=job_display_name,json=jobDisplayName,proto3" json:"job_display_name,omitempty"`
+	Suite          string                 `protobuf:"bytes,6,opt,name=suite,proto3" json:"suite,omitempty"`
+	Classname      string                 `protobuf:"bytes,7,opt,name=classname,proto3" json:"classname,omitempty"`
+	Name           string                 `protobuf:"bytes,8,opt,name=name,proto3" json:"name,omitempty"`
+	File           string                 `protobuf:"bytes,9,opt,name=file,proto3" json:"file,omitempty"`
+	Runs           int64                  `protobuf:"varint,10,opt,name=runs,proto3" json:"runs,omitempty"` // runs the test ran in, in the window
+	Executions     int64                  `protobuf:"varint,11,opt,name=executions,proto3" json:"executions,omitempty"`
+	Failures       int64                  `protobuf:"varint,12,opt,name=failures,proto3" json:"failures,omitempty"`
+	FlakyRuns      int64                  `protobuf:"varint,13,opt,name=flaky_runs,json=flakyRuns,proto3" json:"flaky_runs,omitempty"` // runs flagged retried or same commit
+	Flips          int64                  `protobuf:"varint,14,opt,name=flips,proto3" json:"flips,omitempty"`
+	FlakeRate      float64                `protobuf:"fixed64,15,opt,name=flake_rate,json=flakeRate,proto3" json:"flake_rate,omitempty"` // min(1, (flaky_runs + flips) / runs)
+	FirstFlakyAt   *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=first_flaky_at,json=firstFlakyAt,proto3" json:"first_flaky_at,omitempty"`
+	LastFlakyAt    *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=last_flaky_at,json=lastFlakyAt,proto3" json:"last_flaky_at,omitempty"`
+	LastSeenAt     *timestamppb.Timestamp `protobuf:"bytes,18,opt,name=last_seen_at,json=lastSeenAt,proto3" json:"last_seen_at,omitempty"`
+	LastStatus     TestStatus             `protobuf:"varint,19,opt,name=last_status,json=lastStatus,proto3,enum=slipway.v1.TestStatus" json:"last_status,omitempty"`
+	Recent         []*FlakeOccurrence     `protobuf:"bytes,20,rep,name=recent,proto3" json:"recent,omitempty"` // up to 5, newest first
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *FlakyTest) Reset() {
+	*x = FlakyTest{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[51]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FlakyTest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FlakyTest) ProtoMessage() {}
+
+func (x *FlakyTest) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[51]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FlakyTest.ProtoReflect.Descriptor instead.
+func (*FlakyTest) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{51}
+}
+
+func (x *FlakyTest) GetTestId() string {
+	if x != nil {
+		return x.TestId
+	}
+	return ""
+}
+
+func (x *FlakyTest) GetPipelineId() string {
+	if x != nil {
+		return x.PipelineId
+	}
+	return ""
+}
+
+func (x *FlakyTest) GetPipelineName() string {
+	if x != nil {
+		return x.PipelineName
+	}
+	return ""
+}
+
+func (x *FlakyTest) GetJobName() string {
+	if x != nil {
+		return x.JobName
+	}
+	return ""
+}
+
+func (x *FlakyTest) GetJobDisplayName() string {
+	if x != nil {
+		return x.JobDisplayName
+	}
+	return ""
+}
+
+func (x *FlakyTest) GetSuite() string {
+	if x != nil {
+		return x.Suite
+	}
+	return ""
+}
+
+func (x *FlakyTest) GetClassname() string {
+	if x != nil {
+		return x.Classname
+	}
+	return ""
+}
+
+func (x *FlakyTest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *FlakyTest) GetFile() string {
+	if x != nil {
+		return x.File
+	}
+	return ""
+}
+
+func (x *FlakyTest) GetRuns() int64 {
+	if x != nil {
+		return x.Runs
+	}
+	return 0
+}
+
+func (x *FlakyTest) GetExecutions() int64 {
+	if x != nil {
+		return x.Executions
+	}
+	return 0
+}
+
+func (x *FlakyTest) GetFailures() int64 {
+	if x != nil {
+		return x.Failures
+	}
+	return 0
+}
+
+func (x *FlakyTest) GetFlakyRuns() int64 {
+	if x != nil {
+		return x.FlakyRuns
+	}
+	return 0
+}
+
+func (x *FlakyTest) GetFlips() int64 {
+	if x != nil {
+		return x.Flips
+	}
+	return 0
+}
+
+func (x *FlakyTest) GetFlakeRate() float64 {
+	if x != nil {
+		return x.FlakeRate
+	}
+	return 0
+}
+
+func (x *FlakyTest) GetFirstFlakyAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FirstFlakyAt
+	}
+	return nil
+}
+
+func (x *FlakyTest) GetLastFlakyAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastFlakyAt
+	}
+	return nil
+}
+
+func (x *FlakyTest) GetLastSeenAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastSeenAt
+	}
+	return nil
+}
+
+func (x *FlakyTest) GetLastStatus() TestStatus {
+	if x != nil {
+		return x.LastStatus
+	}
+	return TestStatus_TEST_STATUS_UNSPECIFIED
+}
+
+func (x *FlakyTest) GetRecent() []*FlakeOccurrence {
+	if x != nil {
+		return x.Recent
+	}
+	return nil
+}
+
+type ListFlakyTestsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*FlakyTest           `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Page          *PageResponse          `protobuf:"bytes,2,opt,name=page,proto3" json:"page,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListFlakyTestsResponse) Reset() {
+	*x = ListFlakyTestsResponse{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListFlakyTestsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFlakyTestsResponse) ProtoMessage() {}
+
+func (x *ListFlakyTestsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFlakyTestsResponse.ProtoReflect.Descriptor instead.
+func (*ListFlakyTestsResponse) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{52}
+}
+
+func (x *ListFlakyTestsResponse) GetItems() []*FlakyTest {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListFlakyTestsResponse) GetPage() *PageResponse {
+	if x != nil {
+		return x.Page
+	}
+	return nil
+}
+
+type ListSlowTestsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	PipelineId    string                 `protobuf:"bytes,2,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`
+	WindowDays    int32                  `protobuf:"varint,3,opt,name=window_days,json=windowDays,proto3" json:"window_days,omitempty"`
+	Page          *PageRequest           `protobuf:"bytes,4,opt,name=page,proto3" json:"page,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSlowTestsRequest) Reset() {
+	*x = ListSlowTestsRequest{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[53]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSlowTestsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSlowTestsRequest) ProtoMessage() {}
+
+func (x *ListSlowTestsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[53]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSlowTestsRequest.ProtoReflect.Descriptor instead.
+func (*ListSlowTestsRequest) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{53}
+}
+
+func (x *ListSlowTestsRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *ListSlowTestsRequest) GetPipelineId() string {
+	if x != nil {
+		return x.PipelineId
+	}
+	return ""
+}
+
+func (x *ListSlowTestsRequest) GetWindowDays() int32 {
+	if x != nil {
+		return x.WindowDays
+	}
+	return 0
+}
+
+func (x *ListSlowTestsRequest) GetPage() *PageRequest {
+	if x != nil {
+		return x.Page
+	}
+	return nil
+}
+
+type SlowTest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	TestId         string                 `protobuf:"bytes,1,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
+	PipelineId     string                 `protobuf:"bytes,2,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`
+	PipelineName   string                 `protobuf:"bytes,3,opt,name=pipeline_name,json=pipelineName,proto3" json:"pipeline_name,omitempty"`
+	JobDisplayName string                 `protobuf:"bytes,4,opt,name=job_display_name,json=jobDisplayName,proto3" json:"job_display_name,omitempty"`
+	Suite          string                 `protobuf:"bytes,5,opt,name=suite,proto3" json:"suite,omitempty"`
+	Classname      string                 `protobuf:"bytes,6,opt,name=classname,proto3" json:"classname,omitempty"`
+	Name           string                 `protobuf:"bytes,7,opt,name=name,proto3" json:"name,omitempty"`
+	AvgDuration    *durationpb.Duration   `protobuf:"bytes,8,opt,name=avg_duration,json=avgDuration,proto3" json:"avg_duration,omitempty"` // moving average over recent runs
+	LastDuration   *durationpb.Duration   `protobuf:"bytes,9,opt,name=last_duration,json=lastDuration,proto3" json:"last_duration,omitempty"`
+	MaxDuration    *durationpb.Duration   `protobuf:"bytes,10,opt,name=max_duration,json=maxDuration,proto3" json:"max_duration,omitempty"` // in the window
+	Executions     int64                  `protobuf:"varint,11,opt,name=executions,proto3" json:"executions,omitempty"`                     // in the window
+	LastSeenAt     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=last_seen_at,json=lastSeenAt,proto3" json:"last_seen_at,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *SlowTest) Reset() {
+	*x = SlowTest{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SlowTest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SlowTest) ProtoMessage() {}
+
+func (x *SlowTest) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SlowTest.ProtoReflect.Descriptor instead.
+func (*SlowTest) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{54}
+}
+
+func (x *SlowTest) GetTestId() string {
+	if x != nil {
+		return x.TestId
+	}
+	return ""
+}
+
+func (x *SlowTest) GetPipelineId() string {
+	if x != nil {
+		return x.PipelineId
+	}
+	return ""
+}
+
+func (x *SlowTest) GetPipelineName() string {
+	if x != nil {
+		return x.PipelineName
+	}
+	return ""
+}
+
+func (x *SlowTest) GetJobDisplayName() string {
+	if x != nil {
+		return x.JobDisplayName
+	}
+	return ""
+}
+
+func (x *SlowTest) GetSuite() string {
+	if x != nil {
+		return x.Suite
+	}
+	return ""
+}
+
+func (x *SlowTest) GetClassname() string {
+	if x != nil {
+		return x.Classname
+	}
+	return ""
+}
+
+func (x *SlowTest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SlowTest) GetAvgDuration() *durationpb.Duration {
+	if x != nil {
+		return x.AvgDuration
+	}
+	return nil
+}
+
+func (x *SlowTest) GetLastDuration() *durationpb.Duration {
+	if x != nil {
+		return x.LastDuration
+	}
+	return nil
+}
+
+func (x *SlowTest) GetMaxDuration() *durationpb.Duration {
+	if x != nil {
+		return x.MaxDuration
+	}
+	return nil
+}
+
+func (x *SlowTest) GetExecutions() int64 {
+	if x != nil {
+		return x.Executions
+	}
+	return 0
+}
+
+func (x *SlowTest) GetLastSeenAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastSeenAt
+	}
+	return nil
+}
+
+type ListSlowTestsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*SlowTest            `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Page          *PageResponse          `protobuf:"bytes,2,opt,name=page,proto3" json:"page,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSlowTestsResponse) Reset() {
+	*x = ListSlowTestsResponse{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSlowTestsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSlowTestsResponse) ProtoMessage() {}
+
+func (x *ListSlowTestsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSlowTestsResponse.ProtoReflect.Descriptor instead.
+func (*ListSlowTestsResponse) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{55}
+}
+
+func (x *ListSlowTestsResponse) GetItems() []*SlowTest {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListSlowTestsResponse) GetPage() *PageResponse {
+	if x != nil {
+		return x.Page
+	}
+	return nil
+}
+
+type ListJobDurationsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	PipelineId    string                 `protobuf:"bytes,2,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`
+	WindowDays    int32                  `protobuf:"varint,3,opt,name=window_days,json=windowDays,proto3" json:"window_days,omitempty"`
+	BranchScope   InsightsBranchScope    `protobuf:"varint,4,opt,name=branch_scope,json=branchScope,proto3,enum=slipway.v1.InsightsBranchScope" json:"branch_scope,omitempty"`
+	Order         JobDurationOrder       `protobuf:"varint,5,opt,name=order,proto3,enum=slipway.v1.JobDurationOrder" json:"order,omitempty"`
+	Page          *PageRequest           `protobuf:"bytes,6,opt,name=page,proto3" json:"page,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListJobDurationsRequest) Reset() {
+	*x = ListJobDurationsRequest{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[56]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListJobDurationsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListJobDurationsRequest) ProtoMessage() {}
+
+func (x *ListJobDurationsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[56]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListJobDurationsRequest.ProtoReflect.Descriptor instead.
+func (*ListJobDurationsRequest) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{56}
+}
+
+func (x *ListJobDurationsRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *ListJobDurationsRequest) GetPipelineId() string {
+	if x != nil {
+		return x.PipelineId
+	}
+	return ""
+}
+
+func (x *ListJobDurationsRequest) GetWindowDays() int32 {
+	if x != nil {
+		return x.WindowDays
+	}
+	return 0
+}
+
+func (x *ListJobDurationsRequest) GetBranchScope() InsightsBranchScope {
+	if x != nil {
+		return x.BranchScope
+	}
+	return InsightsBranchScope_INSIGHTS_BRANCH_SCOPE_UNSPECIFIED
+}
+
+func (x *ListJobDurationsRequest) GetOrder() JobDurationOrder {
+	if x != nil {
+		return x.Order
+	}
+	return JobDurationOrder_JOB_DURATION_ORDER_UNSPECIFIED
+}
+
+func (x *ListJobDurationsRequest) GetPage() *PageRequest {
+	if x != nil {
+		return x.Page
+	}
+	return nil
+}
+
+type JobDuration struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	PipelineId     string                 `protobuf:"bytes,1,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`
+	PipelineName   string                 `protobuf:"bytes,2,opt,name=pipeline_name,json=pipelineName,proto3" json:"pipeline_name,omitempty"`
+	JobName        string                 `protobuf:"bytes,3,opt,name=job_name,json=jobName,proto3" json:"job_name,omitempty"`
+	JobDisplayName string                 `protobuf:"bytes,4,opt,name=job_display_name,json=jobDisplayName,proto3" json:"job_display_name,omitempty"`
+	Runs           int32                  `protobuf:"varint,5,opt,name=runs,proto3" json:"runs,omitempty"`
+	Succeeded      int32                  `protobuf:"varint,6,opt,name=succeeded,proto3" json:"succeeded,omitempty"`
+	Failed         int32                  `protobuf:"varint,7,opt,name=failed,proto3" json:"failed,omitempty"`
+	P50            *durationpb.Duration   `protobuf:"bytes,8,opt,name=p50,proto3" json:"p50,omitempty"` // succeeded attempts only
+	P95            *durationpb.Duration   `protobuf:"bytes,9,opt,name=p95,proto3" json:"p95,omitempty"`
+	P50Previous    *durationpb.Duration   `protobuf:"bytes,10,opt,name=p50_previous,json=p50Previous,proto3" json:"p50_previous,omitempty"`
+	ChangeRatio    float64                `protobuf:"fixed64,11,opt,name=change_ratio,json=changeRatio,proto3" json:"change_ratio,omitempty"` // p50 / p50_previous, 0 without a previous p50
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *JobDuration) Reset() {
+	*x = JobDuration{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[57]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JobDuration) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JobDuration) ProtoMessage() {}
+
+func (x *JobDuration) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[57]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JobDuration.ProtoReflect.Descriptor instead.
+func (*JobDuration) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{57}
+}
+
+func (x *JobDuration) GetPipelineId() string {
+	if x != nil {
+		return x.PipelineId
+	}
+	return ""
+}
+
+func (x *JobDuration) GetPipelineName() string {
+	if x != nil {
+		return x.PipelineName
+	}
+	return ""
+}
+
+func (x *JobDuration) GetJobName() string {
+	if x != nil {
+		return x.JobName
+	}
+	return ""
+}
+
+func (x *JobDuration) GetJobDisplayName() string {
+	if x != nil {
+		return x.JobDisplayName
+	}
+	return ""
+}
+
+func (x *JobDuration) GetRuns() int32 {
+	if x != nil {
+		return x.Runs
+	}
+	return 0
+}
+
+func (x *JobDuration) GetSucceeded() int32 {
+	if x != nil {
+		return x.Succeeded
+	}
+	return 0
+}
+
+func (x *JobDuration) GetFailed() int32 {
+	if x != nil {
+		return x.Failed
+	}
+	return 0
+}
+
+func (x *JobDuration) GetP50() *durationpb.Duration {
+	if x != nil {
+		return x.P50
+	}
+	return nil
+}
+
+func (x *JobDuration) GetP95() *durationpb.Duration {
+	if x != nil {
+		return x.P95
+	}
+	return nil
+}
+
+func (x *JobDuration) GetP50Previous() *durationpb.Duration {
+	if x != nil {
+		return x.P50Previous
+	}
+	return nil
+}
+
+func (x *JobDuration) GetChangeRatio() float64 {
+	if x != nil {
+		return x.ChangeRatio
+	}
+	return 0
+}
+
+type ListJobDurationsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*JobDuration         `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Page          *PageResponse          `protobuf:"bytes,2,opt,name=page,proto3" json:"page,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListJobDurationsResponse) Reset() {
+	*x = ListJobDurationsResponse{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[58]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListJobDurationsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListJobDurationsResponse) ProtoMessage() {}
+
+func (x *ListJobDurationsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[58]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListJobDurationsResponse.ProtoReflect.Descriptor instead.
+func (*ListJobDurationsResponse) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{58}
+}
+
+func (x *ListJobDurationsResponse) GetItems() []*JobDuration {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListJobDurationsResponse) GetPage() *PageResponse {
+	if x != nil {
+		return x.Page
+	}
+	return nil
+}
+
+type ListCacheStatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	PipelineId    string                 `protobuf:"bytes,2,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`
+	WindowDays    int32                  `protobuf:"varint,3,opt,name=window_days,json=windowDays,proto3" json:"window_days,omitempty"`
+	Page          *PageRequest           `protobuf:"bytes,4,opt,name=page,proto3" json:"page,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCacheStatsRequest) Reset() {
+	*x = ListCacheStatsRequest{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[59]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCacheStatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCacheStatsRequest) ProtoMessage() {}
+
+func (x *ListCacheStatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[59]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCacheStatsRequest.ProtoReflect.Descriptor instead.
+func (*ListCacheStatsRequest) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{59}
+}
+
+func (x *ListCacheStatsRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *ListCacheStatsRequest) GetPipelineId() string {
+	if x != nil {
+		return x.PipelineId
+	}
+	return ""
+}
+
+func (x *ListCacheStatsRequest) GetWindowDays() int32 {
+	if x != nil {
+		return x.WindowDays
+	}
+	return 0
+}
+
+func (x *ListCacheStatsRequest) GetPage() *PageRequest {
+	if x != nil {
+		return x.Page
+	}
+	return nil
+}
+
+type CacheStat struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PipelineId    string                 `protobuf:"bytes,1,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`
+	PipelineName  string                 `protobuf:"bytes,2,opt,name=pipeline_name,json=pipelineName,proto3" json:"pipeline_name,omitempty"`
+	JobName       string                 `protobuf:"bytes,3,opt,name=job_name,json=jobName,proto3" json:"job_name,omitempty"`
+	CacheName     string                 `protobuf:"bytes,4,opt,name=cache_name,json=cacheName,proto3" json:"cache_name,omitempty"` // derived from the key: the last restore key, or the key without its hash
+	ExactHits     int64                  `protobuf:"varint,5,opt,name=exact_hits,json=exactHits,proto3" json:"exact_hits,omitempty"`
+	PartialHits   int64                  `protobuf:"varint,6,opt,name=partial_hits,json=partialHits,proto3" json:"partial_hits,omitempty"` // restored from a restore key
+	Misses        int64                  `protobuf:"varint,7,opt,name=misses,proto3" json:"misses,omitempty"`
+	HitRate       float64                `protobuf:"fixed64,8,opt,name=hit_rate,json=hitRate,proto3" json:"hit_rate,omitempty"`             // exact / lookups
+	RestoreRate   float64                `protobuf:"fixed64,9,opt,name=restore_rate,json=restoreRate,proto3" json:"restore_rate,omitempty"` // (exact + partial) / lookups
+	LastDay       *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=last_day,json=lastDay,proto3" json:"last_day,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CacheStat) Reset() {
+	*x = CacheStat{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[60]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CacheStat) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CacheStat) ProtoMessage() {}
+
+func (x *CacheStat) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[60]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CacheStat.ProtoReflect.Descriptor instead.
+func (*CacheStat) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{60}
+}
+
+func (x *CacheStat) GetPipelineId() string {
+	if x != nil {
+		return x.PipelineId
+	}
+	return ""
+}
+
+func (x *CacheStat) GetPipelineName() string {
+	if x != nil {
+		return x.PipelineName
+	}
+	return ""
+}
+
+func (x *CacheStat) GetJobName() string {
+	if x != nil {
+		return x.JobName
+	}
+	return ""
+}
+
+func (x *CacheStat) GetCacheName() string {
+	if x != nil {
+		return x.CacheName
+	}
+	return ""
+}
+
+func (x *CacheStat) GetExactHits() int64 {
+	if x != nil {
+		return x.ExactHits
+	}
+	return 0
+}
+
+func (x *CacheStat) GetPartialHits() int64 {
+	if x != nil {
+		return x.PartialHits
+	}
+	return 0
+}
+
+func (x *CacheStat) GetMisses() int64 {
+	if x != nil {
+		return x.Misses
+	}
+	return 0
+}
+
+func (x *CacheStat) GetHitRate() float64 {
+	if x != nil {
+		return x.HitRate
+	}
+	return 0
+}
+
+func (x *CacheStat) GetRestoreRate() float64 {
+	if x != nil {
+		return x.RestoreRate
+	}
+	return 0
+}
+
+func (x *CacheStat) GetLastDay() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastDay
+	}
+	return nil
+}
+
+type ListCacheStatsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*CacheStat           `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Page          *PageResponse          `protobuf:"bytes,2,opt,name=page,proto3" json:"page,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCacheStatsResponse) Reset() {
+	*x = ListCacheStatsResponse{}
+	mi := &file_slipway_v1_runs_proto_msgTypes[61]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCacheStatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCacheStatsResponse) ProtoMessage() {}
+
+func (x *ListCacheStatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_runs_proto_msgTypes[61]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCacheStatsResponse.ProtoReflect.Descriptor instead.
+func (*ListCacheStatsResponse) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{61}
+}
+
+func (x *ListCacheStatsResponse) GetItems() []*CacheStat {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListCacheStatsResponse) GetPage() *PageResponse {
+	if x != nil {
+		return x.Page
+	}
+	return nil
+}
+
 // HostedSuspension is an organisation's kill switch for Slipway-hosted runners.
 type HostedSuspension struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -4449,7 +6072,7 @@ type HostedSuspension struct {
 
 func (x *HostedSuspension) Reset() {
 	*x = HostedSuspension{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[46]
+	mi := &file_slipway_v1_runs_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4461,7 +6084,7 @@ func (x *HostedSuspension) String() string {
 func (*HostedSuspension) ProtoMessage() {}
 
 func (x *HostedSuspension) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[46]
+	mi := &file_slipway_v1_runs_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4474,7 +6097,7 @@ func (x *HostedSuspension) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostedSuspension.ProtoReflect.Descriptor instead.
 func (*HostedSuspension) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{46}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *HostedSuspension) GetOrgId() string {
@@ -4514,7 +6137,7 @@ type GetHostedSuspensionRequest struct {
 
 func (x *GetHostedSuspensionRequest) Reset() {
 	*x = GetHostedSuspensionRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[47]
+	mi := &file_slipway_v1_runs_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4526,7 +6149,7 @@ func (x *GetHostedSuspensionRequest) String() string {
 func (*GetHostedSuspensionRequest) ProtoMessage() {}
 
 func (x *GetHostedSuspensionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[47]
+	mi := &file_slipway_v1_runs_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4539,7 +6162,7 @@ func (x *GetHostedSuspensionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHostedSuspensionRequest.ProtoReflect.Descriptor instead.
 func (*GetHostedSuspensionRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{47}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *GetHostedSuspensionRequest) GetOrgId() string {
@@ -4558,7 +6181,7 @@ type GetHostedSuspensionResponse struct {
 
 func (x *GetHostedSuspensionResponse) Reset() {
 	*x = GetHostedSuspensionResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[48]
+	mi := &file_slipway_v1_runs_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4570,7 +6193,7 @@ func (x *GetHostedSuspensionResponse) String() string {
 func (*GetHostedSuspensionResponse) ProtoMessage() {}
 
 func (x *GetHostedSuspensionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[48]
+	mi := &file_slipway_v1_runs_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4583,7 +6206,7 @@ func (x *GetHostedSuspensionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHostedSuspensionResponse.ProtoReflect.Descriptor instead.
 func (*GetHostedSuspensionResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{48}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *GetHostedSuspensionResponse) GetSuspension() *HostedSuspension {
@@ -4603,7 +6226,7 @@ type SuspendHostedRunnersRequest struct {
 
 func (x *SuspendHostedRunnersRequest) Reset() {
 	*x = SuspendHostedRunnersRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[49]
+	mi := &file_slipway_v1_runs_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4615,7 +6238,7 @@ func (x *SuspendHostedRunnersRequest) String() string {
 func (*SuspendHostedRunnersRequest) ProtoMessage() {}
 
 func (x *SuspendHostedRunnersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[49]
+	mi := &file_slipway_v1_runs_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4628,7 +6251,7 @@ func (x *SuspendHostedRunnersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SuspendHostedRunnersRequest.ProtoReflect.Descriptor instead.
 func (*SuspendHostedRunnersRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{49}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *SuspendHostedRunnersRequest) GetOrgId() string {
@@ -4655,7 +6278,7 @@ type SuspendHostedRunnersResponse struct {
 
 func (x *SuspendHostedRunnersResponse) Reset() {
 	*x = SuspendHostedRunnersResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[50]
+	mi := &file_slipway_v1_runs_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4667,7 +6290,7 @@ func (x *SuspendHostedRunnersResponse) String() string {
 func (*SuspendHostedRunnersResponse) ProtoMessage() {}
 
 func (x *SuspendHostedRunnersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[50]
+	mi := &file_slipway_v1_runs_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4680,7 +6303,7 @@ func (x *SuspendHostedRunnersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SuspendHostedRunnersResponse.ProtoReflect.Descriptor instead.
 func (*SuspendHostedRunnersResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{50}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *SuspendHostedRunnersResponse) GetSuspension() *HostedSuspension {
@@ -4706,7 +6329,7 @@ type ResumeHostedRunnersRequest struct {
 
 func (x *ResumeHostedRunnersRequest) Reset() {
 	*x = ResumeHostedRunnersRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[51]
+	mi := &file_slipway_v1_runs_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4718,7 +6341,7 @@ func (x *ResumeHostedRunnersRequest) String() string {
 func (*ResumeHostedRunnersRequest) ProtoMessage() {}
 
 func (x *ResumeHostedRunnersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[51]
+	mi := &file_slipway_v1_runs_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4731,7 +6354,7 @@ func (x *ResumeHostedRunnersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResumeHostedRunnersRequest.ProtoReflect.Descriptor instead.
 func (*ResumeHostedRunnersRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{51}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *ResumeHostedRunnersRequest) GetOrgId() string {
@@ -4750,7 +6373,7 @@ type ResumeHostedRunnersResponse struct {
 
 func (x *ResumeHostedRunnersResponse) Reset() {
 	*x = ResumeHostedRunnersResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[52]
+	mi := &file_slipway_v1_runs_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4762,7 +6385,7 @@ func (x *ResumeHostedRunnersResponse) String() string {
 func (*ResumeHostedRunnersResponse) ProtoMessage() {}
 
 func (x *ResumeHostedRunnersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[52]
+	mi := &file_slipway_v1_runs_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4775,7 +6398,7 @@ func (x *ResumeHostedRunnersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResumeHostedRunnersResponse.ProtoReflect.Descriptor instead.
 func (*ResumeHostedRunnersResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{52}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *ResumeHostedRunnersResponse) GetWasSuspended() bool {
@@ -4795,7 +6418,7 @@ type ListRunnerPoolsRequest struct {
 
 func (x *ListRunnerPoolsRequest) Reset() {
 	*x = ListRunnerPoolsRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[53]
+	mi := &file_slipway_v1_runs_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4807,7 +6430,7 @@ func (x *ListRunnerPoolsRequest) String() string {
 func (*ListRunnerPoolsRequest) ProtoMessage() {}
 
 func (x *ListRunnerPoolsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[53]
+	mi := &file_slipway_v1_runs_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4820,7 +6443,7 @@ func (x *ListRunnerPoolsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRunnerPoolsRequest.ProtoReflect.Descriptor instead.
 func (*ListRunnerPoolsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{53}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *ListRunnerPoolsRequest) GetProjectId() string {
@@ -4847,7 +6470,7 @@ type ListRunnerPoolsResponse struct {
 
 func (x *ListRunnerPoolsResponse) Reset() {
 	*x = ListRunnerPoolsResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[54]
+	mi := &file_slipway_v1_runs_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4859,7 +6482,7 @@ func (x *ListRunnerPoolsResponse) String() string {
 func (*ListRunnerPoolsResponse) ProtoMessage() {}
 
 func (x *ListRunnerPoolsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[54]
+	mi := &file_slipway_v1_runs_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4872,7 +6495,7 @@ func (x *ListRunnerPoolsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRunnerPoolsResponse.ProtoReflect.Descriptor instead.
 func (*ListRunnerPoolsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{54}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *ListRunnerPoolsResponse) GetItems() []*RunnerPool {
@@ -4898,7 +6521,7 @@ type GetRunnerPoolRequest struct {
 
 func (x *GetRunnerPoolRequest) Reset() {
 	*x = GetRunnerPoolRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[55]
+	mi := &file_slipway_v1_runs_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4910,7 +6533,7 @@ func (x *GetRunnerPoolRequest) String() string {
 func (*GetRunnerPoolRequest) ProtoMessage() {}
 
 func (x *GetRunnerPoolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[55]
+	mi := &file_slipway_v1_runs_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4923,7 +6546,7 @@ func (x *GetRunnerPoolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRunnerPoolRequest.ProtoReflect.Descriptor instead.
 func (*GetRunnerPoolRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{55}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *GetRunnerPoolRequest) GetId() string {
@@ -4942,7 +6565,7 @@ type GetRunnerPoolResponse struct {
 
 func (x *GetRunnerPoolResponse) Reset() {
 	*x = GetRunnerPoolResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[56]
+	mi := &file_slipway_v1_runs_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4954,7 +6577,7 @@ func (x *GetRunnerPoolResponse) String() string {
 func (*GetRunnerPoolResponse) ProtoMessage() {}
 
 func (x *GetRunnerPoolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[56]
+	mi := &file_slipway_v1_runs_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4967,7 +6590,7 @@ func (x *GetRunnerPoolResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRunnerPoolResponse.ProtoReflect.Descriptor instead.
 func (*GetRunnerPoolResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{56}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *GetRunnerPoolResponse) GetPool() *RunnerPool {
@@ -4995,7 +6618,7 @@ type CreateRunnerPoolRequest struct {
 
 func (x *CreateRunnerPoolRequest) Reset() {
 	*x = CreateRunnerPoolRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[57]
+	mi := &file_slipway_v1_runs_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5007,7 +6630,7 @@ func (x *CreateRunnerPoolRequest) String() string {
 func (*CreateRunnerPoolRequest) ProtoMessage() {}
 
 func (x *CreateRunnerPoolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[57]
+	mi := &file_slipway_v1_runs_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5020,7 +6643,7 @@ func (x *CreateRunnerPoolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRunnerPoolRequest.ProtoReflect.Descriptor instead.
 func (*CreateRunnerPoolRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{57}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *CreateRunnerPoolRequest) GetProjectId() string {
@@ -5095,7 +6718,7 @@ type CreateRunnerPoolResponse struct {
 
 func (x *CreateRunnerPoolResponse) Reset() {
 	*x = CreateRunnerPoolResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[58]
+	mi := &file_slipway_v1_runs_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5107,7 +6730,7 @@ func (x *CreateRunnerPoolResponse) String() string {
 func (*CreateRunnerPoolResponse) ProtoMessage() {}
 
 func (x *CreateRunnerPoolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[58]
+	mi := &file_slipway_v1_runs_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5120,7 +6743,7 @@ func (x *CreateRunnerPoolResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRunnerPoolResponse.ProtoReflect.Descriptor instead.
 func (*CreateRunnerPoolResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{58}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *CreateRunnerPoolResponse) GetPool() *RunnerPool {
@@ -5149,7 +6772,7 @@ type UpdateRunnerPoolRequest struct {
 
 func (x *UpdateRunnerPoolRequest) Reset() {
 	*x = UpdateRunnerPoolRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[59]
+	mi := &file_slipway_v1_runs_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5161,7 +6784,7 @@ func (x *UpdateRunnerPoolRequest) String() string {
 func (*UpdateRunnerPoolRequest) ProtoMessage() {}
 
 func (x *UpdateRunnerPoolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[59]
+	mi := &file_slipway_v1_runs_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5174,7 +6797,7 @@ func (x *UpdateRunnerPoolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateRunnerPoolRequest.ProtoReflect.Descriptor instead.
 func (*UpdateRunnerPoolRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{59}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *UpdateRunnerPoolRequest) GetId() string {
@@ -5249,7 +6872,7 @@ type UpdateRunnerPoolResponse struct {
 
 func (x *UpdateRunnerPoolResponse) Reset() {
 	*x = UpdateRunnerPoolResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[60]
+	mi := &file_slipway_v1_runs_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5261,7 +6884,7 @@ func (x *UpdateRunnerPoolResponse) String() string {
 func (*UpdateRunnerPoolResponse) ProtoMessage() {}
 
 func (x *UpdateRunnerPoolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[60]
+	mi := &file_slipway_v1_runs_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5274,7 +6897,7 @@ func (x *UpdateRunnerPoolResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateRunnerPoolResponse.ProtoReflect.Descriptor instead.
 func (*UpdateRunnerPoolResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{60}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *UpdateRunnerPoolResponse) GetPool() *RunnerPool {
@@ -5293,7 +6916,7 @@ type DeleteRunnerPoolRequest struct {
 
 func (x *DeleteRunnerPoolRequest) Reset() {
 	*x = DeleteRunnerPoolRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[61]
+	mi := &file_slipway_v1_runs_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5305,7 +6928,7 @@ func (x *DeleteRunnerPoolRequest) String() string {
 func (*DeleteRunnerPoolRequest) ProtoMessage() {}
 
 func (x *DeleteRunnerPoolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[61]
+	mi := &file_slipway_v1_runs_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5318,7 +6941,7 @@ func (x *DeleteRunnerPoolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRunnerPoolRequest.ProtoReflect.Descriptor instead.
 func (*DeleteRunnerPoolRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{61}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *DeleteRunnerPoolRequest) GetId() string {
@@ -5336,7 +6959,7 @@ type DeleteRunnerPoolResponse struct {
 
 func (x *DeleteRunnerPoolResponse) Reset() {
 	*x = DeleteRunnerPoolResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[62]
+	mi := &file_slipway_v1_runs_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5348,7 +6971,7 @@ func (x *DeleteRunnerPoolResponse) String() string {
 func (*DeleteRunnerPoolResponse) ProtoMessage() {}
 
 func (x *DeleteRunnerPoolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[62]
+	mi := &file_slipway_v1_runs_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5361,7 +6984,7 @@ func (x *DeleteRunnerPoolResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRunnerPoolResponse.ProtoReflect.Descriptor instead.
 func (*DeleteRunnerPoolResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{62}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{78}
 }
 
 type CreateRegistrationTokenRequest struct {
@@ -5376,7 +6999,7 @@ type CreateRegistrationTokenRequest struct {
 
 func (x *CreateRegistrationTokenRequest) Reset() {
 	*x = CreateRegistrationTokenRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[63]
+	mi := &file_slipway_v1_runs_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5388,7 +7011,7 @@ func (x *CreateRegistrationTokenRequest) String() string {
 func (*CreateRegistrationTokenRequest) ProtoMessage() {}
 
 func (x *CreateRegistrationTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[63]
+	mi := &file_slipway_v1_runs_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5401,7 +7024,7 @@ func (x *CreateRegistrationTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRegistrationTokenRequest.ProtoReflect.Descriptor instead.
 func (*CreateRegistrationTokenRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{63}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{79}
 }
 
 func (x *CreateRegistrationTokenRequest) GetPoolId() string {
@@ -5445,7 +7068,7 @@ type CreateRegistrationTokenResponse struct {
 
 func (x *CreateRegistrationTokenResponse) Reset() {
 	*x = CreateRegistrationTokenResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[64]
+	mi := &file_slipway_v1_runs_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5457,7 +7080,7 @@ func (x *CreateRegistrationTokenResponse) String() string {
 func (*CreateRegistrationTokenResponse) ProtoMessage() {}
 
 func (x *CreateRegistrationTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[64]
+	mi := &file_slipway_v1_runs_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5470,7 +7093,7 @@ func (x *CreateRegistrationTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRegistrationTokenResponse.ProtoReflect.Descriptor instead.
 func (*CreateRegistrationTokenResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{64}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *CreateRegistrationTokenResponse) GetToken() *RegistrationToken {
@@ -5503,7 +7126,7 @@ type ListRegistrationTokensRequest struct {
 
 func (x *ListRegistrationTokensRequest) Reset() {
 	*x = ListRegistrationTokensRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[65]
+	mi := &file_slipway_v1_runs_proto_msgTypes[81]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5515,7 +7138,7 @@ func (x *ListRegistrationTokensRequest) String() string {
 func (*ListRegistrationTokensRequest) ProtoMessage() {}
 
 func (x *ListRegistrationTokensRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[65]
+	mi := &file_slipway_v1_runs_proto_msgTypes[81]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5528,7 +7151,7 @@ func (x *ListRegistrationTokensRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRegistrationTokensRequest.ProtoReflect.Descriptor instead.
 func (*ListRegistrationTokensRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{65}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{81}
 }
 
 func (x *ListRegistrationTokensRequest) GetPoolId() string {
@@ -5547,7 +7170,7 @@ type ListRegistrationTokensResponse struct {
 
 func (x *ListRegistrationTokensResponse) Reset() {
 	*x = ListRegistrationTokensResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[66]
+	mi := &file_slipway_v1_runs_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5559,7 +7182,7 @@ func (x *ListRegistrationTokensResponse) String() string {
 func (*ListRegistrationTokensResponse) ProtoMessage() {}
 
 func (x *ListRegistrationTokensResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[66]
+	mi := &file_slipway_v1_runs_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5572,7 +7195,7 @@ func (x *ListRegistrationTokensResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRegistrationTokensResponse.ProtoReflect.Descriptor instead.
 func (*ListRegistrationTokensResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{66}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{82}
 }
 
 func (x *ListRegistrationTokensResponse) GetItems() []*RegistrationToken {
@@ -5591,7 +7214,7 @@ type RevokeRegistrationTokenRequest struct {
 
 func (x *RevokeRegistrationTokenRequest) Reset() {
 	*x = RevokeRegistrationTokenRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[67]
+	mi := &file_slipway_v1_runs_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5603,7 +7226,7 @@ func (x *RevokeRegistrationTokenRequest) String() string {
 func (*RevokeRegistrationTokenRequest) ProtoMessage() {}
 
 func (x *RevokeRegistrationTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[67]
+	mi := &file_slipway_v1_runs_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5616,7 +7239,7 @@ func (x *RevokeRegistrationTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeRegistrationTokenRequest.ProtoReflect.Descriptor instead.
 func (*RevokeRegistrationTokenRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{67}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{83}
 }
 
 func (x *RevokeRegistrationTokenRequest) GetId() string {
@@ -5634,7 +7257,7 @@ type RevokeRegistrationTokenResponse struct {
 
 func (x *RevokeRegistrationTokenResponse) Reset() {
 	*x = RevokeRegistrationTokenResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[68]
+	mi := &file_slipway_v1_runs_proto_msgTypes[84]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5646,7 +7269,7 @@ func (x *RevokeRegistrationTokenResponse) String() string {
 func (*RevokeRegistrationTokenResponse) ProtoMessage() {}
 
 func (x *RevokeRegistrationTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[68]
+	mi := &file_slipway_v1_runs_proto_msgTypes[84]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5659,7 +7282,7 @@ func (x *RevokeRegistrationTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeRegistrationTokenResponse.ProtoReflect.Descriptor instead.
 func (*RevokeRegistrationTokenResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{68}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{84}
 }
 
 type ListRunnersRequest struct {
@@ -5672,7 +7295,7 @@ type ListRunnersRequest struct {
 
 func (x *ListRunnersRequest) Reset() {
 	*x = ListRunnersRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[69]
+	mi := &file_slipway_v1_runs_proto_msgTypes[85]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5684,7 +7307,7 @@ func (x *ListRunnersRequest) String() string {
 func (*ListRunnersRequest) ProtoMessage() {}
 
 func (x *ListRunnersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[69]
+	mi := &file_slipway_v1_runs_proto_msgTypes[85]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5697,7 +7320,7 @@ func (x *ListRunnersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRunnersRequest.ProtoReflect.Descriptor instead.
 func (*ListRunnersRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{69}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{85}
 }
 
 func (x *ListRunnersRequest) GetPoolId() string {
@@ -5724,7 +7347,7 @@ type ListRunnersResponse struct {
 
 func (x *ListRunnersResponse) Reset() {
 	*x = ListRunnersResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[70]
+	mi := &file_slipway_v1_runs_proto_msgTypes[86]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5736,7 +7359,7 @@ func (x *ListRunnersResponse) String() string {
 func (*ListRunnersResponse) ProtoMessage() {}
 
 func (x *ListRunnersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[70]
+	mi := &file_slipway_v1_runs_proto_msgTypes[86]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5749,7 +7372,7 @@ func (x *ListRunnersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRunnersResponse.ProtoReflect.Descriptor instead.
 func (*ListRunnersResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{70}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{86}
 }
 
 func (x *ListRunnersResponse) GetItems() []*Runner {
@@ -5775,7 +7398,7 @@ type GetRunnerRequest struct {
 
 func (x *GetRunnerRequest) Reset() {
 	*x = GetRunnerRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[71]
+	mi := &file_slipway_v1_runs_proto_msgTypes[87]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5787,7 +7410,7 @@ func (x *GetRunnerRequest) String() string {
 func (*GetRunnerRequest) ProtoMessage() {}
 
 func (x *GetRunnerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[71]
+	mi := &file_slipway_v1_runs_proto_msgTypes[87]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5800,7 +7423,7 @@ func (x *GetRunnerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRunnerRequest.ProtoReflect.Descriptor instead.
 func (*GetRunnerRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{71}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{87}
 }
 
 func (x *GetRunnerRequest) GetId() string {
@@ -5820,7 +7443,7 @@ type GetRunnerResponse struct {
 
 func (x *GetRunnerResponse) Reset() {
 	*x = GetRunnerResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[72]
+	mi := &file_slipway_v1_runs_proto_msgTypes[88]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5832,7 +7455,7 @@ func (x *GetRunnerResponse) String() string {
 func (*GetRunnerResponse) ProtoMessage() {}
 
 func (x *GetRunnerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[72]
+	mi := &file_slipway_v1_runs_proto_msgTypes[88]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5845,7 +7468,7 @@ func (x *GetRunnerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRunnerResponse.ProtoReflect.Descriptor instead.
 func (*GetRunnerResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{72}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{88}
 }
 
 func (x *GetRunnerResponse) GetRunner() *Runner {
@@ -5875,7 +7498,7 @@ type UpdateRunnerRequest struct {
 
 func (x *UpdateRunnerRequest) Reset() {
 	*x = UpdateRunnerRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[73]
+	mi := &file_slipway_v1_runs_proto_msgTypes[89]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5887,7 +7510,7 @@ func (x *UpdateRunnerRequest) String() string {
 func (*UpdateRunnerRequest) ProtoMessage() {}
 
 func (x *UpdateRunnerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[73]
+	mi := &file_slipway_v1_runs_proto_msgTypes[89]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5900,7 +7523,7 @@ func (x *UpdateRunnerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateRunnerRequest.ProtoReflect.Descriptor instead.
 func (*UpdateRunnerRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{73}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{89}
 }
 
 func (x *UpdateRunnerRequest) GetId() string {
@@ -5947,7 +7570,7 @@ type UpdateRunnerResponse struct {
 
 func (x *UpdateRunnerResponse) Reset() {
 	*x = UpdateRunnerResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[74]
+	mi := &file_slipway_v1_runs_proto_msgTypes[90]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5959,7 +7582,7 @@ func (x *UpdateRunnerResponse) String() string {
 func (*UpdateRunnerResponse) ProtoMessage() {}
 
 func (x *UpdateRunnerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[74]
+	mi := &file_slipway_v1_runs_proto_msgTypes[90]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5972,7 +7595,7 @@ func (x *UpdateRunnerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateRunnerResponse.ProtoReflect.Descriptor instead.
 func (*UpdateRunnerResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{74}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{90}
 }
 
 func (x *UpdateRunnerResponse) GetRunner() *Runner {
@@ -5991,7 +7614,7 @@ type DeleteRunnerRequest struct {
 
 func (x *DeleteRunnerRequest) Reset() {
 	*x = DeleteRunnerRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[75]
+	mi := &file_slipway_v1_runs_proto_msgTypes[91]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6003,7 +7626,7 @@ func (x *DeleteRunnerRequest) String() string {
 func (*DeleteRunnerRequest) ProtoMessage() {}
 
 func (x *DeleteRunnerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[75]
+	mi := &file_slipway_v1_runs_proto_msgTypes[91]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6016,7 +7639,7 @@ func (x *DeleteRunnerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRunnerRequest.ProtoReflect.Descriptor instead.
 func (*DeleteRunnerRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{75}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{91}
 }
 
 func (x *DeleteRunnerRequest) GetId() string {
@@ -6034,7 +7657,7 @@ type DeleteRunnerResponse struct {
 
 func (x *DeleteRunnerResponse) Reset() {
 	*x = DeleteRunnerResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[76]
+	mi := &file_slipway_v1_runs_proto_msgTypes[92]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6046,7 +7669,7 @@ func (x *DeleteRunnerResponse) String() string {
 func (*DeleteRunnerResponse) ProtoMessage() {}
 
 func (x *DeleteRunnerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[76]
+	mi := &file_slipway_v1_runs_proto_msgTypes[92]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6059,7 +7682,7 @@ func (x *DeleteRunnerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRunnerResponse.ProtoReflect.Descriptor instead.
 func (*DeleteRunnerResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{76}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{92}
 }
 
 type LogLine struct {
@@ -6074,7 +7697,7 @@ type LogLine struct {
 
 func (x *LogLine) Reset() {
 	*x = LogLine{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[77]
+	mi := &file_slipway_v1_runs_proto_msgTypes[93]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6086,7 +7709,7 @@ func (x *LogLine) String() string {
 func (*LogLine) ProtoMessage() {}
 
 func (x *LogLine) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[77]
+	mi := &file_slipway_v1_runs_proto_msgTypes[93]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6099,7 +7722,7 @@ func (x *LogLine) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogLine.ProtoReflect.Descriptor instead.
 func (*LogLine) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{77}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{93}
 }
 
 func (x *LogLine) GetTs() *timestamppb.Timestamp {
@@ -6145,7 +7768,7 @@ type LogChunk struct {
 
 func (x *LogChunk) Reset() {
 	*x = LogChunk{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[78]
+	mi := &file_slipway_v1_runs_proto_msgTypes[94]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6157,7 +7780,7 @@ func (x *LogChunk) String() string {
 func (*LogChunk) ProtoMessage() {}
 
 func (x *LogChunk) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[78]
+	mi := &file_slipway_v1_runs_proto_msgTypes[94]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6170,7 +7793,7 @@ func (x *LogChunk) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogChunk.ProtoReflect.Descriptor instead.
 func (*LogChunk) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{78}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{94}
 }
 
 func (x *LogChunk) GetJobId() string {
@@ -6228,7 +7851,7 @@ type TailRequest struct {
 
 func (x *TailRequest) Reset() {
 	*x = TailRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[79]
+	mi := &file_slipway_v1_runs_proto_msgTypes[95]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6240,7 +7863,7 @@ func (x *TailRequest) String() string {
 func (*TailRequest) ProtoMessage() {}
 
 func (x *TailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[79]
+	mi := &file_slipway_v1_runs_proto_msgTypes[95]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6253,7 +7876,7 @@ func (x *TailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TailRequest.ProtoReflect.Descriptor instead.
 func (*TailRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{79}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{95}
 }
 
 func (x *TailRequest) GetJobId() string {
@@ -6303,7 +7926,7 @@ type TailResponse struct {
 
 func (x *TailResponse) Reset() {
 	*x = TailResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[80]
+	mi := &file_slipway_v1_runs_proto_msgTypes[96]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6315,7 +7938,7 @@ func (x *TailResponse) String() string {
 func (*TailResponse) ProtoMessage() {}
 
 func (x *TailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[80]
+	mi := &file_slipway_v1_runs_proto_msgTypes[96]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6328,7 +7951,7 @@ func (x *TailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TailResponse.ProtoReflect.Descriptor instead.
 func (*TailResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{80}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{96}
 }
 
 func (x *TailResponse) GetStepIndex() int32 {
@@ -6372,7 +7995,7 @@ type GetLogsRequest struct {
 
 func (x *GetLogsRequest) Reset() {
 	*x = GetLogsRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[81]
+	mi := &file_slipway_v1_runs_proto_msgTypes[97]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6384,7 +8007,7 @@ func (x *GetLogsRequest) String() string {
 func (*GetLogsRequest) ProtoMessage() {}
 
 func (x *GetLogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[81]
+	mi := &file_slipway_v1_runs_proto_msgTypes[97]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6397,7 +8020,7 @@ func (x *GetLogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLogsRequest.ProtoReflect.Descriptor instead.
 func (*GetLogsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{81}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{97}
 }
 
 func (x *GetLogsRequest) GetJobId() string {
@@ -6446,7 +8069,7 @@ type GetLogsResponse struct {
 
 func (x *GetLogsResponse) Reset() {
 	*x = GetLogsResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[82]
+	mi := &file_slipway_v1_runs_proto_msgTypes[98]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6458,7 +8081,7 @@ func (x *GetLogsResponse) String() string {
 func (*GetLogsResponse) ProtoMessage() {}
 
 func (x *GetLogsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[82]
+	mi := &file_slipway_v1_runs_proto_msgTypes[98]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6471,7 +8094,7 @@ func (x *GetLogsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLogsResponse.ProtoReflect.Descriptor instead.
 func (*GetLogsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{82}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{98}
 }
 
 func (x *GetLogsResponse) GetLines() []*LogLine {
@@ -6509,7 +8132,7 @@ type SearchLogsRequest struct {
 
 func (x *SearchLogsRequest) Reset() {
 	*x = SearchLogsRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[83]
+	mi := &file_slipway_v1_runs_proto_msgTypes[99]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6521,7 +8144,7 @@ func (x *SearchLogsRequest) String() string {
 func (*SearchLogsRequest) ProtoMessage() {}
 
 func (x *SearchLogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[83]
+	mi := &file_slipway_v1_runs_proto_msgTypes[99]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6534,7 +8157,7 @@ func (x *SearchLogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchLogsRequest.ProtoReflect.Descriptor instead.
 func (*SearchLogsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{83}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{99}
 }
 
 func (x *SearchLogsRequest) GetJobId() string {
@@ -6591,7 +8214,7 @@ type LogMatch struct {
 
 func (x *LogMatch) Reset() {
 	*x = LogMatch{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[84]
+	mi := &file_slipway_v1_runs_proto_msgTypes[100]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6603,7 +8226,7 @@ func (x *LogMatch) String() string {
 func (*LogMatch) ProtoMessage() {}
 
 func (x *LogMatch) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[84]
+	mi := &file_slipway_v1_runs_proto_msgTypes[100]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6616,7 +8239,7 @@ func (x *LogMatch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogMatch.ProtoReflect.Descriptor instead.
 func (*LogMatch) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{84}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{100}
 }
 
 func (x *LogMatch) GetStepIndex() int32 {
@@ -6657,7 +8280,7 @@ type SearchLogsResponse struct {
 
 func (x *SearchLogsResponse) Reset() {
 	*x = SearchLogsResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[85]
+	mi := &file_slipway_v1_runs_proto_msgTypes[101]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6669,7 +8292,7 @@ func (x *SearchLogsResponse) String() string {
 func (*SearchLogsResponse) ProtoMessage() {}
 
 func (x *SearchLogsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[85]
+	mi := &file_slipway_v1_runs_proto_msgTypes[101]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6682,7 +8305,7 @@ func (x *SearchLogsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchLogsResponse.ProtoReflect.Descriptor instead.
 func (*SearchLogsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{85}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{101}
 }
 
 func (x *SearchLogsResponse) GetMatches() []*LogMatch {
@@ -6709,7 +8332,7 @@ type GetLogDownloadRequest struct {
 
 func (x *GetLogDownloadRequest) Reset() {
 	*x = GetLogDownloadRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[86]
+	mi := &file_slipway_v1_runs_proto_msgTypes[102]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6721,7 +8344,7 @@ func (x *GetLogDownloadRequest) String() string {
 func (*GetLogDownloadRequest) ProtoMessage() {}
 
 func (x *GetLogDownloadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[86]
+	mi := &file_slipway_v1_runs_proto_msgTypes[102]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6734,7 +8357,7 @@ func (x *GetLogDownloadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLogDownloadRequest.ProtoReflect.Descriptor instead.
 func (*GetLogDownloadRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{86}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{102}
 }
 
 func (x *GetLogDownloadRequest) GetJobId() string {
@@ -6761,7 +8384,7 @@ type GetLogDownloadResponse struct {
 
 func (x *GetLogDownloadResponse) Reset() {
 	*x = GetLogDownloadResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[87]
+	mi := &file_slipway_v1_runs_proto_msgTypes[103]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6773,7 +8396,7 @@ func (x *GetLogDownloadResponse) String() string {
 func (*GetLogDownloadResponse) ProtoMessage() {}
 
 func (x *GetLogDownloadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[87]
+	mi := &file_slipway_v1_runs_proto_msgTypes[103]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6786,7 +8409,7 @@ func (x *GetLogDownloadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLogDownloadResponse.ProtoReflect.Descriptor instead.
 func (*GetLogDownloadResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{87}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{103}
 }
 
 func (x *GetLogDownloadResponse) GetUrl() string {
@@ -6815,7 +8438,7 @@ type ListArtifactsRequest struct {
 
 func (x *ListArtifactsRequest) Reset() {
 	*x = ListArtifactsRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[88]
+	mi := &file_slipway_v1_runs_proto_msgTypes[104]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6827,7 +8450,7 @@ func (x *ListArtifactsRequest) String() string {
 func (*ListArtifactsRequest) ProtoMessage() {}
 
 func (x *ListArtifactsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[88]
+	mi := &file_slipway_v1_runs_proto_msgTypes[104]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6840,7 +8463,7 @@ func (x *ListArtifactsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListArtifactsRequest.ProtoReflect.Descriptor instead.
 func (*ListArtifactsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{88}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{104}
 }
 
 func (x *ListArtifactsRequest) GetRunId() string {
@@ -6881,7 +8504,7 @@ type ListArtifactsResponse struct {
 
 func (x *ListArtifactsResponse) Reset() {
 	*x = ListArtifactsResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[89]
+	mi := &file_slipway_v1_runs_proto_msgTypes[105]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6893,7 +8516,7 @@ func (x *ListArtifactsResponse) String() string {
 func (*ListArtifactsResponse) ProtoMessage() {}
 
 func (x *ListArtifactsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[89]
+	mi := &file_slipway_v1_runs_proto_msgTypes[105]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6906,7 +8529,7 @@ func (x *ListArtifactsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListArtifactsResponse.ProtoReflect.Descriptor instead.
 func (*ListArtifactsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{89}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{105}
 }
 
 func (x *ListArtifactsResponse) GetItems() []*RunArtifact {
@@ -6932,7 +8555,7 @@ type GetArtifactRequest struct {
 
 func (x *GetArtifactRequest) Reset() {
 	*x = GetArtifactRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[90]
+	mi := &file_slipway_v1_runs_proto_msgTypes[106]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6944,7 +8567,7 @@ func (x *GetArtifactRequest) String() string {
 func (*GetArtifactRequest) ProtoMessage() {}
 
 func (x *GetArtifactRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[90]
+	mi := &file_slipway_v1_runs_proto_msgTypes[106]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6957,7 +8580,7 @@ func (x *GetArtifactRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetArtifactRequest.ProtoReflect.Descriptor instead.
 func (*GetArtifactRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{90}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{106}
 }
 
 func (x *GetArtifactRequest) GetId() string {
@@ -6976,7 +8599,7 @@ type GetArtifactResponse struct {
 
 func (x *GetArtifactResponse) Reset() {
 	*x = GetArtifactResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[91]
+	mi := &file_slipway_v1_runs_proto_msgTypes[107]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6988,7 +8611,7 @@ func (x *GetArtifactResponse) String() string {
 func (*GetArtifactResponse) ProtoMessage() {}
 
 func (x *GetArtifactResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[91]
+	mi := &file_slipway_v1_runs_proto_msgTypes[107]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7001,7 +8624,7 @@ func (x *GetArtifactResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetArtifactResponse.ProtoReflect.Descriptor instead.
 func (*GetArtifactResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{91}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{107}
 }
 
 func (x *GetArtifactResponse) GetArtifact() *RunArtifact {
@@ -7020,7 +8643,7 @@ type GetArtifactDownloadUrlRequest struct {
 
 func (x *GetArtifactDownloadUrlRequest) Reset() {
 	*x = GetArtifactDownloadUrlRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[92]
+	mi := &file_slipway_v1_runs_proto_msgTypes[108]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7032,7 +8655,7 @@ func (x *GetArtifactDownloadUrlRequest) String() string {
 func (*GetArtifactDownloadUrlRequest) ProtoMessage() {}
 
 func (x *GetArtifactDownloadUrlRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[92]
+	mi := &file_slipway_v1_runs_proto_msgTypes[108]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7045,7 +8668,7 @@ func (x *GetArtifactDownloadUrlRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetArtifactDownloadUrlRequest.ProtoReflect.Descriptor instead.
 func (*GetArtifactDownloadUrlRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{92}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{108}
 }
 
 func (x *GetArtifactDownloadUrlRequest) GetId() string {
@@ -7065,7 +8688,7 @@ type GetArtifactDownloadUrlResponse struct {
 
 func (x *GetArtifactDownloadUrlResponse) Reset() {
 	*x = GetArtifactDownloadUrlResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[93]
+	mi := &file_slipway_v1_runs_proto_msgTypes[109]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7077,7 +8700,7 @@ func (x *GetArtifactDownloadUrlResponse) String() string {
 func (*GetArtifactDownloadUrlResponse) ProtoMessage() {}
 
 func (x *GetArtifactDownloadUrlResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[93]
+	mi := &file_slipway_v1_runs_proto_msgTypes[109]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7090,7 +8713,7 @@ func (x *GetArtifactDownloadUrlResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetArtifactDownloadUrlResponse.ProtoReflect.Descriptor instead.
 func (*GetArtifactDownloadUrlResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{93}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{109}
 }
 
 func (x *GetArtifactDownloadUrlResponse) GetUrl() string {
@@ -7116,7 +8739,7 @@ type DeleteArtifactRequest struct {
 
 func (x *DeleteArtifactRequest) Reset() {
 	*x = DeleteArtifactRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[94]
+	mi := &file_slipway_v1_runs_proto_msgTypes[110]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7128,7 +8751,7 @@ func (x *DeleteArtifactRequest) String() string {
 func (*DeleteArtifactRequest) ProtoMessage() {}
 
 func (x *DeleteArtifactRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[94]
+	mi := &file_slipway_v1_runs_proto_msgTypes[110]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7141,7 +8764,7 @@ func (x *DeleteArtifactRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteArtifactRequest.ProtoReflect.Descriptor instead.
 func (*DeleteArtifactRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{94}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{110}
 }
 
 func (x *DeleteArtifactRequest) GetId() string {
@@ -7159,7 +8782,7 @@ type DeleteArtifactResponse struct {
 
 func (x *DeleteArtifactResponse) Reset() {
 	*x = DeleteArtifactResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[95]
+	mi := &file_slipway_v1_runs_proto_msgTypes[111]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7171,7 +8794,7 @@ func (x *DeleteArtifactResponse) String() string {
 func (*DeleteArtifactResponse) ProtoMessage() {}
 
 func (x *DeleteArtifactResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[95]
+	mi := &file_slipway_v1_runs_proto_msgTypes[111]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7184,7 +8807,7 @@ func (x *DeleteArtifactResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteArtifactResponse.ProtoReflect.Descriptor instead.
 func (*DeleteArtifactResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{95}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{111}
 }
 
 type ListCacheEntriesRequest struct {
@@ -7197,7 +8820,7 @@ type ListCacheEntriesRequest struct {
 
 func (x *ListCacheEntriesRequest) Reset() {
 	*x = ListCacheEntriesRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[96]
+	mi := &file_slipway_v1_runs_proto_msgTypes[112]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7209,7 +8832,7 @@ func (x *ListCacheEntriesRequest) String() string {
 func (*ListCacheEntriesRequest) ProtoMessage() {}
 
 func (x *ListCacheEntriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[96]
+	mi := &file_slipway_v1_runs_proto_msgTypes[112]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7222,7 +8845,7 @@ func (x *ListCacheEntriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCacheEntriesRequest.ProtoReflect.Descriptor instead.
 func (*ListCacheEntriesRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{96}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{112}
 }
 
 func (x *ListCacheEntriesRequest) GetProjectId() string {
@@ -7249,7 +8872,7 @@ type ListCacheEntriesResponse struct {
 
 func (x *ListCacheEntriesResponse) Reset() {
 	*x = ListCacheEntriesResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[97]
+	mi := &file_slipway_v1_runs_proto_msgTypes[113]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7261,7 +8884,7 @@ func (x *ListCacheEntriesResponse) String() string {
 func (*ListCacheEntriesResponse) ProtoMessage() {}
 
 func (x *ListCacheEntriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[97]
+	mi := &file_slipway_v1_runs_proto_msgTypes[113]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7274,7 +8897,7 @@ func (x *ListCacheEntriesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCacheEntriesResponse.ProtoReflect.Descriptor instead.
 func (*ListCacheEntriesResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{97}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{113}
 }
 
 func (x *ListCacheEntriesResponse) GetItems() []*CacheEntry {
@@ -7300,7 +8923,7 @@ type DeleteCacheEntryRequest struct {
 
 func (x *DeleteCacheEntryRequest) Reset() {
 	*x = DeleteCacheEntryRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[98]
+	mi := &file_slipway_v1_runs_proto_msgTypes[114]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7312,7 +8935,7 @@ func (x *DeleteCacheEntryRequest) String() string {
 func (*DeleteCacheEntryRequest) ProtoMessage() {}
 
 func (x *DeleteCacheEntryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[98]
+	mi := &file_slipway_v1_runs_proto_msgTypes[114]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7325,7 +8948,7 @@ func (x *DeleteCacheEntryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCacheEntryRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCacheEntryRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{98}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{114}
 }
 
 func (x *DeleteCacheEntryRequest) GetId() string {
@@ -7343,7 +8966,7 @@ type DeleteCacheEntryResponse struct {
 
 func (x *DeleteCacheEntryResponse) Reset() {
 	*x = DeleteCacheEntryResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[99]
+	mi := &file_slipway_v1_runs_proto_msgTypes[115]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7355,7 +8978,7 @@ func (x *DeleteCacheEntryResponse) String() string {
 func (*DeleteCacheEntryResponse) ProtoMessage() {}
 
 func (x *DeleteCacheEntryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[99]
+	mi := &file_slipway_v1_runs_proto_msgTypes[115]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7368,7 +8991,7 @@ func (x *DeleteCacheEntryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCacheEntryResponse.ProtoReflect.Descriptor instead.
 func (*DeleteCacheEntryResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{99}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{115}
 }
 
 type DeregisterRequest struct {
@@ -7379,7 +9002,7 @@ type DeregisterRequest struct {
 
 func (x *DeregisterRequest) Reset() {
 	*x = DeregisterRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[100]
+	mi := &file_slipway_v1_runs_proto_msgTypes[116]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7391,7 +9014,7 @@ func (x *DeregisterRequest) String() string {
 func (*DeregisterRequest) ProtoMessage() {}
 
 func (x *DeregisterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[100]
+	mi := &file_slipway_v1_runs_proto_msgTypes[116]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7404,7 +9027,7 @@ func (x *DeregisterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeregisterRequest.ProtoReflect.Descriptor instead.
 func (*DeregisterRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{100}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{116}
 }
 
 type DeregisterResponse struct {
@@ -7415,7 +9038,7 @@ type DeregisterResponse struct {
 
 func (x *DeregisterResponse) Reset() {
 	*x = DeregisterResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[101]
+	mi := &file_slipway_v1_runs_proto_msgTypes[117]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7427,7 +9050,7 @@ func (x *DeregisterResponse) String() string {
 func (*DeregisterResponse) ProtoMessage() {}
 
 func (x *DeregisterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[101]
+	mi := &file_slipway_v1_runs_proto_msgTypes[117]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7440,7 +9063,7 @@ func (x *DeregisterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeregisterResponse.ProtoReflect.Descriptor instead.
 func (*DeregisterResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{101}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{117}
 }
 
 // GetRunnerDownloadRequest asks for the runner build to run: always the control plane's own version.
@@ -7454,7 +9077,7 @@ type GetRunnerDownloadRequest struct {
 
 func (x *GetRunnerDownloadRequest) Reset() {
 	*x = GetRunnerDownloadRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[102]
+	mi := &file_slipway_v1_runs_proto_msgTypes[118]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7466,7 +9089,7 @@ func (x *GetRunnerDownloadRequest) String() string {
 func (*GetRunnerDownloadRequest) ProtoMessage() {}
 
 func (x *GetRunnerDownloadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[102]
+	mi := &file_slipway_v1_runs_proto_msgTypes[118]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7479,7 +9102,7 @@ func (x *GetRunnerDownloadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRunnerDownloadRequest.ProtoReflect.Descriptor instead.
 func (*GetRunnerDownloadRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{102}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{118}
 }
 
 func (x *GetRunnerDownloadRequest) GetOs() string {
@@ -7508,7 +9131,7 @@ type GetRunnerDownloadResponse struct {
 
 func (x *GetRunnerDownloadResponse) Reset() {
 	*x = GetRunnerDownloadResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[103]
+	mi := &file_slipway_v1_runs_proto_msgTypes[119]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7520,7 +9143,7 @@ func (x *GetRunnerDownloadResponse) String() string {
 func (*GetRunnerDownloadResponse) ProtoMessage() {}
 
 func (x *GetRunnerDownloadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[103]
+	mi := &file_slipway_v1_runs_proto_msgTypes[119]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7533,7 +9156,7 @@ func (x *GetRunnerDownloadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRunnerDownloadResponse.ProtoReflect.Descriptor instead.
 func (*GetRunnerDownloadResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{103}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{119}
 }
 
 func (x *GetRunnerDownloadResponse) GetVersion() string {
@@ -7584,7 +9207,7 @@ type RegisterRequest struct {
 
 func (x *RegisterRequest) Reset() {
 	*x = RegisterRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[104]
+	mi := &file_slipway_v1_runs_proto_msgTypes[120]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7596,7 +9219,7 @@ func (x *RegisterRequest) String() string {
 func (*RegisterRequest) ProtoMessage() {}
 
 func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[104]
+	mi := &file_slipway_v1_runs_proto_msgTypes[120]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7609,7 +9232,7 @@ func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
 func (*RegisterRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{104}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{120}
 }
 
 func (x *RegisterRequest) GetRegistrationToken() string {
@@ -7688,7 +9311,7 @@ type RegisterResponse struct {
 
 func (x *RegisterResponse) Reset() {
 	*x = RegisterResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[105]
+	mi := &file_slipway_v1_runs_proto_msgTypes[121]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7700,7 +9323,7 @@ func (x *RegisterResponse) String() string {
 func (*RegisterResponse) ProtoMessage() {}
 
 func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[105]
+	mi := &file_slipway_v1_runs_proto_msgTypes[121]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7713,7 +9336,7 @@ func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
 func (*RegisterResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{105}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{121}
 }
 
 func (x *RegisterResponse) GetRunnerId() string {
@@ -7762,7 +9385,7 @@ type JobRef struct {
 
 func (x *JobRef) Reset() {
 	*x = JobRef{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[106]
+	mi := &file_slipway_v1_runs_proto_msgTypes[122]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7774,7 +9397,7 @@ func (x *JobRef) String() string {
 func (*JobRef) ProtoMessage() {}
 
 func (x *JobRef) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[106]
+	mi := &file_slipway_v1_runs_proto_msgTypes[122]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7787,7 +9410,7 @@ func (x *JobRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JobRef.ProtoReflect.Descriptor instead.
 func (*JobRef) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{106}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{122}
 }
 
 func (x *JobRef) GetJobId() string {
@@ -7822,7 +9445,7 @@ type ConnectRequest struct {
 
 func (x *ConnectRequest) Reset() {
 	*x = ConnectRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[107]
+	mi := &file_slipway_v1_runs_proto_msgTypes[123]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7834,7 +9457,7 @@ func (x *ConnectRequest) String() string {
 func (*ConnectRequest) ProtoMessage() {}
 
 func (x *ConnectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[107]
+	mi := &file_slipway_v1_runs_proto_msgTypes[123]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7847,7 +9470,7 @@ func (x *ConnectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectRequest.ProtoReflect.Descriptor instead.
 func (*ConnectRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{107}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{123}
 }
 
 func (x *ConnectRequest) GetMsg() isConnectRequest_Msg {
@@ -7978,7 +9601,7 @@ type JobRejected struct {
 
 func (x *JobRejected) Reset() {
 	*x = JobRejected{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[108]
+	mi := &file_slipway_v1_runs_proto_msgTypes[124]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7990,7 +9613,7 @@ func (x *JobRejected) String() string {
 func (*JobRejected) ProtoMessage() {}
 
 func (x *JobRejected) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[108]
+	mi := &file_slipway_v1_runs_proto_msgTypes[124]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8003,7 +9626,7 @@ func (x *JobRejected) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JobRejected.ProtoReflect.Descriptor instead.
 func (*JobRejected) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{108}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{124}
 }
 
 func (x *JobRejected) GetJob() *JobRef {
@@ -8034,7 +9657,7 @@ type Hello struct {
 
 func (x *Hello) Reset() {
 	*x = Hello{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[109]
+	mi := &file_slipway_v1_runs_proto_msgTypes[125]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8046,7 +9669,7 @@ func (x *Hello) String() string {
 func (*Hello) ProtoMessage() {}
 
 func (x *Hello) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[109]
+	mi := &file_slipway_v1_runs_proto_msgTypes[125]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8059,7 +9682,7 @@ func (x *Hello) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Hello.ProtoReflect.Descriptor instead.
 func (*Hello) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{109}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{125}
 }
 
 func (x *Hello) GetRunnerToken() string {
@@ -8119,7 +9742,7 @@ type Heartbeat struct {
 
 func (x *Heartbeat) Reset() {
 	*x = Heartbeat{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[110]
+	mi := &file_slipway_v1_runs_proto_msgTypes[126]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8131,7 +9754,7 @@ func (x *Heartbeat) String() string {
 func (*Heartbeat) ProtoMessage() {}
 
 func (x *Heartbeat) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[110]
+	mi := &file_slipway_v1_runs_proto_msgTypes[126]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8144,7 +9767,7 @@ func (x *Heartbeat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Heartbeat.ProtoReflect.Descriptor instead.
 func (*Heartbeat) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{110}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{126}
 }
 
 func (x *Heartbeat) GetRunning() []*JobRef {
@@ -8191,7 +9814,7 @@ type JobAccepted struct {
 
 func (x *JobAccepted) Reset() {
 	*x = JobAccepted{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[111]
+	mi := &file_slipway_v1_runs_proto_msgTypes[127]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8203,7 +9826,7 @@ func (x *JobAccepted) String() string {
 func (*JobAccepted) ProtoMessage() {}
 
 func (x *JobAccepted) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[111]
+	mi := &file_slipway_v1_runs_proto_msgTypes[127]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8216,7 +9839,7 @@ func (x *JobAccepted) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JobAccepted.ProtoReflect.Descriptor instead.
 func (*JobAccepted) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{111}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{127}
 }
 
 func (x *JobAccepted) GetJob() *JobRef {
@@ -8242,7 +9865,7 @@ type StepUpdate struct {
 
 func (x *StepUpdate) Reset() {
 	*x = StepUpdate{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[112]
+	mi := &file_slipway_v1_runs_proto_msgTypes[128]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8254,7 +9877,7 @@ func (x *StepUpdate) String() string {
 func (*StepUpdate) ProtoMessage() {}
 
 func (x *StepUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[112]
+	mi := &file_slipway_v1_runs_proto_msgTypes[128]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8267,7 +9890,7 @@ func (x *StepUpdate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StepUpdate.ProtoReflect.Descriptor instead.
 func (*StepUpdate) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{112}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{128}
 }
 
 func (x *StepUpdate) GetJob() *JobRef {
@@ -8338,7 +9961,7 @@ type JobResult struct {
 
 func (x *JobResult) Reset() {
 	*x = JobResult{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[113]
+	mi := &file_slipway_v1_runs_proto_msgTypes[129]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8350,7 +9973,7 @@ func (x *JobResult) String() string {
 func (*JobResult) ProtoMessage() {}
 
 func (x *JobResult) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[113]
+	mi := &file_slipway_v1_runs_proto_msgTypes[129]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8363,7 +9986,7 @@ func (x *JobResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JobResult.ProtoReflect.Descriptor instead.
 func (*JobResult) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{113}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{129}
 }
 
 func (x *JobResult) GetJob() *JobRef {
@@ -8413,7 +10036,7 @@ type ConnectResponse struct {
 
 func (x *ConnectResponse) Reset() {
 	*x = ConnectResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[114]
+	mi := &file_slipway_v1_runs_proto_msgTypes[130]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8425,7 +10048,7 @@ func (x *ConnectResponse) String() string {
 func (*ConnectResponse) ProtoMessage() {}
 
 func (x *ConnectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[114]
+	mi := &file_slipway_v1_runs_proto_msgTypes[130]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8438,7 +10061,7 @@ func (x *ConnectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectResponse.ProtoReflect.Descriptor instead.
 func (*ConnectResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{114}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{130}
 }
 
 func (x *ConnectResponse) GetMsg() isConnectResponse_Msg {
@@ -8596,7 +10219,7 @@ type Welcome struct {
 
 func (x *Welcome) Reset() {
 	*x = Welcome{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[115]
+	mi := &file_slipway_v1_runs_proto_msgTypes[131]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8608,7 +10231,7 @@ func (x *Welcome) String() string {
 func (*Welcome) ProtoMessage() {}
 
 func (x *Welcome) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[115]
+	mi := &file_slipway_v1_runs_proto_msgTypes[131]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8621,7 +10244,7 @@ func (x *Welcome) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Welcome.ProtoReflect.Descriptor instead.
 func (*Welcome) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{115}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{131}
 }
 
 func (x *Welcome) GetRunnerId() string {
@@ -8730,7 +10353,7 @@ type JobAssignment struct {
 
 func (x *JobAssignment) Reset() {
 	*x = JobAssignment{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[116]
+	mi := &file_slipway_v1_runs_proto_msgTypes[132]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8742,7 +10365,7 @@ func (x *JobAssignment) String() string {
 func (*JobAssignment) ProtoMessage() {}
 
 func (x *JobAssignment) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[116]
+	mi := &file_slipway_v1_runs_proto_msgTypes[132]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8755,7 +10378,7 @@ func (x *JobAssignment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JobAssignment.ProtoReflect.Descriptor instead.
 func (*JobAssignment) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{116}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{132}
 }
 
 func (x *JobAssignment) GetJob() *JobRef {
@@ -8976,7 +10599,7 @@ type CancelJob struct {
 
 func (x *CancelJob) Reset() {
 	*x = CancelJob{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[117]
+	mi := &file_slipway_v1_runs_proto_msgTypes[133]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8988,7 +10611,7 @@ func (x *CancelJob) String() string {
 func (*CancelJob) ProtoMessage() {}
 
 func (x *CancelJob) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[117]
+	mi := &file_slipway_v1_runs_proto_msgTypes[133]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9001,7 +10624,7 @@ func (x *CancelJob) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelJob.ProtoReflect.Descriptor instead.
 func (*CancelJob) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{117}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{133}
 }
 
 func (x *CancelJob) GetJob() *JobRef {
@@ -9043,7 +10666,7 @@ type LogAck struct {
 
 func (x *LogAck) Reset() {
 	*x = LogAck{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[118]
+	mi := &file_slipway_v1_runs_proto_msgTypes[134]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9055,7 +10678,7 @@ func (x *LogAck) String() string {
 func (*LogAck) ProtoMessage() {}
 
 func (x *LogAck) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[118]
+	mi := &file_slipway_v1_runs_proto_msgTypes[134]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9068,7 +10691,7 @@ func (x *LogAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogAck.ProtoReflect.Descriptor instead.
 func (*LogAck) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{118}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{134}
 }
 
 func (x *LogAck) GetJob() *JobRef {
@@ -9108,7 +10731,7 @@ type ServerError struct {
 
 func (x *ServerError) Reset() {
 	*x = ServerError{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[119]
+	mi := &file_slipway_v1_runs_proto_msgTypes[135]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9120,7 +10743,7 @@ func (x *ServerError) String() string {
 func (*ServerError) ProtoMessage() {}
 
 func (x *ServerError) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[119]
+	mi := &file_slipway_v1_runs_proto_msgTypes[135]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9133,7 +10756,7 @@ func (x *ServerError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerError.ProtoReflect.Descriptor instead.
 func (*ServerError) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{119}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{135}
 }
 
 func (x *ServerError) GetCode() string {
@@ -9186,7 +10809,7 @@ type Drain struct {
 
 func (x *Drain) Reset() {
 	*x = Drain{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[120]
+	mi := &file_slipway_v1_runs_proto_msgTypes[136]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9198,7 +10821,7 @@ func (x *Drain) String() string {
 func (*Drain) ProtoMessage() {}
 
 func (x *Drain) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[120]
+	mi := &file_slipway_v1_runs_proto_msgTypes[136]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9211,7 +10834,7 @@ func (x *Drain) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Drain.ProtoReflect.Descriptor instead.
 func (*Drain) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{120}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{136}
 }
 
 // JobAck confirms that a job-critical report (accepted, step update, result) was recorded, or that the server holds
@@ -9228,7 +10851,7 @@ type JobAck struct {
 
 func (x *JobAck) Reset() {
 	*x = JobAck{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[121]
+	mi := &file_slipway_v1_runs_proto_msgTypes[137]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9240,7 +10863,7 @@ func (x *JobAck) String() string {
 func (*JobAck) ProtoMessage() {}
 
 func (x *JobAck) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[121]
+	mi := &file_slipway_v1_runs_proto_msgTypes[137]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9253,7 +10876,7 @@ func (x *JobAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JobAck.ProtoReflect.Descriptor instead.
 func (*JobAck) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{121}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{137}
 }
 
 func (x *JobAck) GetJob() *JobRef {
@@ -9295,7 +10918,7 @@ type Pong struct {
 
 func (x *Pong) Reset() {
 	*x = Pong{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[122]
+	mi := &file_slipway_v1_runs_proto_msgTypes[138]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9307,7 +10930,7 @@ func (x *Pong) String() string {
 func (*Pong) ProtoMessage() {}
 
 func (x *Pong) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[122]
+	mi := &file_slipway_v1_runs_proto_msgTypes[138]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9320,7 +10943,7 @@ func (x *Pong) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pong.ProtoReflect.Descriptor instead.
 func (*Pong) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{122}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{138}
 }
 
 func (x *Pong) GetNonce() string {
@@ -9350,7 +10973,7 @@ type CreateArtifactRequest struct {
 
 func (x *CreateArtifactRequest) Reset() {
 	*x = CreateArtifactRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[123]
+	mi := &file_slipway_v1_runs_proto_msgTypes[139]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9362,7 +10985,7 @@ func (x *CreateArtifactRequest) String() string {
 func (*CreateArtifactRequest) ProtoMessage() {}
 
 func (x *CreateArtifactRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[123]
+	mi := &file_slipway_v1_runs_proto_msgTypes[139]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9375,7 +10998,7 @@ func (x *CreateArtifactRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateArtifactRequest.ProtoReflect.Descriptor instead.
 func (*CreateArtifactRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{123}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{139}
 }
 
 func (x *CreateArtifactRequest) GetJob() *JobRef {
@@ -9425,7 +11048,7 @@ type CreateArtifactResponse struct {
 
 func (x *CreateArtifactResponse) Reset() {
 	*x = CreateArtifactResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[124]
+	mi := &file_slipway_v1_runs_proto_msgTypes[140]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9437,7 +11060,7 @@ func (x *CreateArtifactResponse) String() string {
 func (*CreateArtifactResponse) ProtoMessage() {}
 
 func (x *CreateArtifactResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[124]
+	mi := &file_slipway_v1_runs_proto_msgTypes[140]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9450,7 +11073,7 @@ func (x *CreateArtifactResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateArtifactResponse.ProtoReflect.Descriptor instead.
 func (*CreateArtifactResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{124}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{140}
 }
 
 func (x *CreateArtifactResponse) GetArtifactId() string {
@@ -9493,7 +11116,7 @@ type FinalizeArtifactRequest struct {
 
 func (x *FinalizeArtifactRequest) Reset() {
 	*x = FinalizeArtifactRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[125]
+	mi := &file_slipway_v1_runs_proto_msgTypes[141]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9505,7 +11128,7 @@ func (x *FinalizeArtifactRequest) String() string {
 func (*FinalizeArtifactRequest) ProtoMessage() {}
 
 func (x *FinalizeArtifactRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[125]
+	mi := &file_slipway_v1_runs_proto_msgTypes[141]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9518,7 +11141,7 @@ func (x *FinalizeArtifactRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinalizeArtifactRequest.ProtoReflect.Descriptor instead.
 func (*FinalizeArtifactRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{125}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{141}
 }
 
 func (x *FinalizeArtifactRequest) GetJob() *JobRef {
@@ -9558,7 +11181,7 @@ type FinalizeArtifactResponse struct {
 
 func (x *FinalizeArtifactResponse) Reset() {
 	*x = FinalizeArtifactResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[126]
+	mi := &file_slipway_v1_runs_proto_msgTypes[142]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9570,7 +11193,7 @@ func (x *FinalizeArtifactResponse) String() string {
 func (*FinalizeArtifactResponse) ProtoMessage() {}
 
 func (x *FinalizeArtifactResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[126]
+	mi := &file_slipway_v1_runs_proto_msgTypes[142]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9583,7 +11206,7 @@ func (x *FinalizeArtifactResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinalizeArtifactResponse.ProtoReflect.Descriptor instead.
 func (*FinalizeArtifactResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{126}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{142}
 }
 
 func (x *FinalizeArtifactResponse) GetArtifact() *RunArtifact {
@@ -9605,7 +11228,7 @@ type GetArtifactDownloadRequest struct {
 
 func (x *GetArtifactDownloadRequest) Reset() {
 	*x = GetArtifactDownloadRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[127]
+	mi := &file_slipway_v1_runs_proto_msgTypes[143]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9617,7 +11240,7 @@ func (x *GetArtifactDownloadRequest) String() string {
 func (*GetArtifactDownloadRequest) ProtoMessage() {}
 
 func (x *GetArtifactDownloadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[127]
+	mi := &file_slipway_v1_runs_proto_msgTypes[143]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9630,7 +11253,7 @@ func (x *GetArtifactDownloadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetArtifactDownloadRequest.ProtoReflect.Descriptor instead.
 func (*GetArtifactDownloadRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{127}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{143}
 }
 
 func (x *GetArtifactDownloadRequest) GetJob() *JobRef {
@@ -9674,7 +11297,7 @@ type GetArtifactDownloadResponse struct {
 
 func (x *GetArtifactDownloadResponse) Reset() {
 	*x = GetArtifactDownloadResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[128]
+	mi := &file_slipway_v1_runs_proto_msgTypes[144]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9686,7 +11309,7 @@ func (x *GetArtifactDownloadResponse) String() string {
 func (*GetArtifactDownloadResponse) ProtoMessage() {}
 
 func (x *GetArtifactDownloadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[128]
+	mi := &file_slipway_v1_runs_proto_msgTypes[144]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9699,7 +11322,7 @@ func (x *GetArtifactDownloadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetArtifactDownloadResponse.ProtoReflect.Descriptor instead.
 func (*GetArtifactDownloadResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{128}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{144}
 }
 
 func (x *GetArtifactDownloadResponse) GetArtifactId() string {
@@ -9750,7 +11373,7 @@ type LookupCacheRequest struct {
 
 func (x *LookupCacheRequest) Reset() {
 	*x = LookupCacheRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[129]
+	mi := &file_slipway_v1_runs_proto_msgTypes[145]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9762,7 +11385,7 @@ func (x *LookupCacheRequest) String() string {
 func (*LookupCacheRequest) ProtoMessage() {}
 
 func (x *LookupCacheRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[129]
+	mi := &file_slipway_v1_runs_proto_msgTypes[145]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9775,7 +11398,7 @@ func (x *LookupCacheRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LookupCacheRequest.ProtoReflect.Descriptor instead.
 func (*LookupCacheRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{129}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{145}
 }
 
 func (x *LookupCacheRequest) GetJob() *JobRef {
@@ -9827,7 +11450,7 @@ type LookupCacheResponse struct {
 
 func (x *LookupCacheResponse) Reset() {
 	*x = LookupCacheResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[130]
+	mi := &file_slipway_v1_runs_proto_msgTypes[146]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9839,7 +11462,7 @@ func (x *LookupCacheResponse) String() string {
 func (*LookupCacheResponse) ProtoMessage() {}
 
 func (x *LookupCacheResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[130]
+	mi := &file_slipway_v1_runs_proto_msgTypes[146]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9852,7 +11475,7 @@ func (x *LookupCacheResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LookupCacheResponse.ProtoReflect.Descriptor instead.
 func (*LookupCacheResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{130}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{146}
 }
 
 func (x *LookupCacheResponse) GetHit() bool {
@@ -9910,7 +11533,7 @@ type ReserveCacheRequest struct {
 
 func (x *ReserveCacheRequest) Reset() {
 	*x = ReserveCacheRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[131]
+	mi := &file_slipway_v1_runs_proto_msgTypes[147]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9922,7 +11545,7 @@ func (x *ReserveCacheRequest) String() string {
 func (*ReserveCacheRequest) ProtoMessage() {}
 
 func (x *ReserveCacheRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[131]
+	mi := &file_slipway_v1_runs_proto_msgTypes[147]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9935,7 +11558,7 @@ func (x *ReserveCacheRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReserveCacheRequest.ProtoReflect.Descriptor instead.
 func (*ReserveCacheRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{131}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{147}
 }
 
 func (x *ReserveCacheRequest) GetJob() *JobRef {
@@ -9986,7 +11609,7 @@ type ReserveCacheResponse struct {
 
 func (x *ReserveCacheResponse) Reset() {
 	*x = ReserveCacheResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[132]
+	mi := &file_slipway_v1_runs_proto_msgTypes[148]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9998,7 +11621,7 @@ func (x *ReserveCacheResponse) String() string {
 func (*ReserveCacheResponse) ProtoMessage() {}
 
 func (x *ReserveCacheResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[132]
+	mi := &file_slipway_v1_runs_proto_msgTypes[148]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10011,7 +11634,7 @@ func (x *ReserveCacheResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReserveCacheResponse.ProtoReflect.Descriptor instead.
 func (*ReserveCacheResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{132}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{148}
 }
 
 func (x *ReserveCacheResponse) GetAlreadyExists() bool {
@@ -10061,7 +11684,7 @@ type CommitCacheRequest struct {
 
 func (x *CommitCacheRequest) Reset() {
 	*x = CommitCacheRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[133]
+	mi := &file_slipway_v1_runs_proto_msgTypes[149]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10073,7 +11696,7 @@ func (x *CommitCacheRequest) String() string {
 func (*CommitCacheRequest) ProtoMessage() {}
 
 func (x *CommitCacheRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[133]
+	mi := &file_slipway_v1_runs_proto_msgTypes[149]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10086,7 +11709,7 @@ func (x *CommitCacheRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitCacheRequest.ProtoReflect.Descriptor instead.
 func (*CommitCacheRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{133}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{149}
 }
 
 func (x *CommitCacheRequest) GetJob() *JobRef {
@@ -10126,7 +11749,7 @@ type CommitCacheResponse struct {
 
 func (x *CommitCacheResponse) Reset() {
 	*x = CommitCacheResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[134]
+	mi := &file_slipway_v1_runs_proto_msgTypes[150]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10138,7 +11761,7 @@ func (x *CommitCacheResponse) String() string {
 func (*CommitCacheResponse) ProtoMessage() {}
 
 func (x *CommitCacheResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[134]
+	mi := &file_slipway_v1_runs_proto_msgTypes[150]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10151,7 +11774,7 @@ func (x *CommitCacheResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitCacheResponse.ProtoReflect.Descriptor instead.
 func (*CommitCacheResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{134}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{150}
 }
 
 func (x *CommitCacheResponse) GetEntry() *CacheEntry {
@@ -10173,7 +11796,7 @@ type UploadTestReportRequest struct {
 
 func (x *UploadTestReportRequest) Reset() {
 	*x = UploadTestReportRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[135]
+	mi := &file_slipway_v1_runs_proto_msgTypes[151]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10185,7 +11808,7 @@ func (x *UploadTestReportRequest) String() string {
 func (*UploadTestReportRequest) ProtoMessage() {}
 
 func (x *UploadTestReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[135]
+	mi := &file_slipway_v1_runs_proto_msgTypes[151]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10198,7 +11821,7 @@ func (x *UploadTestReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadTestReportRequest.ProtoReflect.Descriptor instead.
 func (*UploadTestReportRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{135}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{151}
 }
 
 func (x *UploadTestReportRequest) GetJob() *JobRef {
@@ -10239,7 +11862,7 @@ type UploadTestReportResponse struct {
 
 func (x *UploadTestReportResponse) Reset() {
 	*x = UploadTestReportResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[136]
+	mi := &file_slipway_v1_runs_proto_msgTypes[152]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10251,7 +11874,7 @@ func (x *UploadTestReportResponse) String() string {
 func (*UploadTestReportResponse) ProtoMessage() {}
 
 func (x *UploadTestReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[136]
+	mi := &file_slipway_v1_runs_proto_msgTypes[152]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10264,7 +11887,7 @@ func (x *UploadTestReportResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadTestReportResponse.ProtoReflect.Descriptor instead.
 func (*UploadTestReportResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{136}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{152}
 }
 
 func (x *UploadTestReportResponse) GetReport() *RunTestReport {
@@ -10296,7 +11919,7 @@ type AnnotationInput struct {
 
 func (x *AnnotationInput) Reset() {
 	*x = AnnotationInput{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[137]
+	mi := &file_slipway_v1_runs_proto_msgTypes[153]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10308,7 +11931,7 @@ func (x *AnnotationInput) String() string {
 func (*AnnotationInput) ProtoMessage() {}
 
 func (x *AnnotationInput) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[137]
+	mi := &file_slipway_v1_runs_proto_msgTypes[153]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10321,7 +11944,7 @@ func (x *AnnotationInput) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnnotationInput.ProtoReflect.Descriptor instead.
 func (*AnnotationInput) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{137}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{153}
 }
 
 func (x *AnnotationInput) GetStepIndex() int32 {
@@ -10383,7 +12006,7 @@ type AddAnnotationsRequest struct {
 
 func (x *AddAnnotationsRequest) Reset() {
 	*x = AddAnnotationsRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[138]
+	mi := &file_slipway_v1_runs_proto_msgTypes[154]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10395,7 +12018,7 @@ func (x *AddAnnotationsRequest) String() string {
 func (*AddAnnotationsRequest) ProtoMessage() {}
 
 func (x *AddAnnotationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[138]
+	mi := &file_slipway_v1_runs_proto_msgTypes[154]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10408,7 +12031,7 @@ func (x *AddAnnotationsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddAnnotationsRequest.ProtoReflect.Descriptor instead.
 func (*AddAnnotationsRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{138}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{154}
 }
 
 func (x *AddAnnotationsRequest) GetJob() *JobRef {
@@ -10434,7 +12057,7 @@ type AddAnnotationsResponse struct {
 
 func (x *AddAnnotationsResponse) Reset() {
 	*x = AddAnnotationsResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[139]
+	mi := &file_slipway_v1_runs_proto_msgTypes[155]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10446,7 +12069,7 @@ func (x *AddAnnotationsResponse) String() string {
 func (*AddAnnotationsResponse) ProtoMessage() {}
 
 func (x *AddAnnotationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[139]
+	mi := &file_slipway_v1_runs_proto_msgTypes[155]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10459,7 +12082,7 @@ func (x *AddAnnotationsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddAnnotationsResponse.ProtoReflect.Descriptor instead.
 func (*AddAnnotationsResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{139}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{155}
 }
 
 func (x *AddAnnotationsResponse) GetAccepted() int32 {
@@ -10479,7 +12102,7 @@ type IssueJobTokenRequest struct {
 
 func (x *IssueJobTokenRequest) Reset() {
 	*x = IssueJobTokenRequest{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[140]
+	mi := &file_slipway_v1_runs_proto_msgTypes[156]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10491,7 +12114,7 @@ func (x *IssueJobTokenRequest) String() string {
 func (*IssueJobTokenRequest) ProtoMessage() {}
 
 func (x *IssueJobTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[140]
+	mi := &file_slipway_v1_runs_proto_msgTypes[156]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10504,7 +12127,7 @@ func (x *IssueJobTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IssueJobTokenRequest.ProtoReflect.Descriptor instead.
 func (*IssueJobTokenRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{140}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{156}
 }
 
 func (x *IssueJobTokenRequest) GetJob() *JobRef {
@@ -10531,7 +12154,7 @@ type IssueJobTokenResponse struct {
 
 func (x *IssueJobTokenResponse) Reset() {
 	*x = IssueJobTokenResponse{}
-	mi := &file_slipway_v1_runs_proto_msgTypes[141]
+	mi := &file_slipway_v1_runs_proto_msgTypes[157]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10543,7 +12166,7 @@ func (x *IssueJobTokenResponse) String() string {
 func (*IssueJobTokenResponse) ProtoMessage() {}
 
 func (x *IssueJobTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_runs_proto_msgTypes[141]
+	mi := &file_slipway_v1_runs_proto_msgTypes[157]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10556,7 +12179,7 @@ func (x *IssueJobTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IssueJobTokenResponse.ProtoReflect.Descriptor instead.
 func (*IssueJobTokenResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{141}
+	return file_slipway_v1_runs_proto_rawDescGZIP(), []int{157}
 }
 
 func (x *IssueJobTokenResponse) GetToken() string {
@@ -10943,7 +12566,173 @@ const file_slipway_v1_runs_proto_rawDesc = "" +
 	" \x01(\bR\tregressed\"w\n" +
 	"\x1aGetStepTimingStatsResponse\x120\n" +
 	"\x05items\x18\x01 \x03(\v2\x1a.slipway.v1.StepTimingStatR\x05items\x12'\n" +
-	"\x0fruns_considered\x18\x02 \x01(\x05R\x0erunsConsidered\"\xa3\x01\n" +
+	"\x0fruns_considered\x18\x02 \x01(\x05R\x0erunsConsidered\"\xc0\x01\n" +
+	"\x19GetInsightsSummaryRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\x12\x1f\n" +
+	"\vpipeline_id\x18\x02 \x01(\tR\n" +
+	"pipelineId\x12\x1f\n" +
+	"\vwindow_days\x18\x03 \x01(\x05R\n" +
+	"windowDays\x12B\n" +
+	"\fbranch_scope\x18\x04 \x01(\x0e2\x1f.slipway.v1.InsightsBranchScopeR\vbranchScope\"\xcb\x02\n" +
+	"\vInsightsDay\x12,\n" +
+	"\x03day\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x03day\x12\x12\n" +
+	"\x04runs\x18\x02 \x01(\x05R\x04runs\x12\x1c\n" +
+	"\tsucceeded\x18\x03 \x01(\x05R\tsucceeded\x12\x16\n" +
+	"\x06failed\x18\x04 \x01(\x05R\x06failed\x12+\n" +
+	"\x03p50\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\x03p50\x12+\n" +
+	"\x03p95\x18\x06 \x01(\v2\x19.google.protobuf.DurationR\x03p95\x12\x1f\n" +
+	"\vflaky_tests\x18\a \x01(\x05R\n" +
+	"flakyTests\x12#\n" +
+	"\rcache_lookups\x18\b \x01(\x03R\fcacheLookups\x12$\n" +
+	"\x0ecache_hit_rate\x18\t \x01(\x01R\fcacheHitRate\"\x96\x04\n" +
+	"\x1aGetInsightsSummaryResponse\x12.\n" +
+	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12\x12\n" +
+	"\x04runs\x18\x03 \x01(\x05R\x04runs\x12\x1c\n" +
+	"\tsucceeded\x18\x04 \x01(\x05R\tsucceeded\x12\x16\n" +
+	"\x06failed\x18\x05 \x01(\x05R\x06failed\x12!\n" +
+	"\fsuccess_rate\x18\x06 \x01(\x01R\vsuccessRate\x12+\n" +
+	"\x03p50\x18\a \x01(\v2\x19.google.protobuf.DurationR\x03p50\x12+\n" +
+	"\x03p95\x18\b \x01(\v2\x19.google.protobuf.DurationR\x03p95\x12<\n" +
+	"\fp50_previous\x18\t \x01(\v2\x19.google.protobuf.DurationR\vp50Previous\x12\x1f\n" +
+	"\vflaky_tests\x18\n" +
+	" \x01(\x05R\n" +
+	"flakyTests\x12#\n" +
+	"\rcache_lookups\x18\v \x01(\x03R\fcacheLookups\x12$\n" +
+	"\x0ecache_hit_rate\x18\f \x01(\x01R\fcacheHitRate\x12+\n" +
+	"\x04days\x18\r \x03(\v2\x17.slipway.v1.InsightsDayR\x04days\"\xa5\x01\n" +
+	"\x15ListFlakyTestsRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\x12\x1f\n" +
+	"\vpipeline_id\x18\x02 \x01(\tR\n" +
+	"pipelineId\x12\x1f\n" +
+	"\vwindow_days\x18\x03 \x01(\x05R\n" +
+	"windowDays\x12+\n" +
+	"\x04page\x18\x04 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\"\xdf\x01\n" +
+	"\x0fFlakeOccurrence\x12\x15\n" +
+	"\x06run_id\x18\x01 \x01(\tR\x05runId\x12\x1d\n" +
+	"\n" +
+	"run_number\x18\x02 \x01(\x03R\trunNumber\x12\x15\n" +
+	"\x06job_id\x18\x03 \x01(\tR\x05jobId\x12)\n" +
+	"\x04kind\x18\x04 \x01(\x0e2\x15.slipway.v1.FlakeKindR\x04kind\x12\x16\n" +
+	"\x06branch\x18\x05 \x01(\tR\x06branch\x12\x10\n" +
+	"\x03sha\x18\x06 \x01(\tR\x03sha\x12*\n" +
+	"\x02at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\x02at\"\xdd\x05\n" +
+	"\tFlakyTest\x12\x17\n" +
+	"\atest_id\x18\x01 \x01(\tR\x06testId\x12\x1f\n" +
+	"\vpipeline_id\x18\x02 \x01(\tR\n" +
+	"pipelineId\x12#\n" +
+	"\rpipeline_name\x18\x03 \x01(\tR\fpipelineName\x12\x19\n" +
+	"\bjob_name\x18\x04 \x01(\tR\ajobName\x12(\n" +
+	"\x10job_display_name\x18\x05 \x01(\tR\x0ejobDisplayName\x12\x14\n" +
+	"\x05suite\x18\x06 \x01(\tR\x05suite\x12\x1c\n" +
+	"\tclassname\x18\a \x01(\tR\tclassname\x12\x12\n" +
+	"\x04name\x18\b \x01(\tR\x04name\x12\x12\n" +
+	"\x04file\x18\t \x01(\tR\x04file\x12\x12\n" +
+	"\x04runs\x18\n" +
+	" \x01(\x03R\x04runs\x12\x1e\n" +
+	"\n" +
+	"executions\x18\v \x01(\x03R\n" +
+	"executions\x12\x1a\n" +
+	"\bfailures\x18\f \x01(\x03R\bfailures\x12\x1d\n" +
+	"\n" +
+	"flaky_runs\x18\r \x01(\x03R\tflakyRuns\x12\x14\n" +
+	"\x05flips\x18\x0e \x01(\x03R\x05flips\x12\x1d\n" +
+	"\n" +
+	"flake_rate\x18\x0f \x01(\x01R\tflakeRate\x12@\n" +
+	"\x0efirst_flaky_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\ffirstFlakyAt\x12>\n" +
+	"\rlast_flaky_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\vlastFlakyAt\x12<\n" +
+	"\flast_seen_at\x18\x12 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"lastSeenAt\x127\n" +
+	"\vlast_status\x18\x13 \x01(\x0e2\x16.slipway.v1.TestStatusR\n" +
+	"lastStatus\x123\n" +
+	"\x06recent\x18\x14 \x03(\v2\x1b.slipway.v1.FlakeOccurrenceR\x06recent\"s\n" +
+	"\x16ListFlakyTestsResponse\x12+\n" +
+	"\x05items\x18\x01 \x03(\v2\x15.slipway.v1.FlakyTestR\x05items\x12,\n" +
+	"\x04page\x18\x02 \x01(\v2\x18.slipway.v1.PageResponseR\x04page\"\xa4\x01\n" +
+	"\x14ListSlowTestsRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\x12\x1f\n" +
+	"\vpipeline_id\x18\x02 \x01(\tR\n" +
+	"pipelineId\x12\x1f\n" +
+	"\vwindow_days\x18\x03 \x01(\x05R\n" +
+	"windowDays\x12+\n" +
+	"\x04page\x18\x04 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\"\xf5\x03\n" +
+	"\bSlowTest\x12\x17\n" +
+	"\atest_id\x18\x01 \x01(\tR\x06testId\x12\x1f\n" +
+	"\vpipeline_id\x18\x02 \x01(\tR\n" +
+	"pipelineId\x12#\n" +
+	"\rpipeline_name\x18\x03 \x01(\tR\fpipelineName\x12(\n" +
+	"\x10job_display_name\x18\x04 \x01(\tR\x0ejobDisplayName\x12\x14\n" +
+	"\x05suite\x18\x05 \x01(\tR\x05suite\x12\x1c\n" +
+	"\tclassname\x18\x06 \x01(\tR\tclassname\x12\x12\n" +
+	"\x04name\x18\a \x01(\tR\x04name\x12<\n" +
+	"\favg_duration\x18\b \x01(\v2\x19.google.protobuf.DurationR\vavgDuration\x12>\n" +
+	"\rlast_duration\x18\t \x01(\v2\x19.google.protobuf.DurationR\flastDuration\x12<\n" +
+	"\fmax_duration\x18\n" +
+	" \x01(\v2\x19.google.protobuf.DurationR\vmaxDuration\x12\x1e\n" +
+	"\n" +
+	"executions\x18\v \x01(\x03R\n" +
+	"executions\x12<\n" +
+	"\flast_seen_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"lastSeenAt\"q\n" +
+	"\x15ListSlowTestsResponse\x12*\n" +
+	"\x05items\x18\x01 \x03(\v2\x14.slipway.v1.SlowTestR\x05items\x12,\n" +
+	"\x04page\x18\x02 \x01(\v2\x18.slipway.v1.PageResponseR\x04page\"\x9f\x02\n" +
+	"\x17ListJobDurationsRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\x12\x1f\n" +
+	"\vpipeline_id\x18\x02 \x01(\tR\n" +
+	"pipelineId\x12\x1f\n" +
+	"\vwindow_days\x18\x03 \x01(\x05R\n" +
+	"windowDays\x12B\n" +
+	"\fbranch_scope\x18\x04 \x01(\x0e2\x1f.slipway.v1.InsightsBranchScopeR\vbranchScope\x122\n" +
+	"\x05order\x18\x05 \x01(\x0e2\x1c.slipway.v1.JobDurationOrderR\x05order\x12+\n" +
+	"\x04page\x18\x06 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\"\x9d\x03\n" +
+	"\vJobDuration\x12\x1f\n" +
+	"\vpipeline_id\x18\x01 \x01(\tR\n" +
+	"pipelineId\x12#\n" +
+	"\rpipeline_name\x18\x02 \x01(\tR\fpipelineName\x12\x19\n" +
+	"\bjob_name\x18\x03 \x01(\tR\ajobName\x12(\n" +
+	"\x10job_display_name\x18\x04 \x01(\tR\x0ejobDisplayName\x12\x12\n" +
+	"\x04runs\x18\x05 \x01(\x05R\x04runs\x12\x1c\n" +
+	"\tsucceeded\x18\x06 \x01(\x05R\tsucceeded\x12\x16\n" +
+	"\x06failed\x18\a \x01(\x05R\x06failed\x12+\n" +
+	"\x03p50\x18\b \x01(\v2\x19.google.protobuf.DurationR\x03p50\x12+\n" +
+	"\x03p95\x18\t \x01(\v2\x19.google.protobuf.DurationR\x03p95\x12<\n" +
+	"\fp50_previous\x18\n" +
+	" \x01(\v2\x19.google.protobuf.DurationR\vp50Previous\x12!\n" +
+	"\fchange_ratio\x18\v \x01(\x01R\vchangeRatio\"w\n" +
+	"\x18ListJobDurationsResponse\x12-\n" +
+	"\x05items\x18\x01 \x03(\v2\x17.slipway.v1.JobDurationR\x05items\x12,\n" +
+	"\x04page\x18\x02 \x01(\v2\x18.slipway.v1.PageResponseR\x04page\"\xa5\x01\n" +
+	"\x15ListCacheStatsRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\x12\x1f\n" +
+	"\vpipeline_id\x18\x02 \x01(\tR\n" +
+	"pipelineId\x12\x1f\n" +
+	"\vwindow_days\x18\x03 \x01(\x05R\n" +
+	"windowDays\x12+\n" +
+	"\x04page\x18\x04 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\"\xda\x02\n" +
+	"\tCacheStat\x12\x1f\n" +
+	"\vpipeline_id\x18\x01 \x01(\tR\n" +
+	"pipelineId\x12#\n" +
+	"\rpipeline_name\x18\x02 \x01(\tR\fpipelineName\x12\x19\n" +
+	"\bjob_name\x18\x03 \x01(\tR\ajobName\x12\x1d\n" +
+	"\n" +
+	"cache_name\x18\x04 \x01(\tR\tcacheName\x12\x1d\n" +
+	"\n" +
+	"exact_hits\x18\x05 \x01(\x03R\texactHits\x12!\n" +
+	"\fpartial_hits\x18\x06 \x01(\x03R\vpartialHits\x12\x16\n" +
+	"\x06misses\x18\a \x01(\x03R\x06misses\x12\x19\n" +
+	"\bhit_rate\x18\b \x01(\x01R\ahitRate\x12!\n" +
+	"\frestore_rate\x18\t \x01(\x01R\vrestoreRate\x125\n" +
+	"\blast_day\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\alastDay\"s\n" +
+	"\x16ListCacheStatsResponse\x12+\n" +
+	"\x05items\x18\x01 \x03(\v2\x15.slipway.v1.CacheStatR\x05items\x12,\n" +
+	"\x04page\x18\x02 \x01(\v2\x18.slipway.v1.PageResponseR\x04page\"\xa3\x01\n" +
 	"\x10HostedSuspension\x12\x15\n" +
 	"\x06org_id\x18\x01 \x01(\tR\x05orgId\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\x12!\n" +
@@ -11495,7 +13284,20 @@ const file_slipway_v1_runs_proto_rawDesc = "" +
 	"\x16RERUN_MODE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eRERUN_MODE_ALL\x10\x01\x12\x15\n" +
 	"\x11RERUN_MODE_FAILED\x10\x02\x12\x17\n" +
-	"\x13RERUN_MODE_FROM_JOB\x10\x032\x9a\t\n" +
+	"\x13RERUN_MODE_FROM_JOB\x10\x03*\x7f\n" +
+	"\x13InsightsBranchScope\x12%\n" +
+	"!INSIGHTS_BRANCH_SCOPE_UNSPECIFIED\x10\x00\x12\x1d\n" +
+	"\x19INSIGHTS_BRANCH_SCOPE_ALL\x10\x01\x12\"\n" +
+	"\x1eINSIGHTS_BRANCH_SCOPE_MAINLINE\x10\x02*s\n" +
+	"\tFlakeKind\x12\x1a\n" +
+	"\x16FLAKE_KIND_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12FLAKE_KIND_RETRIED\x10\x01\x12\x1a\n" +
+	"\x16FLAKE_KIND_SAME_COMMIT\x10\x02\x12\x16\n" +
+	"\x12FLAKE_KIND_FLIPPED\x10\x03*q\n" +
+	"\x10JobDurationOrder\x12\"\n" +
+	"\x1eJOB_DURATION_ORDER_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16JOB_DURATION_ORDER_P95\x10\x01\x12\x1d\n" +
+	"\x19JOB_DURATION_ORDER_CHANGE\x10\x022\xe6\f\n" +
 	"\n" +
 	"RunService\x12E\n" +
 	"\bListRuns\x12\x1b.slipway.v1.ListRunsRequest\x1a\x1c.slipway.v1.ListRunsResponse\x12?\n" +
@@ -11513,7 +13315,12 @@ const file_slipway_v1_runs_proto_rawDesc = "" +
 	"\fListCoverage\x12\x1f.slipway.v1.ListCoverageRequest\x1a .slipway.v1.ListCoverageResponse\x12Z\n" +
 	"\x0fListAnnotations\x12\".slipway.v1.ListAnnotationsRequest\x1a#.slipway.v1.ListAnnotationsResponse\x12E\n" +
 	"\bGetBadge\x12\x1b.slipway.v1.GetBadgeRequest\x1a\x1c.slipway.v1.GetBadgeResponse\x12c\n" +
-	"\x12GetStepTimingStats\x12%.slipway.v1.GetStepTimingStatsRequest\x1a&.slipway.v1.GetStepTimingStatsResponse2\xb6\v\n" +
+	"\x12GetStepTimingStats\x12%.slipway.v1.GetStepTimingStatsRequest\x1a&.slipway.v1.GetStepTimingStatsResponse\x12c\n" +
+	"\x12GetInsightsSummary\x12%.slipway.v1.GetInsightsSummaryRequest\x1a&.slipway.v1.GetInsightsSummaryResponse\x12W\n" +
+	"\x0eListFlakyTests\x12!.slipway.v1.ListFlakyTestsRequest\x1a\".slipway.v1.ListFlakyTestsResponse\x12T\n" +
+	"\rListSlowTests\x12 .slipway.v1.ListSlowTestsRequest\x1a!.slipway.v1.ListSlowTestsResponse\x12]\n" +
+	"\x10ListJobDurations\x12#.slipway.v1.ListJobDurationsRequest\x1a$.slipway.v1.ListJobDurationsResponse\x12W\n" +
+	"\x0eListCacheStats\x12!.slipway.v1.ListCacheStatsRequest\x1a\".slipway.v1.ListCacheStatsResponse2\xb6\v\n" +
 	"\x11RunnerPoolService\x12Z\n" +
 	"\x0fListRunnerPools\x12\".slipway.v1.ListRunnerPoolsRequest\x1a#.slipway.v1.ListRunnerPoolsResponse\x12T\n" +
 	"\rGetRunnerPool\x12 .slipway.v1.GetRunnerPoolRequest\x1a!.slipway.v1.GetRunnerPoolResponse\x12]\n" +
@@ -11575,8 +13382,8 @@ func file_slipway_v1_runs_proto_rawDescGZIP() []byte {
 	return file_slipway_v1_runs_proto_rawDescData
 }
 
-var file_slipway_v1_runs_proto_enumTypes = make([]protoimpl.EnumInfo, 11)
-var file_slipway_v1_runs_proto_msgTypes = make([]protoimpl.MessageInfo, 146)
+var file_slipway_v1_runs_proto_enumTypes = make([]protoimpl.EnumInfo, 14)
+var file_slipway_v1_runs_proto_msgTypes = make([]protoimpl.MessageInfo, 162)
 var file_slipway_v1_runs_proto_goTypes = []any{
 	(RunStatus)(0),                          // 0: slipway.v1.RunStatus
 	(RunJobStatus)(0),                       // 1: slipway.v1.RunJobStatus
@@ -11589,470 +13396,538 @@ var file_slipway_v1_runs_proto_goTypes = []any{
 	(ReportFormat)(0),                       // 8: slipway.v1.ReportFormat
 	(AnnotationLevel)(0),                    // 9: slipway.v1.AnnotationLevel
 	(RerunMode)(0),                          // 10: slipway.v1.RerunMode
-	(*RunTrigger)(nil),                      // 11: slipway.v1.RunTrigger
-	(*Run)(nil),                             // 12: slipway.v1.Run
-	(*RunJob)(nil),                          // 13: slipway.v1.RunJob
-	(*RunStep)(nil),                         // 14: slipway.v1.RunStep
-	(*RunArtifact)(nil),                     // 15: slipway.v1.RunArtifact
-	(*CacheEntry)(nil),                      // 16: slipway.v1.CacheEntry
-	(*RunTestReport)(nil),                   // 17: slipway.v1.RunTestReport
-	(*RunTestCase)(nil),                     // 18: slipway.v1.RunTestCase
-	(*RunCoverage)(nil),                     // 19: slipway.v1.RunCoverage
-	(*RunAnnotation)(nil),                   // 20: slipway.v1.RunAnnotation
-	(*RunnerPool)(nil),                      // 21: slipway.v1.RunnerPool
-	(*Runner)(nil),                          // 22: slipway.v1.Runner
-	(*RegistrationToken)(nil),               // 23: slipway.v1.RegistrationToken
-	(*ListRunsRequest)(nil),                 // 24: slipway.v1.ListRunsRequest
-	(*ListRunsResponse)(nil),                // 25: slipway.v1.ListRunsResponse
-	(*GetRunRequest)(nil),                   // 26: slipway.v1.GetRunRequest
-	(*GetRunResponse)(nil),                  // 27: slipway.v1.GetRunResponse
-	(*WatchRunRequest)(nil),                 // 28: slipway.v1.WatchRunRequest
-	(*WatchRunResponse)(nil),                // 29: slipway.v1.WatchRunResponse
-	(*RunDiff)(nil),                         // 30: slipway.v1.RunDiff
-	(*RunInput)(nil),                        // 31: slipway.v1.RunInput
-	(*TriggerRunRequest)(nil),               // 32: slipway.v1.TriggerRunRequest
-	(*TriggerRunResponse)(nil),              // 33: slipway.v1.TriggerRunResponse
-	(*CancelRunRequest)(nil),                // 34: slipway.v1.CancelRunRequest
-	(*CancelRunResponse)(nil),               // 35: slipway.v1.CancelRunResponse
-	(*RerunRunRequest)(nil),                 // 36: slipway.v1.RerunRunRequest
-	(*RerunRunResponse)(nil),                // 37: slipway.v1.RerunRunResponse
-	(*CancelJobRequest)(nil),                // 38: slipway.v1.CancelJobRequest
-	(*CancelJobResponse)(nil),               // 39: slipway.v1.CancelJobResponse
-	(*ListJobsRequest)(nil),                 // 40: slipway.v1.ListJobsRequest
-	(*ListJobsResponse)(nil),                // 41: slipway.v1.ListJobsResponse
-	(*GetJobRequest)(nil),                   // 42: slipway.v1.GetJobRequest
-	(*GetJobResponse)(nil),                  // 43: slipway.v1.GetJobResponse
-	(*ListTestReportsRequest)(nil),          // 44: slipway.v1.ListTestReportsRequest
-	(*ListTestReportsResponse)(nil),         // 45: slipway.v1.ListTestReportsResponse
-	(*ListTestCasesRequest)(nil),            // 46: slipway.v1.ListTestCasesRequest
-	(*ListTestCasesResponse)(nil),           // 47: slipway.v1.ListTestCasesResponse
-	(*ListCoverageRequest)(nil),             // 48: slipway.v1.ListCoverageRequest
-	(*ListCoverageResponse)(nil),            // 49: slipway.v1.ListCoverageResponse
-	(*ListAnnotationsRequest)(nil),          // 50: slipway.v1.ListAnnotationsRequest
-	(*ListAnnotationsResponse)(nil),         // 51: slipway.v1.ListAnnotationsResponse
-	(*GetBadgeRequest)(nil),                 // 52: slipway.v1.GetBadgeRequest
-	(*GetBadgeResponse)(nil),                // 53: slipway.v1.GetBadgeResponse
-	(*GetStepTimingStatsRequest)(nil),       // 54: slipway.v1.GetStepTimingStatsRequest
-	(*StepTimingStat)(nil),                  // 55: slipway.v1.StepTimingStat
-	(*GetStepTimingStatsResponse)(nil),      // 56: slipway.v1.GetStepTimingStatsResponse
-	(*HostedSuspension)(nil),                // 57: slipway.v1.HostedSuspension
-	(*GetHostedSuspensionRequest)(nil),      // 58: slipway.v1.GetHostedSuspensionRequest
-	(*GetHostedSuspensionResponse)(nil),     // 59: slipway.v1.GetHostedSuspensionResponse
-	(*SuspendHostedRunnersRequest)(nil),     // 60: slipway.v1.SuspendHostedRunnersRequest
-	(*SuspendHostedRunnersResponse)(nil),    // 61: slipway.v1.SuspendHostedRunnersResponse
-	(*ResumeHostedRunnersRequest)(nil),      // 62: slipway.v1.ResumeHostedRunnersRequest
-	(*ResumeHostedRunnersResponse)(nil),     // 63: slipway.v1.ResumeHostedRunnersResponse
-	(*ListRunnerPoolsRequest)(nil),          // 64: slipway.v1.ListRunnerPoolsRequest
-	(*ListRunnerPoolsResponse)(nil),         // 65: slipway.v1.ListRunnerPoolsResponse
-	(*GetRunnerPoolRequest)(nil),            // 66: slipway.v1.GetRunnerPoolRequest
-	(*GetRunnerPoolResponse)(nil),           // 67: slipway.v1.GetRunnerPoolResponse
-	(*CreateRunnerPoolRequest)(nil),         // 68: slipway.v1.CreateRunnerPoolRequest
-	(*CreateRunnerPoolResponse)(nil),        // 69: slipway.v1.CreateRunnerPoolResponse
-	(*UpdateRunnerPoolRequest)(nil),         // 70: slipway.v1.UpdateRunnerPoolRequest
-	(*UpdateRunnerPoolResponse)(nil),        // 71: slipway.v1.UpdateRunnerPoolResponse
-	(*DeleteRunnerPoolRequest)(nil),         // 72: slipway.v1.DeleteRunnerPoolRequest
-	(*DeleteRunnerPoolResponse)(nil),        // 73: slipway.v1.DeleteRunnerPoolResponse
-	(*CreateRegistrationTokenRequest)(nil),  // 74: slipway.v1.CreateRegistrationTokenRequest
-	(*CreateRegistrationTokenResponse)(nil), // 75: slipway.v1.CreateRegistrationTokenResponse
-	(*ListRegistrationTokensRequest)(nil),   // 76: slipway.v1.ListRegistrationTokensRequest
-	(*ListRegistrationTokensResponse)(nil),  // 77: slipway.v1.ListRegistrationTokensResponse
-	(*RevokeRegistrationTokenRequest)(nil),  // 78: slipway.v1.RevokeRegistrationTokenRequest
-	(*RevokeRegistrationTokenResponse)(nil), // 79: slipway.v1.RevokeRegistrationTokenResponse
-	(*ListRunnersRequest)(nil),              // 80: slipway.v1.ListRunnersRequest
-	(*ListRunnersResponse)(nil),             // 81: slipway.v1.ListRunnersResponse
-	(*GetRunnerRequest)(nil),                // 82: slipway.v1.GetRunnerRequest
-	(*GetRunnerResponse)(nil),               // 83: slipway.v1.GetRunnerResponse
-	(*UpdateRunnerRequest)(nil),             // 84: slipway.v1.UpdateRunnerRequest
-	(*UpdateRunnerResponse)(nil),            // 85: slipway.v1.UpdateRunnerResponse
-	(*DeleteRunnerRequest)(nil),             // 86: slipway.v1.DeleteRunnerRequest
-	(*DeleteRunnerResponse)(nil),            // 87: slipway.v1.DeleteRunnerResponse
-	(*LogLine)(nil),                         // 88: slipway.v1.LogLine
-	(*LogChunk)(nil),                        // 89: slipway.v1.LogChunk
-	(*TailRequest)(nil),                     // 90: slipway.v1.TailRequest
-	(*TailResponse)(nil),                    // 91: slipway.v1.TailResponse
-	(*GetLogsRequest)(nil),                  // 92: slipway.v1.GetLogsRequest
-	(*GetLogsResponse)(nil),                 // 93: slipway.v1.GetLogsResponse
-	(*SearchLogsRequest)(nil),               // 94: slipway.v1.SearchLogsRequest
-	(*LogMatch)(nil),                        // 95: slipway.v1.LogMatch
-	(*SearchLogsResponse)(nil),              // 96: slipway.v1.SearchLogsResponse
-	(*GetLogDownloadRequest)(nil),           // 97: slipway.v1.GetLogDownloadRequest
-	(*GetLogDownloadResponse)(nil),          // 98: slipway.v1.GetLogDownloadResponse
-	(*ListArtifactsRequest)(nil),            // 99: slipway.v1.ListArtifactsRequest
-	(*ListArtifactsResponse)(nil),           // 100: slipway.v1.ListArtifactsResponse
-	(*GetArtifactRequest)(nil),              // 101: slipway.v1.GetArtifactRequest
-	(*GetArtifactResponse)(nil),             // 102: slipway.v1.GetArtifactResponse
-	(*GetArtifactDownloadUrlRequest)(nil),   // 103: slipway.v1.GetArtifactDownloadUrlRequest
-	(*GetArtifactDownloadUrlResponse)(nil),  // 104: slipway.v1.GetArtifactDownloadUrlResponse
-	(*DeleteArtifactRequest)(nil),           // 105: slipway.v1.DeleteArtifactRequest
-	(*DeleteArtifactResponse)(nil),          // 106: slipway.v1.DeleteArtifactResponse
-	(*ListCacheEntriesRequest)(nil),         // 107: slipway.v1.ListCacheEntriesRequest
-	(*ListCacheEntriesResponse)(nil),        // 108: slipway.v1.ListCacheEntriesResponse
-	(*DeleteCacheEntryRequest)(nil),         // 109: slipway.v1.DeleteCacheEntryRequest
-	(*DeleteCacheEntryResponse)(nil),        // 110: slipway.v1.DeleteCacheEntryResponse
-	(*DeregisterRequest)(nil),               // 111: slipway.v1.DeregisterRequest
-	(*DeregisterResponse)(nil),              // 112: slipway.v1.DeregisterResponse
-	(*GetRunnerDownloadRequest)(nil),        // 113: slipway.v1.GetRunnerDownloadRequest
-	(*GetRunnerDownloadResponse)(nil),       // 114: slipway.v1.GetRunnerDownloadResponse
-	(*RegisterRequest)(nil),                 // 115: slipway.v1.RegisterRequest
-	(*RegisterResponse)(nil),                // 116: slipway.v1.RegisterResponse
-	(*JobRef)(nil),                          // 117: slipway.v1.JobRef
-	(*ConnectRequest)(nil),                  // 118: slipway.v1.ConnectRequest
-	(*JobRejected)(nil),                     // 119: slipway.v1.JobRejected
-	(*Hello)(nil),                           // 120: slipway.v1.Hello
-	(*Heartbeat)(nil),                       // 121: slipway.v1.Heartbeat
-	(*JobAccepted)(nil),                     // 122: slipway.v1.JobAccepted
-	(*StepUpdate)(nil),                      // 123: slipway.v1.StepUpdate
-	(*JobResult)(nil),                       // 124: slipway.v1.JobResult
-	(*ConnectResponse)(nil),                 // 125: slipway.v1.ConnectResponse
-	(*Welcome)(nil),                         // 126: slipway.v1.Welcome
-	(*JobAssignment)(nil),                   // 127: slipway.v1.JobAssignment
-	(*CancelJob)(nil),                       // 128: slipway.v1.CancelJob
-	(*LogAck)(nil),                          // 129: slipway.v1.LogAck
-	(*ServerError)(nil),                     // 130: slipway.v1.ServerError
-	(*Drain)(nil),                           // 131: slipway.v1.Drain
-	(*JobAck)(nil),                          // 132: slipway.v1.JobAck
-	(*Pong)(nil),                            // 133: slipway.v1.Pong
-	(*CreateArtifactRequest)(nil),           // 134: slipway.v1.CreateArtifactRequest
-	(*CreateArtifactResponse)(nil),          // 135: slipway.v1.CreateArtifactResponse
-	(*FinalizeArtifactRequest)(nil),         // 136: slipway.v1.FinalizeArtifactRequest
-	(*FinalizeArtifactResponse)(nil),        // 137: slipway.v1.FinalizeArtifactResponse
-	(*GetArtifactDownloadRequest)(nil),      // 138: slipway.v1.GetArtifactDownloadRequest
-	(*GetArtifactDownloadResponse)(nil),     // 139: slipway.v1.GetArtifactDownloadResponse
-	(*LookupCacheRequest)(nil),              // 140: slipway.v1.LookupCacheRequest
-	(*LookupCacheResponse)(nil),             // 141: slipway.v1.LookupCacheResponse
-	(*ReserveCacheRequest)(nil),             // 142: slipway.v1.ReserveCacheRequest
-	(*ReserveCacheResponse)(nil),            // 143: slipway.v1.ReserveCacheResponse
-	(*CommitCacheRequest)(nil),              // 144: slipway.v1.CommitCacheRequest
-	(*CommitCacheResponse)(nil),             // 145: slipway.v1.CommitCacheResponse
-	(*UploadTestReportRequest)(nil),         // 146: slipway.v1.UploadTestReportRequest
-	(*UploadTestReportResponse)(nil),        // 147: slipway.v1.UploadTestReportResponse
-	(*AnnotationInput)(nil),                 // 148: slipway.v1.AnnotationInput
-	(*AddAnnotationsRequest)(nil),           // 149: slipway.v1.AddAnnotationsRequest
-	(*AddAnnotationsResponse)(nil),          // 150: slipway.v1.AddAnnotationsResponse
-	(*IssueJobTokenRequest)(nil),            // 151: slipway.v1.IssueJobTokenRequest
-	(*IssueJobTokenResponse)(nil),           // 152: slipway.v1.IssueJobTokenResponse
-	nil,                                     // 153: slipway.v1.JobAssignment.EnvEntry
-	nil,                                     // 154: slipway.v1.JobAssignment.SecretsEntry
-	nil,                                     // 155: slipway.v1.CreateArtifactResponse.UploadHeadersEntry
-	nil,                                     // 156: slipway.v1.ReserveCacheResponse.UploadHeadersEntry
-	(*structpb.Struct)(nil),                 // 157: google.protobuf.Struct
-	(*Actor)(nil),                           // 158: slipway.v1.Actor
-	(*GitRef)(nil),                          // 159: slipway.v1.GitRef
-	(*timestamppb.Timestamp)(nil),           // 160: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),             // 161: google.protobuf.Duration
-	(*PageRequest)(nil),                     // 162: slipway.v1.PageRequest
-	(*PageResponse)(nil),                    // 163: slipway.v1.PageResponse
+	(InsightsBranchScope)(0),                // 11: slipway.v1.InsightsBranchScope
+	(FlakeKind)(0),                          // 12: slipway.v1.FlakeKind
+	(JobDurationOrder)(0),                   // 13: slipway.v1.JobDurationOrder
+	(*RunTrigger)(nil),                      // 14: slipway.v1.RunTrigger
+	(*Run)(nil),                             // 15: slipway.v1.Run
+	(*RunJob)(nil),                          // 16: slipway.v1.RunJob
+	(*RunStep)(nil),                         // 17: slipway.v1.RunStep
+	(*RunArtifact)(nil),                     // 18: slipway.v1.RunArtifact
+	(*CacheEntry)(nil),                      // 19: slipway.v1.CacheEntry
+	(*RunTestReport)(nil),                   // 20: slipway.v1.RunTestReport
+	(*RunTestCase)(nil),                     // 21: slipway.v1.RunTestCase
+	(*RunCoverage)(nil),                     // 22: slipway.v1.RunCoverage
+	(*RunAnnotation)(nil),                   // 23: slipway.v1.RunAnnotation
+	(*RunnerPool)(nil),                      // 24: slipway.v1.RunnerPool
+	(*Runner)(nil),                          // 25: slipway.v1.Runner
+	(*RegistrationToken)(nil),               // 26: slipway.v1.RegistrationToken
+	(*ListRunsRequest)(nil),                 // 27: slipway.v1.ListRunsRequest
+	(*ListRunsResponse)(nil),                // 28: slipway.v1.ListRunsResponse
+	(*GetRunRequest)(nil),                   // 29: slipway.v1.GetRunRequest
+	(*GetRunResponse)(nil),                  // 30: slipway.v1.GetRunResponse
+	(*WatchRunRequest)(nil),                 // 31: slipway.v1.WatchRunRequest
+	(*WatchRunResponse)(nil),                // 32: slipway.v1.WatchRunResponse
+	(*RunDiff)(nil),                         // 33: slipway.v1.RunDiff
+	(*RunInput)(nil),                        // 34: slipway.v1.RunInput
+	(*TriggerRunRequest)(nil),               // 35: slipway.v1.TriggerRunRequest
+	(*TriggerRunResponse)(nil),              // 36: slipway.v1.TriggerRunResponse
+	(*CancelRunRequest)(nil),                // 37: slipway.v1.CancelRunRequest
+	(*CancelRunResponse)(nil),               // 38: slipway.v1.CancelRunResponse
+	(*RerunRunRequest)(nil),                 // 39: slipway.v1.RerunRunRequest
+	(*RerunRunResponse)(nil),                // 40: slipway.v1.RerunRunResponse
+	(*CancelJobRequest)(nil),                // 41: slipway.v1.CancelJobRequest
+	(*CancelJobResponse)(nil),               // 42: slipway.v1.CancelJobResponse
+	(*ListJobsRequest)(nil),                 // 43: slipway.v1.ListJobsRequest
+	(*ListJobsResponse)(nil),                // 44: slipway.v1.ListJobsResponse
+	(*GetJobRequest)(nil),                   // 45: slipway.v1.GetJobRequest
+	(*GetJobResponse)(nil),                  // 46: slipway.v1.GetJobResponse
+	(*ListTestReportsRequest)(nil),          // 47: slipway.v1.ListTestReportsRequest
+	(*ListTestReportsResponse)(nil),         // 48: slipway.v1.ListTestReportsResponse
+	(*ListTestCasesRequest)(nil),            // 49: slipway.v1.ListTestCasesRequest
+	(*ListTestCasesResponse)(nil),           // 50: slipway.v1.ListTestCasesResponse
+	(*ListCoverageRequest)(nil),             // 51: slipway.v1.ListCoverageRequest
+	(*ListCoverageResponse)(nil),            // 52: slipway.v1.ListCoverageResponse
+	(*ListAnnotationsRequest)(nil),          // 53: slipway.v1.ListAnnotationsRequest
+	(*ListAnnotationsResponse)(nil),         // 54: slipway.v1.ListAnnotationsResponse
+	(*GetBadgeRequest)(nil),                 // 55: slipway.v1.GetBadgeRequest
+	(*GetBadgeResponse)(nil),                // 56: slipway.v1.GetBadgeResponse
+	(*GetStepTimingStatsRequest)(nil),       // 57: slipway.v1.GetStepTimingStatsRequest
+	(*StepTimingStat)(nil),                  // 58: slipway.v1.StepTimingStat
+	(*GetStepTimingStatsResponse)(nil),      // 59: slipway.v1.GetStepTimingStatsResponse
+	(*GetInsightsSummaryRequest)(nil),       // 60: slipway.v1.GetInsightsSummaryRequest
+	(*InsightsDay)(nil),                     // 61: slipway.v1.InsightsDay
+	(*GetInsightsSummaryResponse)(nil),      // 62: slipway.v1.GetInsightsSummaryResponse
+	(*ListFlakyTestsRequest)(nil),           // 63: slipway.v1.ListFlakyTestsRequest
+	(*FlakeOccurrence)(nil),                 // 64: slipway.v1.FlakeOccurrence
+	(*FlakyTest)(nil),                       // 65: slipway.v1.FlakyTest
+	(*ListFlakyTestsResponse)(nil),          // 66: slipway.v1.ListFlakyTestsResponse
+	(*ListSlowTestsRequest)(nil),            // 67: slipway.v1.ListSlowTestsRequest
+	(*SlowTest)(nil),                        // 68: slipway.v1.SlowTest
+	(*ListSlowTestsResponse)(nil),           // 69: slipway.v1.ListSlowTestsResponse
+	(*ListJobDurationsRequest)(nil),         // 70: slipway.v1.ListJobDurationsRequest
+	(*JobDuration)(nil),                     // 71: slipway.v1.JobDuration
+	(*ListJobDurationsResponse)(nil),        // 72: slipway.v1.ListJobDurationsResponse
+	(*ListCacheStatsRequest)(nil),           // 73: slipway.v1.ListCacheStatsRequest
+	(*CacheStat)(nil),                       // 74: slipway.v1.CacheStat
+	(*ListCacheStatsResponse)(nil),          // 75: slipway.v1.ListCacheStatsResponse
+	(*HostedSuspension)(nil),                // 76: slipway.v1.HostedSuspension
+	(*GetHostedSuspensionRequest)(nil),      // 77: slipway.v1.GetHostedSuspensionRequest
+	(*GetHostedSuspensionResponse)(nil),     // 78: slipway.v1.GetHostedSuspensionResponse
+	(*SuspendHostedRunnersRequest)(nil),     // 79: slipway.v1.SuspendHostedRunnersRequest
+	(*SuspendHostedRunnersResponse)(nil),    // 80: slipway.v1.SuspendHostedRunnersResponse
+	(*ResumeHostedRunnersRequest)(nil),      // 81: slipway.v1.ResumeHostedRunnersRequest
+	(*ResumeHostedRunnersResponse)(nil),     // 82: slipway.v1.ResumeHostedRunnersResponse
+	(*ListRunnerPoolsRequest)(nil),          // 83: slipway.v1.ListRunnerPoolsRequest
+	(*ListRunnerPoolsResponse)(nil),         // 84: slipway.v1.ListRunnerPoolsResponse
+	(*GetRunnerPoolRequest)(nil),            // 85: slipway.v1.GetRunnerPoolRequest
+	(*GetRunnerPoolResponse)(nil),           // 86: slipway.v1.GetRunnerPoolResponse
+	(*CreateRunnerPoolRequest)(nil),         // 87: slipway.v1.CreateRunnerPoolRequest
+	(*CreateRunnerPoolResponse)(nil),        // 88: slipway.v1.CreateRunnerPoolResponse
+	(*UpdateRunnerPoolRequest)(nil),         // 89: slipway.v1.UpdateRunnerPoolRequest
+	(*UpdateRunnerPoolResponse)(nil),        // 90: slipway.v1.UpdateRunnerPoolResponse
+	(*DeleteRunnerPoolRequest)(nil),         // 91: slipway.v1.DeleteRunnerPoolRequest
+	(*DeleteRunnerPoolResponse)(nil),        // 92: slipway.v1.DeleteRunnerPoolResponse
+	(*CreateRegistrationTokenRequest)(nil),  // 93: slipway.v1.CreateRegistrationTokenRequest
+	(*CreateRegistrationTokenResponse)(nil), // 94: slipway.v1.CreateRegistrationTokenResponse
+	(*ListRegistrationTokensRequest)(nil),   // 95: slipway.v1.ListRegistrationTokensRequest
+	(*ListRegistrationTokensResponse)(nil),  // 96: slipway.v1.ListRegistrationTokensResponse
+	(*RevokeRegistrationTokenRequest)(nil),  // 97: slipway.v1.RevokeRegistrationTokenRequest
+	(*RevokeRegistrationTokenResponse)(nil), // 98: slipway.v1.RevokeRegistrationTokenResponse
+	(*ListRunnersRequest)(nil),              // 99: slipway.v1.ListRunnersRequest
+	(*ListRunnersResponse)(nil),             // 100: slipway.v1.ListRunnersResponse
+	(*GetRunnerRequest)(nil),                // 101: slipway.v1.GetRunnerRequest
+	(*GetRunnerResponse)(nil),               // 102: slipway.v1.GetRunnerResponse
+	(*UpdateRunnerRequest)(nil),             // 103: slipway.v1.UpdateRunnerRequest
+	(*UpdateRunnerResponse)(nil),            // 104: slipway.v1.UpdateRunnerResponse
+	(*DeleteRunnerRequest)(nil),             // 105: slipway.v1.DeleteRunnerRequest
+	(*DeleteRunnerResponse)(nil),            // 106: slipway.v1.DeleteRunnerResponse
+	(*LogLine)(nil),                         // 107: slipway.v1.LogLine
+	(*LogChunk)(nil),                        // 108: slipway.v1.LogChunk
+	(*TailRequest)(nil),                     // 109: slipway.v1.TailRequest
+	(*TailResponse)(nil),                    // 110: slipway.v1.TailResponse
+	(*GetLogsRequest)(nil),                  // 111: slipway.v1.GetLogsRequest
+	(*GetLogsResponse)(nil),                 // 112: slipway.v1.GetLogsResponse
+	(*SearchLogsRequest)(nil),               // 113: slipway.v1.SearchLogsRequest
+	(*LogMatch)(nil),                        // 114: slipway.v1.LogMatch
+	(*SearchLogsResponse)(nil),              // 115: slipway.v1.SearchLogsResponse
+	(*GetLogDownloadRequest)(nil),           // 116: slipway.v1.GetLogDownloadRequest
+	(*GetLogDownloadResponse)(nil),          // 117: slipway.v1.GetLogDownloadResponse
+	(*ListArtifactsRequest)(nil),            // 118: slipway.v1.ListArtifactsRequest
+	(*ListArtifactsResponse)(nil),           // 119: slipway.v1.ListArtifactsResponse
+	(*GetArtifactRequest)(nil),              // 120: slipway.v1.GetArtifactRequest
+	(*GetArtifactResponse)(nil),             // 121: slipway.v1.GetArtifactResponse
+	(*GetArtifactDownloadUrlRequest)(nil),   // 122: slipway.v1.GetArtifactDownloadUrlRequest
+	(*GetArtifactDownloadUrlResponse)(nil),  // 123: slipway.v1.GetArtifactDownloadUrlResponse
+	(*DeleteArtifactRequest)(nil),           // 124: slipway.v1.DeleteArtifactRequest
+	(*DeleteArtifactResponse)(nil),          // 125: slipway.v1.DeleteArtifactResponse
+	(*ListCacheEntriesRequest)(nil),         // 126: slipway.v1.ListCacheEntriesRequest
+	(*ListCacheEntriesResponse)(nil),        // 127: slipway.v1.ListCacheEntriesResponse
+	(*DeleteCacheEntryRequest)(nil),         // 128: slipway.v1.DeleteCacheEntryRequest
+	(*DeleteCacheEntryResponse)(nil),        // 129: slipway.v1.DeleteCacheEntryResponse
+	(*DeregisterRequest)(nil),               // 130: slipway.v1.DeregisterRequest
+	(*DeregisterResponse)(nil),              // 131: slipway.v1.DeregisterResponse
+	(*GetRunnerDownloadRequest)(nil),        // 132: slipway.v1.GetRunnerDownloadRequest
+	(*GetRunnerDownloadResponse)(nil),       // 133: slipway.v1.GetRunnerDownloadResponse
+	(*RegisterRequest)(nil),                 // 134: slipway.v1.RegisterRequest
+	(*RegisterResponse)(nil),                // 135: slipway.v1.RegisterResponse
+	(*JobRef)(nil),                          // 136: slipway.v1.JobRef
+	(*ConnectRequest)(nil),                  // 137: slipway.v1.ConnectRequest
+	(*JobRejected)(nil),                     // 138: slipway.v1.JobRejected
+	(*Hello)(nil),                           // 139: slipway.v1.Hello
+	(*Heartbeat)(nil),                       // 140: slipway.v1.Heartbeat
+	(*JobAccepted)(nil),                     // 141: slipway.v1.JobAccepted
+	(*StepUpdate)(nil),                      // 142: slipway.v1.StepUpdate
+	(*JobResult)(nil),                       // 143: slipway.v1.JobResult
+	(*ConnectResponse)(nil),                 // 144: slipway.v1.ConnectResponse
+	(*Welcome)(nil),                         // 145: slipway.v1.Welcome
+	(*JobAssignment)(nil),                   // 146: slipway.v1.JobAssignment
+	(*CancelJob)(nil),                       // 147: slipway.v1.CancelJob
+	(*LogAck)(nil),                          // 148: slipway.v1.LogAck
+	(*ServerError)(nil),                     // 149: slipway.v1.ServerError
+	(*Drain)(nil),                           // 150: slipway.v1.Drain
+	(*JobAck)(nil),                          // 151: slipway.v1.JobAck
+	(*Pong)(nil),                            // 152: slipway.v1.Pong
+	(*CreateArtifactRequest)(nil),           // 153: slipway.v1.CreateArtifactRequest
+	(*CreateArtifactResponse)(nil),          // 154: slipway.v1.CreateArtifactResponse
+	(*FinalizeArtifactRequest)(nil),         // 155: slipway.v1.FinalizeArtifactRequest
+	(*FinalizeArtifactResponse)(nil),        // 156: slipway.v1.FinalizeArtifactResponse
+	(*GetArtifactDownloadRequest)(nil),      // 157: slipway.v1.GetArtifactDownloadRequest
+	(*GetArtifactDownloadResponse)(nil),     // 158: slipway.v1.GetArtifactDownloadResponse
+	(*LookupCacheRequest)(nil),              // 159: slipway.v1.LookupCacheRequest
+	(*LookupCacheResponse)(nil),             // 160: slipway.v1.LookupCacheResponse
+	(*ReserveCacheRequest)(nil),             // 161: slipway.v1.ReserveCacheRequest
+	(*ReserveCacheResponse)(nil),            // 162: slipway.v1.ReserveCacheResponse
+	(*CommitCacheRequest)(nil),              // 163: slipway.v1.CommitCacheRequest
+	(*CommitCacheResponse)(nil),             // 164: slipway.v1.CommitCacheResponse
+	(*UploadTestReportRequest)(nil),         // 165: slipway.v1.UploadTestReportRequest
+	(*UploadTestReportResponse)(nil),        // 166: slipway.v1.UploadTestReportResponse
+	(*AnnotationInput)(nil),                 // 167: slipway.v1.AnnotationInput
+	(*AddAnnotationsRequest)(nil),           // 168: slipway.v1.AddAnnotationsRequest
+	(*AddAnnotationsResponse)(nil),          // 169: slipway.v1.AddAnnotationsResponse
+	(*IssueJobTokenRequest)(nil),            // 170: slipway.v1.IssueJobTokenRequest
+	(*IssueJobTokenResponse)(nil),           // 171: slipway.v1.IssueJobTokenResponse
+	nil,                                     // 172: slipway.v1.JobAssignment.EnvEntry
+	nil,                                     // 173: slipway.v1.JobAssignment.SecretsEntry
+	nil,                                     // 174: slipway.v1.CreateArtifactResponse.UploadHeadersEntry
+	nil,                                     // 175: slipway.v1.ReserveCacheResponse.UploadHeadersEntry
+	(*structpb.Struct)(nil),                 // 176: google.protobuf.Struct
+	(*Actor)(nil),                           // 177: slipway.v1.Actor
+	(*GitRef)(nil),                          // 178: slipway.v1.GitRef
+	(*timestamppb.Timestamp)(nil),           // 179: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),             // 180: google.protobuf.Duration
+	(*PageRequest)(nil),                     // 181: slipway.v1.PageRequest
+	(*PageResponse)(nil),                    // 182: slipway.v1.PageResponse
 }
 var file_slipway_v1_runs_proto_depIdxs = []int32{
-	157, // 0: slipway.v1.RunTrigger.payload:type_name -> google.protobuf.Struct
+	176, // 0: slipway.v1.RunTrigger.payload:type_name -> google.protobuf.Struct
 	0,   // 1: slipway.v1.Run.status:type_name -> slipway.v1.RunStatus
-	11,  // 2: slipway.v1.Run.trigger:type_name -> slipway.v1.RunTrigger
-	158, // 3: slipway.v1.Run.actor:type_name -> slipway.v1.Actor
-	159, // 4: slipway.v1.Run.git:type_name -> slipway.v1.GitRef
-	157, // 5: slipway.v1.Run.inputs:type_name -> google.protobuf.Struct
-	160, // 6: slipway.v1.Run.created_at:type_name -> google.protobuf.Timestamp
-	160, // 7: slipway.v1.Run.started_at:type_name -> google.protobuf.Timestamp
-	160, // 8: slipway.v1.Run.finished_at:type_name -> google.protobuf.Timestamp
-	161, // 9: slipway.v1.Run.duration:type_name -> google.protobuf.Duration
-	13,  // 10: slipway.v1.Run.jobs:type_name -> slipway.v1.RunJob
+	14,  // 2: slipway.v1.Run.trigger:type_name -> slipway.v1.RunTrigger
+	177, // 3: slipway.v1.Run.actor:type_name -> slipway.v1.Actor
+	178, // 4: slipway.v1.Run.git:type_name -> slipway.v1.GitRef
+	176, // 5: slipway.v1.Run.inputs:type_name -> google.protobuf.Struct
+	179, // 6: slipway.v1.Run.created_at:type_name -> google.protobuf.Timestamp
+	179, // 7: slipway.v1.Run.started_at:type_name -> google.protobuf.Timestamp
+	179, // 8: slipway.v1.Run.finished_at:type_name -> google.protobuf.Timestamp
+	180, // 9: slipway.v1.Run.duration:type_name -> google.protobuf.Duration
+	16,  // 10: slipway.v1.Run.jobs:type_name -> slipway.v1.RunJob
 	1,   // 11: slipway.v1.RunJob.status:type_name -> slipway.v1.RunJobStatus
-	157, // 12: slipway.v1.RunJob.matrix:type_name -> google.protobuf.Struct
-	157, // 13: slipway.v1.RunJob.outputs:type_name -> google.protobuf.Struct
-	160, // 14: slipway.v1.RunJob.queued_at:type_name -> google.protobuf.Timestamp
-	160, // 15: slipway.v1.RunJob.started_at:type_name -> google.protobuf.Timestamp
-	160, // 16: slipway.v1.RunJob.finished_at:type_name -> google.protobuf.Timestamp
-	161, // 17: slipway.v1.RunJob.duration:type_name -> google.protobuf.Duration
-	161, // 18: slipway.v1.RunJob.timeout:type_name -> google.protobuf.Duration
-	14,  // 19: slipway.v1.RunJob.steps:type_name -> slipway.v1.RunStep
+	176, // 12: slipway.v1.RunJob.matrix:type_name -> google.protobuf.Struct
+	176, // 13: slipway.v1.RunJob.outputs:type_name -> google.protobuf.Struct
+	179, // 14: slipway.v1.RunJob.queued_at:type_name -> google.protobuf.Timestamp
+	179, // 15: slipway.v1.RunJob.started_at:type_name -> google.protobuf.Timestamp
+	179, // 16: slipway.v1.RunJob.finished_at:type_name -> google.protobuf.Timestamp
+	180, // 17: slipway.v1.RunJob.duration:type_name -> google.protobuf.Duration
+	180, // 18: slipway.v1.RunJob.timeout:type_name -> google.protobuf.Duration
+	17,  // 19: slipway.v1.RunJob.steps:type_name -> slipway.v1.RunStep
 	2,   // 20: slipway.v1.RunStep.status:type_name -> slipway.v1.RunStepStatus
-	160, // 21: slipway.v1.RunStep.started_at:type_name -> google.protobuf.Timestamp
-	160, // 22: slipway.v1.RunStep.finished_at:type_name -> google.protobuf.Timestamp
-	161, // 23: slipway.v1.RunStep.duration:type_name -> google.protobuf.Duration
-	160, // 24: slipway.v1.RunArtifact.retention_until:type_name -> google.protobuf.Timestamp
-	160, // 25: slipway.v1.RunArtifact.created_at:type_name -> google.protobuf.Timestamp
-	160, // 26: slipway.v1.CacheEntry.created_at:type_name -> google.protobuf.Timestamp
-	160, // 27: slipway.v1.CacheEntry.last_hit_at:type_name -> google.protobuf.Timestamp
+	179, // 21: slipway.v1.RunStep.started_at:type_name -> google.protobuf.Timestamp
+	179, // 22: slipway.v1.RunStep.finished_at:type_name -> google.protobuf.Timestamp
+	180, // 23: slipway.v1.RunStep.duration:type_name -> google.protobuf.Duration
+	179, // 24: slipway.v1.RunArtifact.retention_until:type_name -> google.protobuf.Timestamp
+	179, // 25: slipway.v1.RunArtifact.created_at:type_name -> google.protobuf.Timestamp
+	179, // 26: slipway.v1.CacheEntry.created_at:type_name -> google.protobuf.Timestamp
+	179, // 27: slipway.v1.CacheEntry.last_hit_at:type_name -> google.protobuf.Timestamp
 	8,   // 28: slipway.v1.RunTestReport.format:type_name -> slipway.v1.ReportFormat
-	161, // 29: slipway.v1.RunTestReport.duration:type_name -> google.protobuf.Duration
-	160, // 30: slipway.v1.RunTestReport.created_at:type_name -> google.protobuf.Timestamp
+	180, // 29: slipway.v1.RunTestReport.duration:type_name -> google.protobuf.Duration
+	179, // 30: slipway.v1.RunTestReport.created_at:type_name -> google.protobuf.Timestamp
 	7,   // 31: slipway.v1.RunTestCase.status:type_name -> slipway.v1.TestStatus
-	161, // 32: slipway.v1.RunTestCase.duration:type_name -> google.protobuf.Duration
+	180, // 32: slipway.v1.RunTestCase.duration:type_name -> google.protobuf.Duration
 	8,   // 33: slipway.v1.RunCoverage.format:type_name -> slipway.v1.ReportFormat
-	160, // 34: slipway.v1.RunCoverage.created_at:type_name -> google.protobuf.Timestamp
+	179, // 34: slipway.v1.RunCoverage.created_at:type_name -> google.protobuf.Timestamp
 	9,   // 35: slipway.v1.RunAnnotation.level:type_name -> slipway.v1.AnnotationLevel
-	160, // 36: slipway.v1.RunAnnotation.created_at:type_name -> google.protobuf.Timestamp
+	179, // 36: slipway.v1.RunAnnotation.created_at:type_name -> google.protobuf.Timestamp
 	4,   // 37: slipway.v1.RunnerPool.kind:type_name -> slipway.v1.RunnerPoolKind
 	5,   // 38: slipway.v1.RunnerPool.executor:type_name -> slipway.v1.RunnerExecutor
-	160, // 39: slipway.v1.RunnerPool.created_at:type_name -> google.protobuf.Timestamp
-	161, // 40: slipway.v1.RunnerPool.no_runner_timeout:type_name -> google.protobuf.Duration
+	179, // 39: slipway.v1.RunnerPool.created_at:type_name -> google.protobuf.Timestamp
+	180, // 40: slipway.v1.RunnerPool.no_runner_timeout:type_name -> google.protobuf.Duration
 	3,   // 41: slipway.v1.Runner.status:type_name -> slipway.v1.RunnerStatus
-	160, // 42: slipway.v1.Runner.last_seen_at:type_name -> google.protobuf.Timestamp
-	160, // 43: slipway.v1.Runner.created_at:type_name -> google.protobuf.Timestamp
-	160, // 44: slipway.v1.RegistrationToken.expires_at:type_name -> google.protobuf.Timestamp
-	160, // 45: slipway.v1.RegistrationToken.created_at:type_name -> google.protobuf.Timestamp
-	162, // 46: slipway.v1.ListRunsRequest.page:type_name -> slipway.v1.PageRequest
-	12,  // 47: slipway.v1.ListRunsResponse.items:type_name -> slipway.v1.Run
-	163, // 48: slipway.v1.ListRunsResponse.page:type_name -> slipway.v1.PageResponse
-	12,  // 49: slipway.v1.GetRunResponse.run:type_name -> slipway.v1.Run
-	12,  // 50: slipway.v1.WatchRunResponse.snapshot:type_name -> slipway.v1.Run
-	30,  // 51: slipway.v1.WatchRunResponse.diff:type_name -> slipway.v1.RunDiff
-	12,  // 52: slipway.v1.RunDiff.run:type_name -> slipway.v1.Run
-	13,  // 53: slipway.v1.RunDiff.jobs:type_name -> slipway.v1.RunJob
-	14,  // 54: slipway.v1.RunDiff.steps:type_name -> slipway.v1.RunStep
-	160, // 55: slipway.v1.RunDiff.at:type_name -> google.protobuf.Timestamp
-	31,  // 56: slipway.v1.TriggerRunRequest.inputs:type_name -> slipway.v1.RunInput
-	12,  // 57: slipway.v1.TriggerRunResponse.run:type_name -> slipway.v1.Run
-	12,  // 58: slipway.v1.CancelRunResponse.run:type_name -> slipway.v1.Run
+	179, // 42: slipway.v1.Runner.last_seen_at:type_name -> google.protobuf.Timestamp
+	179, // 43: slipway.v1.Runner.created_at:type_name -> google.protobuf.Timestamp
+	179, // 44: slipway.v1.RegistrationToken.expires_at:type_name -> google.protobuf.Timestamp
+	179, // 45: slipway.v1.RegistrationToken.created_at:type_name -> google.protobuf.Timestamp
+	181, // 46: slipway.v1.ListRunsRequest.page:type_name -> slipway.v1.PageRequest
+	15,  // 47: slipway.v1.ListRunsResponse.items:type_name -> slipway.v1.Run
+	182, // 48: slipway.v1.ListRunsResponse.page:type_name -> slipway.v1.PageResponse
+	15,  // 49: slipway.v1.GetRunResponse.run:type_name -> slipway.v1.Run
+	15,  // 50: slipway.v1.WatchRunResponse.snapshot:type_name -> slipway.v1.Run
+	33,  // 51: slipway.v1.WatchRunResponse.diff:type_name -> slipway.v1.RunDiff
+	15,  // 52: slipway.v1.RunDiff.run:type_name -> slipway.v1.Run
+	16,  // 53: slipway.v1.RunDiff.jobs:type_name -> slipway.v1.RunJob
+	17,  // 54: slipway.v1.RunDiff.steps:type_name -> slipway.v1.RunStep
+	179, // 55: slipway.v1.RunDiff.at:type_name -> google.protobuf.Timestamp
+	34,  // 56: slipway.v1.TriggerRunRequest.inputs:type_name -> slipway.v1.RunInput
+	15,  // 57: slipway.v1.TriggerRunResponse.run:type_name -> slipway.v1.Run
+	15,  // 58: slipway.v1.CancelRunResponse.run:type_name -> slipway.v1.Run
 	10,  // 59: slipway.v1.RerunRunRequest.mode:type_name -> slipway.v1.RerunMode
-	12,  // 60: slipway.v1.RerunRunResponse.run:type_name -> slipway.v1.Run
-	13,  // 61: slipway.v1.CancelJobResponse.job:type_name -> slipway.v1.RunJob
-	162, // 62: slipway.v1.ListJobsRequest.page:type_name -> slipway.v1.PageRequest
-	13,  // 63: slipway.v1.ListJobsResponse.items:type_name -> slipway.v1.RunJob
-	163, // 64: slipway.v1.ListJobsResponse.page:type_name -> slipway.v1.PageResponse
-	13,  // 65: slipway.v1.GetJobResponse.job:type_name -> slipway.v1.RunJob
-	17,  // 66: slipway.v1.ListTestReportsResponse.items:type_name -> slipway.v1.RunTestReport
-	162, // 67: slipway.v1.ListTestCasesRequest.page:type_name -> slipway.v1.PageRequest
-	18,  // 68: slipway.v1.ListTestCasesResponse.items:type_name -> slipway.v1.RunTestCase
-	163, // 69: slipway.v1.ListTestCasesResponse.page:type_name -> slipway.v1.PageResponse
-	19,  // 70: slipway.v1.ListCoverageResponse.items:type_name -> slipway.v1.RunCoverage
-	162, // 71: slipway.v1.ListAnnotationsRequest.page:type_name -> slipway.v1.PageRequest
-	20,  // 72: slipway.v1.ListAnnotationsResponse.items:type_name -> slipway.v1.RunAnnotation
-	163, // 73: slipway.v1.ListAnnotationsResponse.page:type_name -> slipway.v1.PageResponse
+	15,  // 60: slipway.v1.RerunRunResponse.run:type_name -> slipway.v1.Run
+	16,  // 61: slipway.v1.CancelJobResponse.job:type_name -> slipway.v1.RunJob
+	181, // 62: slipway.v1.ListJobsRequest.page:type_name -> slipway.v1.PageRequest
+	16,  // 63: slipway.v1.ListJobsResponse.items:type_name -> slipway.v1.RunJob
+	182, // 64: slipway.v1.ListJobsResponse.page:type_name -> slipway.v1.PageResponse
+	16,  // 65: slipway.v1.GetJobResponse.job:type_name -> slipway.v1.RunJob
+	20,  // 66: slipway.v1.ListTestReportsResponse.items:type_name -> slipway.v1.RunTestReport
+	181, // 67: slipway.v1.ListTestCasesRequest.page:type_name -> slipway.v1.PageRequest
+	21,  // 68: slipway.v1.ListTestCasesResponse.items:type_name -> slipway.v1.RunTestCase
+	182, // 69: slipway.v1.ListTestCasesResponse.page:type_name -> slipway.v1.PageResponse
+	22,  // 70: slipway.v1.ListCoverageResponse.items:type_name -> slipway.v1.RunCoverage
+	181, // 71: slipway.v1.ListAnnotationsRequest.page:type_name -> slipway.v1.PageRequest
+	23,  // 72: slipway.v1.ListAnnotationsResponse.items:type_name -> slipway.v1.RunAnnotation
+	182, // 73: slipway.v1.ListAnnotationsResponse.page:type_name -> slipway.v1.PageResponse
 	0,   // 74: slipway.v1.GetBadgeResponse.status:type_name -> slipway.v1.RunStatus
-	160, // 75: slipway.v1.GetBadgeResponse.finished_at:type_name -> google.protobuf.Timestamp
-	161, // 76: slipway.v1.GetBadgeResponse.duration:type_name -> google.protobuf.Duration
-	161, // 77: slipway.v1.StepTimingStat.p50:type_name -> google.protobuf.Duration
-	161, // 78: slipway.v1.StepTimingStat.p95:type_name -> google.protobuf.Duration
-	161, // 79: slipway.v1.StepTimingStat.mean:type_name -> google.protobuf.Duration
-	161, // 80: slipway.v1.StepTimingStat.latest:type_name -> google.protobuf.Duration
-	55,  // 81: slipway.v1.GetStepTimingStatsResponse.items:type_name -> slipway.v1.StepTimingStat
-	160, // 82: slipway.v1.HostedSuspension.suspended_at:type_name -> google.protobuf.Timestamp
-	57,  // 83: slipway.v1.GetHostedSuspensionResponse.suspension:type_name -> slipway.v1.HostedSuspension
-	57,  // 84: slipway.v1.SuspendHostedRunnersResponse.suspension:type_name -> slipway.v1.HostedSuspension
-	162, // 85: slipway.v1.ListRunnerPoolsRequest.page:type_name -> slipway.v1.PageRequest
-	21,  // 86: slipway.v1.ListRunnerPoolsResponse.items:type_name -> slipway.v1.RunnerPool
-	163, // 87: slipway.v1.ListRunnerPoolsResponse.page:type_name -> slipway.v1.PageResponse
-	21,  // 88: slipway.v1.GetRunnerPoolResponse.pool:type_name -> slipway.v1.RunnerPool
-	4,   // 89: slipway.v1.CreateRunnerPoolRequest.kind:type_name -> slipway.v1.RunnerPoolKind
-	5,   // 90: slipway.v1.CreateRunnerPoolRequest.executor:type_name -> slipway.v1.RunnerExecutor
-	161, // 91: slipway.v1.CreateRunnerPoolRequest.no_runner_timeout:type_name -> google.protobuf.Duration
-	21,  // 92: slipway.v1.CreateRunnerPoolResponse.pool:type_name -> slipway.v1.RunnerPool
-	161, // 93: slipway.v1.UpdateRunnerPoolRequest.no_runner_timeout:type_name -> google.protobuf.Duration
-	21,  // 94: slipway.v1.UpdateRunnerPoolResponse.pool:type_name -> slipway.v1.RunnerPool
-	161, // 95: slipway.v1.CreateRegistrationTokenRequest.ttl:type_name -> google.protobuf.Duration
-	23,  // 96: slipway.v1.CreateRegistrationTokenResponse.token:type_name -> slipway.v1.RegistrationToken
-	23,  // 97: slipway.v1.ListRegistrationTokensResponse.items:type_name -> slipway.v1.RegistrationToken
-	162, // 98: slipway.v1.ListRunnersRequest.page:type_name -> slipway.v1.PageRequest
-	22,  // 99: slipway.v1.ListRunnersResponse.items:type_name -> slipway.v1.Runner
-	163, // 100: slipway.v1.ListRunnersResponse.page:type_name -> slipway.v1.PageResponse
-	22,  // 101: slipway.v1.GetRunnerResponse.runner:type_name -> slipway.v1.Runner
-	13,  // 102: slipway.v1.GetRunnerResponse.active_jobs:type_name -> slipway.v1.RunJob
-	22,  // 103: slipway.v1.UpdateRunnerResponse.runner:type_name -> slipway.v1.Runner
-	160, // 104: slipway.v1.LogLine.ts:type_name -> google.protobuf.Timestamp
-	6,   // 105: slipway.v1.LogLine.stream:type_name -> slipway.v1.LogStream
-	88,  // 106: slipway.v1.LogChunk.lines:type_name -> slipway.v1.LogLine
-	88,  // 107: slipway.v1.TailResponse.lines:type_name -> slipway.v1.LogLine
-	88,  // 108: slipway.v1.GetLogsResponse.lines:type_name -> slipway.v1.LogLine
-	88,  // 109: slipway.v1.LogMatch.line:type_name -> slipway.v1.LogLine
-	88,  // 110: slipway.v1.LogMatch.before:type_name -> slipway.v1.LogLine
-	88,  // 111: slipway.v1.LogMatch.after:type_name -> slipway.v1.LogLine
-	95,  // 112: slipway.v1.SearchLogsResponse.matches:type_name -> slipway.v1.LogMatch
-	160, // 113: slipway.v1.GetLogDownloadResponse.expires_at:type_name -> google.protobuf.Timestamp
-	162, // 114: slipway.v1.ListArtifactsRequest.page:type_name -> slipway.v1.PageRequest
-	15,  // 115: slipway.v1.ListArtifactsResponse.items:type_name -> slipway.v1.RunArtifact
-	163, // 116: slipway.v1.ListArtifactsResponse.page:type_name -> slipway.v1.PageResponse
-	15,  // 117: slipway.v1.GetArtifactResponse.artifact:type_name -> slipway.v1.RunArtifact
-	160, // 118: slipway.v1.GetArtifactDownloadUrlResponse.expires_at:type_name -> google.protobuf.Timestamp
-	162, // 119: slipway.v1.ListCacheEntriesRequest.page:type_name -> slipway.v1.PageRequest
-	16,  // 120: slipway.v1.ListCacheEntriesResponse.items:type_name -> slipway.v1.CacheEntry
-	163, // 121: slipway.v1.ListCacheEntriesResponse.page:type_name -> slipway.v1.PageResponse
-	5,   // 122: slipway.v1.RegisterRequest.executor:type_name -> slipway.v1.RunnerExecutor
-	161, // 123: slipway.v1.RegisterResponse.heartbeat_interval:type_name -> google.protobuf.Duration
-	161, // 124: slipway.v1.RegisterResponse.lease_ttl:type_name -> google.protobuf.Duration
-	120, // 125: slipway.v1.ConnectRequest.hello:type_name -> slipway.v1.Hello
-	121, // 126: slipway.v1.ConnectRequest.heartbeat:type_name -> slipway.v1.Heartbeat
-	122, // 127: slipway.v1.ConnectRequest.accepted:type_name -> slipway.v1.JobAccepted
-	123, // 128: slipway.v1.ConnectRequest.step_update:type_name -> slipway.v1.StepUpdate
-	89,  // 129: slipway.v1.ConnectRequest.log_chunk:type_name -> slipway.v1.LogChunk
-	124, // 130: slipway.v1.ConnectRequest.result:type_name -> slipway.v1.JobResult
-	119, // 131: slipway.v1.ConnectRequest.rejected:type_name -> slipway.v1.JobRejected
-	117, // 132: slipway.v1.JobRejected.job:type_name -> slipway.v1.JobRef
-	117, // 133: slipway.v1.Hello.running:type_name -> slipway.v1.JobRef
-	117, // 134: slipway.v1.Heartbeat.running:type_name -> slipway.v1.JobRef
-	117, // 135: slipway.v1.JobAccepted.job:type_name -> slipway.v1.JobRef
-	117, // 136: slipway.v1.StepUpdate.job:type_name -> slipway.v1.JobRef
-	2,   // 137: slipway.v1.StepUpdate.status:type_name -> slipway.v1.RunStepStatus
-	160, // 138: slipway.v1.StepUpdate.started_at:type_name -> google.protobuf.Timestamp
-	160, // 139: slipway.v1.StepUpdate.finished_at:type_name -> google.protobuf.Timestamp
-	157, // 140: slipway.v1.StepUpdate.outputs:type_name -> google.protobuf.Struct
-	117, // 141: slipway.v1.JobResult.job:type_name -> slipway.v1.JobRef
-	1,   // 142: slipway.v1.JobResult.status:type_name -> slipway.v1.RunJobStatus
-	157, // 143: slipway.v1.JobResult.outputs:type_name -> google.protobuf.Struct
-	126, // 144: slipway.v1.ConnectResponse.welcome:type_name -> slipway.v1.Welcome
-	127, // 145: slipway.v1.ConnectResponse.assignment:type_name -> slipway.v1.JobAssignment
-	128, // 146: slipway.v1.ConnectResponse.cancel:type_name -> slipway.v1.CancelJob
-	129, // 147: slipway.v1.ConnectResponse.log_ack:type_name -> slipway.v1.LogAck
-	130, // 148: slipway.v1.ConnectResponse.error:type_name -> slipway.v1.ServerError
-	131, // 149: slipway.v1.ConnectResponse.drain:type_name -> slipway.v1.Drain
-	132, // 150: slipway.v1.ConnectResponse.job_ack:type_name -> slipway.v1.JobAck
-	133, // 151: slipway.v1.ConnectResponse.pong:type_name -> slipway.v1.Pong
-	161, // 152: slipway.v1.Welcome.heartbeat_interval:type_name -> google.protobuf.Duration
-	161, // 153: slipway.v1.Welcome.lease_ttl:type_name -> google.protobuf.Duration
-	160, // 154: slipway.v1.Welcome.server_time:type_name -> google.protobuf.Timestamp
-	117, // 155: slipway.v1.Welcome.revoked:type_name -> slipway.v1.JobRef
-	117, // 156: slipway.v1.JobAssignment.job:type_name -> slipway.v1.JobRef
-	160, // 157: slipway.v1.JobAssignment.lease_expires_at:type_name -> google.protobuf.Timestamp
-	159, // 158: slipway.v1.JobAssignment.git:type_name -> slipway.v1.GitRef
-	157, // 159: slipway.v1.JobAssignment.event:type_name -> google.protobuf.Struct
-	157, // 160: slipway.v1.JobAssignment.inputs:type_name -> google.protobuf.Struct
-	157, // 161: slipway.v1.JobAssignment.matrix:type_name -> google.protobuf.Struct
-	157, // 162: slipway.v1.JobAssignment.needs:type_name -> google.protobuf.Struct
-	157, // 163: slipway.v1.JobAssignment.spec:type_name -> google.protobuf.Struct
-	153, // 164: slipway.v1.JobAssignment.env:type_name -> slipway.v1.JobAssignment.EnvEntry
-	154, // 165: slipway.v1.JobAssignment.secrets:type_name -> slipway.v1.JobAssignment.SecretsEntry
-	161, // 166: slipway.v1.JobAssignment.timeout:type_name -> google.protobuf.Duration
-	157, // 167: slipway.v1.JobAssignment.eval_context:type_name -> google.protobuf.Struct
-	117, // 168: slipway.v1.CancelJob.job:type_name -> slipway.v1.JobRef
-	161, // 169: slipway.v1.CancelJob.grace:type_name -> google.protobuf.Duration
-	117, // 170: slipway.v1.LogAck.job:type_name -> slipway.v1.JobRef
-	117, // 171: slipway.v1.ServerError.job:type_name -> slipway.v1.JobRef
-	117, // 172: slipway.v1.JobAck.job:type_name -> slipway.v1.JobRef
-	2,   // 173: slipway.v1.JobAck.step_status:type_name -> slipway.v1.RunStepStatus
-	160, // 174: slipway.v1.Pong.at:type_name -> google.protobuf.Timestamp
-	117, // 175: slipway.v1.CreateArtifactRequest.job:type_name -> slipway.v1.JobRef
-	161, // 176: slipway.v1.CreateArtifactRequest.retention:type_name -> google.protobuf.Duration
-	155, // 177: slipway.v1.CreateArtifactResponse.upload_headers:type_name -> slipway.v1.CreateArtifactResponse.UploadHeadersEntry
-	160, // 178: slipway.v1.CreateArtifactResponse.expires_at:type_name -> google.protobuf.Timestamp
-	117, // 179: slipway.v1.FinalizeArtifactRequest.job:type_name -> slipway.v1.JobRef
-	15,  // 180: slipway.v1.FinalizeArtifactResponse.artifact:type_name -> slipway.v1.RunArtifact
-	117, // 181: slipway.v1.GetArtifactDownloadRequest.job:type_name -> slipway.v1.JobRef
-	160, // 182: slipway.v1.GetArtifactDownloadResponse.expires_at:type_name -> google.protobuf.Timestamp
-	117, // 183: slipway.v1.LookupCacheRequest.job:type_name -> slipway.v1.JobRef
-	117, // 184: slipway.v1.ReserveCacheRequest.job:type_name -> slipway.v1.JobRef
-	156, // 185: slipway.v1.ReserveCacheResponse.upload_headers:type_name -> slipway.v1.ReserveCacheResponse.UploadHeadersEntry
-	160, // 186: slipway.v1.ReserveCacheResponse.expires_at:type_name -> google.protobuf.Timestamp
-	117, // 187: slipway.v1.CommitCacheRequest.job:type_name -> slipway.v1.JobRef
-	16,  // 188: slipway.v1.CommitCacheResponse.entry:type_name -> slipway.v1.CacheEntry
-	117, // 189: slipway.v1.UploadTestReportRequest.job:type_name -> slipway.v1.JobRef
-	8,   // 190: slipway.v1.UploadTestReportRequest.format:type_name -> slipway.v1.ReportFormat
-	17,  // 191: slipway.v1.UploadTestReportResponse.report:type_name -> slipway.v1.RunTestReport
-	19,  // 192: slipway.v1.UploadTestReportResponse.coverage:type_name -> slipway.v1.RunCoverage
-	9,   // 193: slipway.v1.AnnotationInput.level:type_name -> slipway.v1.AnnotationLevel
-	117, // 194: slipway.v1.AddAnnotationsRequest.job:type_name -> slipway.v1.JobRef
-	148, // 195: slipway.v1.AddAnnotationsRequest.annotations:type_name -> slipway.v1.AnnotationInput
-	117, // 196: slipway.v1.IssueJobTokenRequest.job:type_name -> slipway.v1.JobRef
-	160, // 197: slipway.v1.IssueJobTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
-	24,  // 198: slipway.v1.RunService.ListRuns:input_type -> slipway.v1.ListRunsRequest
-	26,  // 199: slipway.v1.RunService.GetRun:input_type -> slipway.v1.GetRunRequest
-	28,  // 200: slipway.v1.RunService.WatchRun:input_type -> slipway.v1.WatchRunRequest
-	32,  // 201: slipway.v1.RunService.TriggerRun:input_type -> slipway.v1.TriggerRunRequest
-	34,  // 202: slipway.v1.RunService.CancelRun:input_type -> slipway.v1.CancelRunRequest
-	36,  // 203: slipway.v1.RunService.RerunRun:input_type -> slipway.v1.RerunRunRequest
-	38,  // 204: slipway.v1.RunService.CancelJob:input_type -> slipway.v1.CancelJobRequest
-	40,  // 205: slipway.v1.RunService.ListJobs:input_type -> slipway.v1.ListJobsRequest
-	42,  // 206: slipway.v1.RunService.GetJob:input_type -> slipway.v1.GetJobRequest
-	44,  // 207: slipway.v1.RunService.ListTestReports:input_type -> slipway.v1.ListTestReportsRequest
-	46,  // 208: slipway.v1.RunService.ListTestCases:input_type -> slipway.v1.ListTestCasesRequest
-	48,  // 209: slipway.v1.RunService.ListCoverage:input_type -> slipway.v1.ListCoverageRequest
-	50,  // 210: slipway.v1.RunService.ListAnnotations:input_type -> slipway.v1.ListAnnotationsRequest
-	52,  // 211: slipway.v1.RunService.GetBadge:input_type -> slipway.v1.GetBadgeRequest
-	54,  // 212: slipway.v1.RunService.GetStepTimingStats:input_type -> slipway.v1.GetStepTimingStatsRequest
-	64,  // 213: slipway.v1.RunnerPoolService.ListRunnerPools:input_type -> slipway.v1.ListRunnerPoolsRequest
-	66,  // 214: slipway.v1.RunnerPoolService.GetRunnerPool:input_type -> slipway.v1.GetRunnerPoolRequest
-	68,  // 215: slipway.v1.RunnerPoolService.CreateRunnerPool:input_type -> slipway.v1.CreateRunnerPoolRequest
-	70,  // 216: slipway.v1.RunnerPoolService.UpdateRunnerPool:input_type -> slipway.v1.UpdateRunnerPoolRequest
-	72,  // 217: slipway.v1.RunnerPoolService.DeleteRunnerPool:input_type -> slipway.v1.DeleteRunnerPoolRequest
-	74,  // 218: slipway.v1.RunnerPoolService.CreateRegistrationToken:input_type -> slipway.v1.CreateRegistrationTokenRequest
-	76,  // 219: slipway.v1.RunnerPoolService.ListRegistrationTokens:input_type -> slipway.v1.ListRegistrationTokensRequest
-	78,  // 220: slipway.v1.RunnerPoolService.RevokeRegistrationToken:input_type -> slipway.v1.RevokeRegistrationTokenRequest
-	80,  // 221: slipway.v1.RunnerPoolService.ListRunners:input_type -> slipway.v1.ListRunnersRequest
-	82,  // 222: slipway.v1.RunnerPoolService.GetRunner:input_type -> slipway.v1.GetRunnerRequest
-	84,  // 223: slipway.v1.RunnerPoolService.UpdateRunner:input_type -> slipway.v1.UpdateRunnerRequest
-	86,  // 224: slipway.v1.RunnerPoolService.DeleteRunner:input_type -> slipway.v1.DeleteRunnerRequest
-	58,  // 225: slipway.v1.RunnerPoolService.GetHostedSuspension:input_type -> slipway.v1.GetHostedSuspensionRequest
-	60,  // 226: slipway.v1.RunnerPoolService.SuspendHostedRunners:input_type -> slipway.v1.SuspendHostedRunnersRequest
-	62,  // 227: slipway.v1.RunnerPoolService.ResumeHostedRunners:input_type -> slipway.v1.ResumeHostedRunnersRequest
-	90,  // 228: slipway.v1.LogService.Tail:input_type -> slipway.v1.TailRequest
-	92,  // 229: slipway.v1.LogService.GetLogs:input_type -> slipway.v1.GetLogsRequest
-	94,  // 230: slipway.v1.LogService.SearchLogs:input_type -> slipway.v1.SearchLogsRequest
-	97,  // 231: slipway.v1.LogService.GetLogDownload:input_type -> slipway.v1.GetLogDownloadRequest
-	99,  // 232: slipway.v1.ArtifactService.ListArtifacts:input_type -> slipway.v1.ListArtifactsRequest
-	101, // 233: slipway.v1.ArtifactService.GetArtifact:input_type -> slipway.v1.GetArtifactRequest
-	103, // 234: slipway.v1.ArtifactService.GetArtifactDownloadUrl:input_type -> slipway.v1.GetArtifactDownloadUrlRequest
-	105, // 235: slipway.v1.ArtifactService.DeleteArtifact:input_type -> slipway.v1.DeleteArtifactRequest
-	107, // 236: slipway.v1.ArtifactService.ListCacheEntries:input_type -> slipway.v1.ListCacheEntriesRequest
-	109, // 237: slipway.v1.ArtifactService.DeleteCacheEntry:input_type -> slipway.v1.DeleteCacheEntryRequest
-	115, // 238: slipway.v1.RunnerService.Register:input_type -> slipway.v1.RegisterRequest
-	118, // 239: slipway.v1.RunnerService.Connect:input_type -> slipway.v1.ConnectRequest
-	134, // 240: slipway.v1.RunnerService.CreateArtifact:input_type -> slipway.v1.CreateArtifactRequest
-	136, // 241: slipway.v1.RunnerService.FinalizeArtifact:input_type -> slipway.v1.FinalizeArtifactRequest
-	138, // 242: slipway.v1.RunnerService.GetArtifactDownload:input_type -> slipway.v1.GetArtifactDownloadRequest
-	140, // 243: slipway.v1.RunnerService.LookupCache:input_type -> slipway.v1.LookupCacheRequest
-	142, // 244: slipway.v1.RunnerService.ReserveCache:input_type -> slipway.v1.ReserveCacheRequest
-	144, // 245: slipway.v1.RunnerService.CommitCache:input_type -> slipway.v1.CommitCacheRequest
-	146, // 246: slipway.v1.RunnerService.UploadTestReport:input_type -> slipway.v1.UploadTestReportRequest
-	149, // 247: slipway.v1.RunnerService.AddAnnotations:input_type -> slipway.v1.AddAnnotationsRequest
-	151, // 248: slipway.v1.RunnerService.IssueJobToken:input_type -> slipway.v1.IssueJobTokenRequest
-	113, // 249: slipway.v1.RunnerService.GetRunnerDownload:input_type -> slipway.v1.GetRunnerDownloadRequest
-	111, // 250: slipway.v1.RunnerService.Deregister:input_type -> slipway.v1.DeregisterRequest
-	25,  // 251: slipway.v1.RunService.ListRuns:output_type -> slipway.v1.ListRunsResponse
-	27,  // 252: slipway.v1.RunService.GetRun:output_type -> slipway.v1.GetRunResponse
-	29,  // 253: slipway.v1.RunService.WatchRun:output_type -> slipway.v1.WatchRunResponse
-	33,  // 254: slipway.v1.RunService.TriggerRun:output_type -> slipway.v1.TriggerRunResponse
-	35,  // 255: slipway.v1.RunService.CancelRun:output_type -> slipway.v1.CancelRunResponse
-	37,  // 256: slipway.v1.RunService.RerunRun:output_type -> slipway.v1.RerunRunResponse
-	39,  // 257: slipway.v1.RunService.CancelJob:output_type -> slipway.v1.CancelJobResponse
-	41,  // 258: slipway.v1.RunService.ListJobs:output_type -> slipway.v1.ListJobsResponse
-	43,  // 259: slipway.v1.RunService.GetJob:output_type -> slipway.v1.GetJobResponse
-	45,  // 260: slipway.v1.RunService.ListTestReports:output_type -> slipway.v1.ListTestReportsResponse
-	47,  // 261: slipway.v1.RunService.ListTestCases:output_type -> slipway.v1.ListTestCasesResponse
-	49,  // 262: slipway.v1.RunService.ListCoverage:output_type -> slipway.v1.ListCoverageResponse
-	51,  // 263: slipway.v1.RunService.ListAnnotations:output_type -> slipway.v1.ListAnnotationsResponse
-	53,  // 264: slipway.v1.RunService.GetBadge:output_type -> slipway.v1.GetBadgeResponse
-	56,  // 265: slipway.v1.RunService.GetStepTimingStats:output_type -> slipway.v1.GetStepTimingStatsResponse
-	65,  // 266: slipway.v1.RunnerPoolService.ListRunnerPools:output_type -> slipway.v1.ListRunnerPoolsResponse
-	67,  // 267: slipway.v1.RunnerPoolService.GetRunnerPool:output_type -> slipway.v1.GetRunnerPoolResponse
-	69,  // 268: slipway.v1.RunnerPoolService.CreateRunnerPool:output_type -> slipway.v1.CreateRunnerPoolResponse
-	71,  // 269: slipway.v1.RunnerPoolService.UpdateRunnerPool:output_type -> slipway.v1.UpdateRunnerPoolResponse
-	73,  // 270: slipway.v1.RunnerPoolService.DeleteRunnerPool:output_type -> slipway.v1.DeleteRunnerPoolResponse
-	75,  // 271: slipway.v1.RunnerPoolService.CreateRegistrationToken:output_type -> slipway.v1.CreateRegistrationTokenResponse
-	77,  // 272: slipway.v1.RunnerPoolService.ListRegistrationTokens:output_type -> slipway.v1.ListRegistrationTokensResponse
-	79,  // 273: slipway.v1.RunnerPoolService.RevokeRegistrationToken:output_type -> slipway.v1.RevokeRegistrationTokenResponse
-	81,  // 274: slipway.v1.RunnerPoolService.ListRunners:output_type -> slipway.v1.ListRunnersResponse
-	83,  // 275: slipway.v1.RunnerPoolService.GetRunner:output_type -> slipway.v1.GetRunnerResponse
-	85,  // 276: slipway.v1.RunnerPoolService.UpdateRunner:output_type -> slipway.v1.UpdateRunnerResponse
-	87,  // 277: slipway.v1.RunnerPoolService.DeleteRunner:output_type -> slipway.v1.DeleteRunnerResponse
-	59,  // 278: slipway.v1.RunnerPoolService.GetHostedSuspension:output_type -> slipway.v1.GetHostedSuspensionResponse
-	61,  // 279: slipway.v1.RunnerPoolService.SuspendHostedRunners:output_type -> slipway.v1.SuspendHostedRunnersResponse
-	63,  // 280: slipway.v1.RunnerPoolService.ResumeHostedRunners:output_type -> slipway.v1.ResumeHostedRunnersResponse
-	91,  // 281: slipway.v1.LogService.Tail:output_type -> slipway.v1.TailResponse
-	93,  // 282: slipway.v1.LogService.GetLogs:output_type -> slipway.v1.GetLogsResponse
-	96,  // 283: slipway.v1.LogService.SearchLogs:output_type -> slipway.v1.SearchLogsResponse
-	98,  // 284: slipway.v1.LogService.GetLogDownload:output_type -> slipway.v1.GetLogDownloadResponse
-	100, // 285: slipway.v1.ArtifactService.ListArtifacts:output_type -> slipway.v1.ListArtifactsResponse
-	102, // 286: slipway.v1.ArtifactService.GetArtifact:output_type -> slipway.v1.GetArtifactResponse
-	104, // 287: slipway.v1.ArtifactService.GetArtifactDownloadUrl:output_type -> slipway.v1.GetArtifactDownloadUrlResponse
-	106, // 288: slipway.v1.ArtifactService.DeleteArtifact:output_type -> slipway.v1.DeleteArtifactResponse
-	108, // 289: slipway.v1.ArtifactService.ListCacheEntries:output_type -> slipway.v1.ListCacheEntriesResponse
-	110, // 290: slipway.v1.ArtifactService.DeleteCacheEntry:output_type -> slipway.v1.DeleteCacheEntryResponse
-	116, // 291: slipway.v1.RunnerService.Register:output_type -> slipway.v1.RegisterResponse
-	125, // 292: slipway.v1.RunnerService.Connect:output_type -> slipway.v1.ConnectResponse
-	135, // 293: slipway.v1.RunnerService.CreateArtifact:output_type -> slipway.v1.CreateArtifactResponse
-	137, // 294: slipway.v1.RunnerService.FinalizeArtifact:output_type -> slipway.v1.FinalizeArtifactResponse
-	139, // 295: slipway.v1.RunnerService.GetArtifactDownload:output_type -> slipway.v1.GetArtifactDownloadResponse
-	141, // 296: slipway.v1.RunnerService.LookupCache:output_type -> slipway.v1.LookupCacheResponse
-	143, // 297: slipway.v1.RunnerService.ReserveCache:output_type -> slipway.v1.ReserveCacheResponse
-	145, // 298: slipway.v1.RunnerService.CommitCache:output_type -> slipway.v1.CommitCacheResponse
-	147, // 299: slipway.v1.RunnerService.UploadTestReport:output_type -> slipway.v1.UploadTestReportResponse
-	150, // 300: slipway.v1.RunnerService.AddAnnotations:output_type -> slipway.v1.AddAnnotationsResponse
-	152, // 301: slipway.v1.RunnerService.IssueJobToken:output_type -> slipway.v1.IssueJobTokenResponse
-	114, // 302: slipway.v1.RunnerService.GetRunnerDownload:output_type -> slipway.v1.GetRunnerDownloadResponse
-	112, // 303: slipway.v1.RunnerService.Deregister:output_type -> slipway.v1.DeregisterResponse
-	251, // [251:304] is the sub-list for method output_type
-	198, // [198:251] is the sub-list for method input_type
-	198, // [198:198] is the sub-list for extension type_name
-	198, // [198:198] is the sub-list for extension extendee
-	0,   // [0:198] is the sub-list for field type_name
+	179, // 75: slipway.v1.GetBadgeResponse.finished_at:type_name -> google.protobuf.Timestamp
+	180, // 76: slipway.v1.GetBadgeResponse.duration:type_name -> google.protobuf.Duration
+	180, // 77: slipway.v1.StepTimingStat.p50:type_name -> google.protobuf.Duration
+	180, // 78: slipway.v1.StepTimingStat.p95:type_name -> google.protobuf.Duration
+	180, // 79: slipway.v1.StepTimingStat.mean:type_name -> google.protobuf.Duration
+	180, // 80: slipway.v1.StepTimingStat.latest:type_name -> google.protobuf.Duration
+	58,  // 81: slipway.v1.GetStepTimingStatsResponse.items:type_name -> slipway.v1.StepTimingStat
+	11,  // 82: slipway.v1.GetInsightsSummaryRequest.branch_scope:type_name -> slipway.v1.InsightsBranchScope
+	179, // 83: slipway.v1.InsightsDay.day:type_name -> google.protobuf.Timestamp
+	180, // 84: slipway.v1.InsightsDay.p50:type_name -> google.protobuf.Duration
+	180, // 85: slipway.v1.InsightsDay.p95:type_name -> google.protobuf.Duration
+	179, // 86: slipway.v1.GetInsightsSummaryResponse.from:type_name -> google.protobuf.Timestamp
+	179, // 87: slipway.v1.GetInsightsSummaryResponse.to:type_name -> google.protobuf.Timestamp
+	180, // 88: slipway.v1.GetInsightsSummaryResponse.p50:type_name -> google.protobuf.Duration
+	180, // 89: slipway.v1.GetInsightsSummaryResponse.p95:type_name -> google.protobuf.Duration
+	180, // 90: slipway.v1.GetInsightsSummaryResponse.p50_previous:type_name -> google.protobuf.Duration
+	61,  // 91: slipway.v1.GetInsightsSummaryResponse.days:type_name -> slipway.v1.InsightsDay
+	181, // 92: slipway.v1.ListFlakyTestsRequest.page:type_name -> slipway.v1.PageRequest
+	12,  // 93: slipway.v1.FlakeOccurrence.kind:type_name -> slipway.v1.FlakeKind
+	179, // 94: slipway.v1.FlakeOccurrence.at:type_name -> google.protobuf.Timestamp
+	179, // 95: slipway.v1.FlakyTest.first_flaky_at:type_name -> google.protobuf.Timestamp
+	179, // 96: slipway.v1.FlakyTest.last_flaky_at:type_name -> google.protobuf.Timestamp
+	179, // 97: slipway.v1.FlakyTest.last_seen_at:type_name -> google.protobuf.Timestamp
+	7,   // 98: slipway.v1.FlakyTest.last_status:type_name -> slipway.v1.TestStatus
+	64,  // 99: slipway.v1.FlakyTest.recent:type_name -> slipway.v1.FlakeOccurrence
+	65,  // 100: slipway.v1.ListFlakyTestsResponse.items:type_name -> slipway.v1.FlakyTest
+	182, // 101: slipway.v1.ListFlakyTestsResponse.page:type_name -> slipway.v1.PageResponse
+	181, // 102: slipway.v1.ListSlowTestsRequest.page:type_name -> slipway.v1.PageRequest
+	180, // 103: slipway.v1.SlowTest.avg_duration:type_name -> google.protobuf.Duration
+	180, // 104: slipway.v1.SlowTest.last_duration:type_name -> google.protobuf.Duration
+	180, // 105: slipway.v1.SlowTest.max_duration:type_name -> google.protobuf.Duration
+	179, // 106: slipway.v1.SlowTest.last_seen_at:type_name -> google.protobuf.Timestamp
+	68,  // 107: slipway.v1.ListSlowTestsResponse.items:type_name -> slipway.v1.SlowTest
+	182, // 108: slipway.v1.ListSlowTestsResponse.page:type_name -> slipway.v1.PageResponse
+	11,  // 109: slipway.v1.ListJobDurationsRequest.branch_scope:type_name -> slipway.v1.InsightsBranchScope
+	13,  // 110: slipway.v1.ListJobDurationsRequest.order:type_name -> slipway.v1.JobDurationOrder
+	181, // 111: slipway.v1.ListJobDurationsRequest.page:type_name -> slipway.v1.PageRequest
+	180, // 112: slipway.v1.JobDuration.p50:type_name -> google.protobuf.Duration
+	180, // 113: slipway.v1.JobDuration.p95:type_name -> google.protobuf.Duration
+	180, // 114: slipway.v1.JobDuration.p50_previous:type_name -> google.protobuf.Duration
+	71,  // 115: slipway.v1.ListJobDurationsResponse.items:type_name -> slipway.v1.JobDuration
+	182, // 116: slipway.v1.ListJobDurationsResponse.page:type_name -> slipway.v1.PageResponse
+	181, // 117: slipway.v1.ListCacheStatsRequest.page:type_name -> slipway.v1.PageRequest
+	179, // 118: slipway.v1.CacheStat.last_day:type_name -> google.protobuf.Timestamp
+	74,  // 119: slipway.v1.ListCacheStatsResponse.items:type_name -> slipway.v1.CacheStat
+	182, // 120: slipway.v1.ListCacheStatsResponse.page:type_name -> slipway.v1.PageResponse
+	179, // 121: slipway.v1.HostedSuspension.suspended_at:type_name -> google.protobuf.Timestamp
+	76,  // 122: slipway.v1.GetHostedSuspensionResponse.suspension:type_name -> slipway.v1.HostedSuspension
+	76,  // 123: slipway.v1.SuspendHostedRunnersResponse.suspension:type_name -> slipway.v1.HostedSuspension
+	181, // 124: slipway.v1.ListRunnerPoolsRequest.page:type_name -> slipway.v1.PageRequest
+	24,  // 125: slipway.v1.ListRunnerPoolsResponse.items:type_name -> slipway.v1.RunnerPool
+	182, // 126: slipway.v1.ListRunnerPoolsResponse.page:type_name -> slipway.v1.PageResponse
+	24,  // 127: slipway.v1.GetRunnerPoolResponse.pool:type_name -> slipway.v1.RunnerPool
+	4,   // 128: slipway.v1.CreateRunnerPoolRequest.kind:type_name -> slipway.v1.RunnerPoolKind
+	5,   // 129: slipway.v1.CreateRunnerPoolRequest.executor:type_name -> slipway.v1.RunnerExecutor
+	180, // 130: slipway.v1.CreateRunnerPoolRequest.no_runner_timeout:type_name -> google.protobuf.Duration
+	24,  // 131: slipway.v1.CreateRunnerPoolResponse.pool:type_name -> slipway.v1.RunnerPool
+	180, // 132: slipway.v1.UpdateRunnerPoolRequest.no_runner_timeout:type_name -> google.protobuf.Duration
+	24,  // 133: slipway.v1.UpdateRunnerPoolResponse.pool:type_name -> slipway.v1.RunnerPool
+	180, // 134: slipway.v1.CreateRegistrationTokenRequest.ttl:type_name -> google.protobuf.Duration
+	26,  // 135: slipway.v1.CreateRegistrationTokenResponse.token:type_name -> slipway.v1.RegistrationToken
+	26,  // 136: slipway.v1.ListRegistrationTokensResponse.items:type_name -> slipway.v1.RegistrationToken
+	181, // 137: slipway.v1.ListRunnersRequest.page:type_name -> slipway.v1.PageRequest
+	25,  // 138: slipway.v1.ListRunnersResponse.items:type_name -> slipway.v1.Runner
+	182, // 139: slipway.v1.ListRunnersResponse.page:type_name -> slipway.v1.PageResponse
+	25,  // 140: slipway.v1.GetRunnerResponse.runner:type_name -> slipway.v1.Runner
+	16,  // 141: slipway.v1.GetRunnerResponse.active_jobs:type_name -> slipway.v1.RunJob
+	25,  // 142: slipway.v1.UpdateRunnerResponse.runner:type_name -> slipway.v1.Runner
+	179, // 143: slipway.v1.LogLine.ts:type_name -> google.protobuf.Timestamp
+	6,   // 144: slipway.v1.LogLine.stream:type_name -> slipway.v1.LogStream
+	107, // 145: slipway.v1.LogChunk.lines:type_name -> slipway.v1.LogLine
+	107, // 146: slipway.v1.TailResponse.lines:type_name -> slipway.v1.LogLine
+	107, // 147: slipway.v1.GetLogsResponse.lines:type_name -> slipway.v1.LogLine
+	107, // 148: slipway.v1.LogMatch.line:type_name -> slipway.v1.LogLine
+	107, // 149: slipway.v1.LogMatch.before:type_name -> slipway.v1.LogLine
+	107, // 150: slipway.v1.LogMatch.after:type_name -> slipway.v1.LogLine
+	114, // 151: slipway.v1.SearchLogsResponse.matches:type_name -> slipway.v1.LogMatch
+	179, // 152: slipway.v1.GetLogDownloadResponse.expires_at:type_name -> google.protobuf.Timestamp
+	181, // 153: slipway.v1.ListArtifactsRequest.page:type_name -> slipway.v1.PageRequest
+	18,  // 154: slipway.v1.ListArtifactsResponse.items:type_name -> slipway.v1.RunArtifact
+	182, // 155: slipway.v1.ListArtifactsResponse.page:type_name -> slipway.v1.PageResponse
+	18,  // 156: slipway.v1.GetArtifactResponse.artifact:type_name -> slipway.v1.RunArtifact
+	179, // 157: slipway.v1.GetArtifactDownloadUrlResponse.expires_at:type_name -> google.protobuf.Timestamp
+	181, // 158: slipway.v1.ListCacheEntriesRequest.page:type_name -> slipway.v1.PageRequest
+	19,  // 159: slipway.v1.ListCacheEntriesResponse.items:type_name -> slipway.v1.CacheEntry
+	182, // 160: slipway.v1.ListCacheEntriesResponse.page:type_name -> slipway.v1.PageResponse
+	5,   // 161: slipway.v1.RegisterRequest.executor:type_name -> slipway.v1.RunnerExecutor
+	180, // 162: slipway.v1.RegisterResponse.heartbeat_interval:type_name -> google.protobuf.Duration
+	180, // 163: slipway.v1.RegisterResponse.lease_ttl:type_name -> google.protobuf.Duration
+	139, // 164: slipway.v1.ConnectRequest.hello:type_name -> slipway.v1.Hello
+	140, // 165: slipway.v1.ConnectRequest.heartbeat:type_name -> slipway.v1.Heartbeat
+	141, // 166: slipway.v1.ConnectRequest.accepted:type_name -> slipway.v1.JobAccepted
+	142, // 167: slipway.v1.ConnectRequest.step_update:type_name -> slipway.v1.StepUpdate
+	108, // 168: slipway.v1.ConnectRequest.log_chunk:type_name -> slipway.v1.LogChunk
+	143, // 169: slipway.v1.ConnectRequest.result:type_name -> slipway.v1.JobResult
+	138, // 170: slipway.v1.ConnectRequest.rejected:type_name -> slipway.v1.JobRejected
+	136, // 171: slipway.v1.JobRejected.job:type_name -> slipway.v1.JobRef
+	136, // 172: slipway.v1.Hello.running:type_name -> slipway.v1.JobRef
+	136, // 173: slipway.v1.Heartbeat.running:type_name -> slipway.v1.JobRef
+	136, // 174: slipway.v1.JobAccepted.job:type_name -> slipway.v1.JobRef
+	136, // 175: slipway.v1.StepUpdate.job:type_name -> slipway.v1.JobRef
+	2,   // 176: slipway.v1.StepUpdate.status:type_name -> slipway.v1.RunStepStatus
+	179, // 177: slipway.v1.StepUpdate.started_at:type_name -> google.protobuf.Timestamp
+	179, // 178: slipway.v1.StepUpdate.finished_at:type_name -> google.protobuf.Timestamp
+	176, // 179: slipway.v1.StepUpdate.outputs:type_name -> google.protobuf.Struct
+	136, // 180: slipway.v1.JobResult.job:type_name -> slipway.v1.JobRef
+	1,   // 181: slipway.v1.JobResult.status:type_name -> slipway.v1.RunJobStatus
+	176, // 182: slipway.v1.JobResult.outputs:type_name -> google.protobuf.Struct
+	145, // 183: slipway.v1.ConnectResponse.welcome:type_name -> slipway.v1.Welcome
+	146, // 184: slipway.v1.ConnectResponse.assignment:type_name -> slipway.v1.JobAssignment
+	147, // 185: slipway.v1.ConnectResponse.cancel:type_name -> slipway.v1.CancelJob
+	148, // 186: slipway.v1.ConnectResponse.log_ack:type_name -> slipway.v1.LogAck
+	149, // 187: slipway.v1.ConnectResponse.error:type_name -> slipway.v1.ServerError
+	150, // 188: slipway.v1.ConnectResponse.drain:type_name -> slipway.v1.Drain
+	151, // 189: slipway.v1.ConnectResponse.job_ack:type_name -> slipway.v1.JobAck
+	152, // 190: slipway.v1.ConnectResponse.pong:type_name -> slipway.v1.Pong
+	180, // 191: slipway.v1.Welcome.heartbeat_interval:type_name -> google.protobuf.Duration
+	180, // 192: slipway.v1.Welcome.lease_ttl:type_name -> google.protobuf.Duration
+	179, // 193: slipway.v1.Welcome.server_time:type_name -> google.protobuf.Timestamp
+	136, // 194: slipway.v1.Welcome.revoked:type_name -> slipway.v1.JobRef
+	136, // 195: slipway.v1.JobAssignment.job:type_name -> slipway.v1.JobRef
+	179, // 196: slipway.v1.JobAssignment.lease_expires_at:type_name -> google.protobuf.Timestamp
+	178, // 197: slipway.v1.JobAssignment.git:type_name -> slipway.v1.GitRef
+	176, // 198: slipway.v1.JobAssignment.event:type_name -> google.protobuf.Struct
+	176, // 199: slipway.v1.JobAssignment.inputs:type_name -> google.protobuf.Struct
+	176, // 200: slipway.v1.JobAssignment.matrix:type_name -> google.protobuf.Struct
+	176, // 201: slipway.v1.JobAssignment.needs:type_name -> google.protobuf.Struct
+	176, // 202: slipway.v1.JobAssignment.spec:type_name -> google.protobuf.Struct
+	172, // 203: slipway.v1.JobAssignment.env:type_name -> slipway.v1.JobAssignment.EnvEntry
+	173, // 204: slipway.v1.JobAssignment.secrets:type_name -> slipway.v1.JobAssignment.SecretsEntry
+	180, // 205: slipway.v1.JobAssignment.timeout:type_name -> google.protobuf.Duration
+	176, // 206: slipway.v1.JobAssignment.eval_context:type_name -> google.protobuf.Struct
+	136, // 207: slipway.v1.CancelJob.job:type_name -> slipway.v1.JobRef
+	180, // 208: slipway.v1.CancelJob.grace:type_name -> google.protobuf.Duration
+	136, // 209: slipway.v1.LogAck.job:type_name -> slipway.v1.JobRef
+	136, // 210: slipway.v1.ServerError.job:type_name -> slipway.v1.JobRef
+	136, // 211: slipway.v1.JobAck.job:type_name -> slipway.v1.JobRef
+	2,   // 212: slipway.v1.JobAck.step_status:type_name -> slipway.v1.RunStepStatus
+	179, // 213: slipway.v1.Pong.at:type_name -> google.protobuf.Timestamp
+	136, // 214: slipway.v1.CreateArtifactRequest.job:type_name -> slipway.v1.JobRef
+	180, // 215: slipway.v1.CreateArtifactRequest.retention:type_name -> google.protobuf.Duration
+	174, // 216: slipway.v1.CreateArtifactResponse.upload_headers:type_name -> slipway.v1.CreateArtifactResponse.UploadHeadersEntry
+	179, // 217: slipway.v1.CreateArtifactResponse.expires_at:type_name -> google.protobuf.Timestamp
+	136, // 218: slipway.v1.FinalizeArtifactRequest.job:type_name -> slipway.v1.JobRef
+	18,  // 219: slipway.v1.FinalizeArtifactResponse.artifact:type_name -> slipway.v1.RunArtifact
+	136, // 220: slipway.v1.GetArtifactDownloadRequest.job:type_name -> slipway.v1.JobRef
+	179, // 221: slipway.v1.GetArtifactDownloadResponse.expires_at:type_name -> google.protobuf.Timestamp
+	136, // 222: slipway.v1.LookupCacheRequest.job:type_name -> slipway.v1.JobRef
+	136, // 223: slipway.v1.ReserveCacheRequest.job:type_name -> slipway.v1.JobRef
+	175, // 224: slipway.v1.ReserveCacheResponse.upload_headers:type_name -> slipway.v1.ReserveCacheResponse.UploadHeadersEntry
+	179, // 225: slipway.v1.ReserveCacheResponse.expires_at:type_name -> google.protobuf.Timestamp
+	136, // 226: slipway.v1.CommitCacheRequest.job:type_name -> slipway.v1.JobRef
+	19,  // 227: slipway.v1.CommitCacheResponse.entry:type_name -> slipway.v1.CacheEntry
+	136, // 228: slipway.v1.UploadTestReportRequest.job:type_name -> slipway.v1.JobRef
+	8,   // 229: slipway.v1.UploadTestReportRequest.format:type_name -> slipway.v1.ReportFormat
+	20,  // 230: slipway.v1.UploadTestReportResponse.report:type_name -> slipway.v1.RunTestReport
+	22,  // 231: slipway.v1.UploadTestReportResponse.coverage:type_name -> slipway.v1.RunCoverage
+	9,   // 232: slipway.v1.AnnotationInput.level:type_name -> slipway.v1.AnnotationLevel
+	136, // 233: slipway.v1.AddAnnotationsRequest.job:type_name -> slipway.v1.JobRef
+	167, // 234: slipway.v1.AddAnnotationsRequest.annotations:type_name -> slipway.v1.AnnotationInput
+	136, // 235: slipway.v1.IssueJobTokenRequest.job:type_name -> slipway.v1.JobRef
+	179, // 236: slipway.v1.IssueJobTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
+	27,  // 237: slipway.v1.RunService.ListRuns:input_type -> slipway.v1.ListRunsRequest
+	29,  // 238: slipway.v1.RunService.GetRun:input_type -> slipway.v1.GetRunRequest
+	31,  // 239: slipway.v1.RunService.WatchRun:input_type -> slipway.v1.WatchRunRequest
+	35,  // 240: slipway.v1.RunService.TriggerRun:input_type -> slipway.v1.TriggerRunRequest
+	37,  // 241: slipway.v1.RunService.CancelRun:input_type -> slipway.v1.CancelRunRequest
+	39,  // 242: slipway.v1.RunService.RerunRun:input_type -> slipway.v1.RerunRunRequest
+	41,  // 243: slipway.v1.RunService.CancelJob:input_type -> slipway.v1.CancelJobRequest
+	43,  // 244: slipway.v1.RunService.ListJobs:input_type -> slipway.v1.ListJobsRequest
+	45,  // 245: slipway.v1.RunService.GetJob:input_type -> slipway.v1.GetJobRequest
+	47,  // 246: slipway.v1.RunService.ListTestReports:input_type -> slipway.v1.ListTestReportsRequest
+	49,  // 247: slipway.v1.RunService.ListTestCases:input_type -> slipway.v1.ListTestCasesRequest
+	51,  // 248: slipway.v1.RunService.ListCoverage:input_type -> slipway.v1.ListCoverageRequest
+	53,  // 249: slipway.v1.RunService.ListAnnotations:input_type -> slipway.v1.ListAnnotationsRequest
+	55,  // 250: slipway.v1.RunService.GetBadge:input_type -> slipway.v1.GetBadgeRequest
+	57,  // 251: slipway.v1.RunService.GetStepTimingStats:input_type -> slipway.v1.GetStepTimingStatsRequest
+	60,  // 252: slipway.v1.RunService.GetInsightsSummary:input_type -> slipway.v1.GetInsightsSummaryRequest
+	63,  // 253: slipway.v1.RunService.ListFlakyTests:input_type -> slipway.v1.ListFlakyTestsRequest
+	67,  // 254: slipway.v1.RunService.ListSlowTests:input_type -> slipway.v1.ListSlowTestsRequest
+	70,  // 255: slipway.v1.RunService.ListJobDurations:input_type -> slipway.v1.ListJobDurationsRequest
+	73,  // 256: slipway.v1.RunService.ListCacheStats:input_type -> slipway.v1.ListCacheStatsRequest
+	83,  // 257: slipway.v1.RunnerPoolService.ListRunnerPools:input_type -> slipway.v1.ListRunnerPoolsRequest
+	85,  // 258: slipway.v1.RunnerPoolService.GetRunnerPool:input_type -> slipway.v1.GetRunnerPoolRequest
+	87,  // 259: slipway.v1.RunnerPoolService.CreateRunnerPool:input_type -> slipway.v1.CreateRunnerPoolRequest
+	89,  // 260: slipway.v1.RunnerPoolService.UpdateRunnerPool:input_type -> slipway.v1.UpdateRunnerPoolRequest
+	91,  // 261: slipway.v1.RunnerPoolService.DeleteRunnerPool:input_type -> slipway.v1.DeleteRunnerPoolRequest
+	93,  // 262: slipway.v1.RunnerPoolService.CreateRegistrationToken:input_type -> slipway.v1.CreateRegistrationTokenRequest
+	95,  // 263: slipway.v1.RunnerPoolService.ListRegistrationTokens:input_type -> slipway.v1.ListRegistrationTokensRequest
+	97,  // 264: slipway.v1.RunnerPoolService.RevokeRegistrationToken:input_type -> slipway.v1.RevokeRegistrationTokenRequest
+	99,  // 265: slipway.v1.RunnerPoolService.ListRunners:input_type -> slipway.v1.ListRunnersRequest
+	101, // 266: slipway.v1.RunnerPoolService.GetRunner:input_type -> slipway.v1.GetRunnerRequest
+	103, // 267: slipway.v1.RunnerPoolService.UpdateRunner:input_type -> slipway.v1.UpdateRunnerRequest
+	105, // 268: slipway.v1.RunnerPoolService.DeleteRunner:input_type -> slipway.v1.DeleteRunnerRequest
+	77,  // 269: slipway.v1.RunnerPoolService.GetHostedSuspension:input_type -> slipway.v1.GetHostedSuspensionRequest
+	79,  // 270: slipway.v1.RunnerPoolService.SuspendHostedRunners:input_type -> slipway.v1.SuspendHostedRunnersRequest
+	81,  // 271: slipway.v1.RunnerPoolService.ResumeHostedRunners:input_type -> slipway.v1.ResumeHostedRunnersRequest
+	109, // 272: slipway.v1.LogService.Tail:input_type -> slipway.v1.TailRequest
+	111, // 273: slipway.v1.LogService.GetLogs:input_type -> slipway.v1.GetLogsRequest
+	113, // 274: slipway.v1.LogService.SearchLogs:input_type -> slipway.v1.SearchLogsRequest
+	116, // 275: slipway.v1.LogService.GetLogDownload:input_type -> slipway.v1.GetLogDownloadRequest
+	118, // 276: slipway.v1.ArtifactService.ListArtifacts:input_type -> slipway.v1.ListArtifactsRequest
+	120, // 277: slipway.v1.ArtifactService.GetArtifact:input_type -> slipway.v1.GetArtifactRequest
+	122, // 278: slipway.v1.ArtifactService.GetArtifactDownloadUrl:input_type -> slipway.v1.GetArtifactDownloadUrlRequest
+	124, // 279: slipway.v1.ArtifactService.DeleteArtifact:input_type -> slipway.v1.DeleteArtifactRequest
+	126, // 280: slipway.v1.ArtifactService.ListCacheEntries:input_type -> slipway.v1.ListCacheEntriesRequest
+	128, // 281: slipway.v1.ArtifactService.DeleteCacheEntry:input_type -> slipway.v1.DeleteCacheEntryRequest
+	134, // 282: slipway.v1.RunnerService.Register:input_type -> slipway.v1.RegisterRequest
+	137, // 283: slipway.v1.RunnerService.Connect:input_type -> slipway.v1.ConnectRequest
+	153, // 284: slipway.v1.RunnerService.CreateArtifact:input_type -> slipway.v1.CreateArtifactRequest
+	155, // 285: slipway.v1.RunnerService.FinalizeArtifact:input_type -> slipway.v1.FinalizeArtifactRequest
+	157, // 286: slipway.v1.RunnerService.GetArtifactDownload:input_type -> slipway.v1.GetArtifactDownloadRequest
+	159, // 287: slipway.v1.RunnerService.LookupCache:input_type -> slipway.v1.LookupCacheRequest
+	161, // 288: slipway.v1.RunnerService.ReserveCache:input_type -> slipway.v1.ReserveCacheRequest
+	163, // 289: slipway.v1.RunnerService.CommitCache:input_type -> slipway.v1.CommitCacheRequest
+	165, // 290: slipway.v1.RunnerService.UploadTestReport:input_type -> slipway.v1.UploadTestReportRequest
+	168, // 291: slipway.v1.RunnerService.AddAnnotations:input_type -> slipway.v1.AddAnnotationsRequest
+	170, // 292: slipway.v1.RunnerService.IssueJobToken:input_type -> slipway.v1.IssueJobTokenRequest
+	132, // 293: slipway.v1.RunnerService.GetRunnerDownload:input_type -> slipway.v1.GetRunnerDownloadRequest
+	130, // 294: slipway.v1.RunnerService.Deregister:input_type -> slipway.v1.DeregisterRequest
+	28,  // 295: slipway.v1.RunService.ListRuns:output_type -> slipway.v1.ListRunsResponse
+	30,  // 296: slipway.v1.RunService.GetRun:output_type -> slipway.v1.GetRunResponse
+	32,  // 297: slipway.v1.RunService.WatchRun:output_type -> slipway.v1.WatchRunResponse
+	36,  // 298: slipway.v1.RunService.TriggerRun:output_type -> slipway.v1.TriggerRunResponse
+	38,  // 299: slipway.v1.RunService.CancelRun:output_type -> slipway.v1.CancelRunResponse
+	40,  // 300: slipway.v1.RunService.RerunRun:output_type -> slipway.v1.RerunRunResponse
+	42,  // 301: slipway.v1.RunService.CancelJob:output_type -> slipway.v1.CancelJobResponse
+	44,  // 302: slipway.v1.RunService.ListJobs:output_type -> slipway.v1.ListJobsResponse
+	46,  // 303: slipway.v1.RunService.GetJob:output_type -> slipway.v1.GetJobResponse
+	48,  // 304: slipway.v1.RunService.ListTestReports:output_type -> slipway.v1.ListTestReportsResponse
+	50,  // 305: slipway.v1.RunService.ListTestCases:output_type -> slipway.v1.ListTestCasesResponse
+	52,  // 306: slipway.v1.RunService.ListCoverage:output_type -> slipway.v1.ListCoverageResponse
+	54,  // 307: slipway.v1.RunService.ListAnnotations:output_type -> slipway.v1.ListAnnotationsResponse
+	56,  // 308: slipway.v1.RunService.GetBadge:output_type -> slipway.v1.GetBadgeResponse
+	59,  // 309: slipway.v1.RunService.GetStepTimingStats:output_type -> slipway.v1.GetStepTimingStatsResponse
+	62,  // 310: slipway.v1.RunService.GetInsightsSummary:output_type -> slipway.v1.GetInsightsSummaryResponse
+	66,  // 311: slipway.v1.RunService.ListFlakyTests:output_type -> slipway.v1.ListFlakyTestsResponse
+	69,  // 312: slipway.v1.RunService.ListSlowTests:output_type -> slipway.v1.ListSlowTestsResponse
+	72,  // 313: slipway.v1.RunService.ListJobDurations:output_type -> slipway.v1.ListJobDurationsResponse
+	75,  // 314: slipway.v1.RunService.ListCacheStats:output_type -> slipway.v1.ListCacheStatsResponse
+	84,  // 315: slipway.v1.RunnerPoolService.ListRunnerPools:output_type -> slipway.v1.ListRunnerPoolsResponse
+	86,  // 316: slipway.v1.RunnerPoolService.GetRunnerPool:output_type -> slipway.v1.GetRunnerPoolResponse
+	88,  // 317: slipway.v1.RunnerPoolService.CreateRunnerPool:output_type -> slipway.v1.CreateRunnerPoolResponse
+	90,  // 318: slipway.v1.RunnerPoolService.UpdateRunnerPool:output_type -> slipway.v1.UpdateRunnerPoolResponse
+	92,  // 319: slipway.v1.RunnerPoolService.DeleteRunnerPool:output_type -> slipway.v1.DeleteRunnerPoolResponse
+	94,  // 320: slipway.v1.RunnerPoolService.CreateRegistrationToken:output_type -> slipway.v1.CreateRegistrationTokenResponse
+	96,  // 321: slipway.v1.RunnerPoolService.ListRegistrationTokens:output_type -> slipway.v1.ListRegistrationTokensResponse
+	98,  // 322: slipway.v1.RunnerPoolService.RevokeRegistrationToken:output_type -> slipway.v1.RevokeRegistrationTokenResponse
+	100, // 323: slipway.v1.RunnerPoolService.ListRunners:output_type -> slipway.v1.ListRunnersResponse
+	102, // 324: slipway.v1.RunnerPoolService.GetRunner:output_type -> slipway.v1.GetRunnerResponse
+	104, // 325: slipway.v1.RunnerPoolService.UpdateRunner:output_type -> slipway.v1.UpdateRunnerResponse
+	106, // 326: slipway.v1.RunnerPoolService.DeleteRunner:output_type -> slipway.v1.DeleteRunnerResponse
+	78,  // 327: slipway.v1.RunnerPoolService.GetHostedSuspension:output_type -> slipway.v1.GetHostedSuspensionResponse
+	80,  // 328: slipway.v1.RunnerPoolService.SuspendHostedRunners:output_type -> slipway.v1.SuspendHostedRunnersResponse
+	82,  // 329: slipway.v1.RunnerPoolService.ResumeHostedRunners:output_type -> slipway.v1.ResumeHostedRunnersResponse
+	110, // 330: slipway.v1.LogService.Tail:output_type -> slipway.v1.TailResponse
+	112, // 331: slipway.v1.LogService.GetLogs:output_type -> slipway.v1.GetLogsResponse
+	115, // 332: slipway.v1.LogService.SearchLogs:output_type -> slipway.v1.SearchLogsResponse
+	117, // 333: slipway.v1.LogService.GetLogDownload:output_type -> slipway.v1.GetLogDownloadResponse
+	119, // 334: slipway.v1.ArtifactService.ListArtifacts:output_type -> slipway.v1.ListArtifactsResponse
+	121, // 335: slipway.v1.ArtifactService.GetArtifact:output_type -> slipway.v1.GetArtifactResponse
+	123, // 336: slipway.v1.ArtifactService.GetArtifactDownloadUrl:output_type -> slipway.v1.GetArtifactDownloadUrlResponse
+	125, // 337: slipway.v1.ArtifactService.DeleteArtifact:output_type -> slipway.v1.DeleteArtifactResponse
+	127, // 338: slipway.v1.ArtifactService.ListCacheEntries:output_type -> slipway.v1.ListCacheEntriesResponse
+	129, // 339: slipway.v1.ArtifactService.DeleteCacheEntry:output_type -> slipway.v1.DeleteCacheEntryResponse
+	135, // 340: slipway.v1.RunnerService.Register:output_type -> slipway.v1.RegisterResponse
+	144, // 341: slipway.v1.RunnerService.Connect:output_type -> slipway.v1.ConnectResponse
+	154, // 342: slipway.v1.RunnerService.CreateArtifact:output_type -> slipway.v1.CreateArtifactResponse
+	156, // 343: slipway.v1.RunnerService.FinalizeArtifact:output_type -> slipway.v1.FinalizeArtifactResponse
+	158, // 344: slipway.v1.RunnerService.GetArtifactDownload:output_type -> slipway.v1.GetArtifactDownloadResponse
+	160, // 345: slipway.v1.RunnerService.LookupCache:output_type -> slipway.v1.LookupCacheResponse
+	162, // 346: slipway.v1.RunnerService.ReserveCache:output_type -> slipway.v1.ReserveCacheResponse
+	164, // 347: slipway.v1.RunnerService.CommitCache:output_type -> slipway.v1.CommitCacheResponse
+	166, // 348: slipway.v1.RunnerService.UploadTestReport:output_type -> slipway.v1.UploadTestReportResponse
+	169, // 349: slipway.v1.RunnerService.AddAnnotations:output_type -> slipway.v1.AddAnnotationsResponse
+	171, // 350: slipway.v1.RunnerService.IssueJobToken:output_type -> slipway.v1.IssueJobTokenResponse
+	133, // 351: slipway.v1.RunnerService.GetRunnerDownload:output_type -> slipway.v1.GetRunnerDownloadResponse
+	131, // 352: slipway.v1.RunnerService.Deregister:output_type -> slipway.v1.DeregisterResponse
+	295, // [295:353] is the sub-list for method output_type
+	237, // [237:295] is the sub-list for method input_type
+	237, // [237:237] is the sub-list for extension type_name
+	237, // [237:237] is the sub-list for extension extendee
+	0,   // [0:237] is the sub-list for field type_name
 }
 
 func init() { file_slipway_v1_runs_proto_init() }
@@ -12065,9 +13940,9 @@ func file_slipway_v1_runs_proto_init() {
 		(*WatchRunResponse_Snapshot)(nil),
 		(*WatchRunResponse_Diff)(nil),
 	}
-	file_slipway_v1_runs_proto_msgTypes[59].OneofWrappers = []any{}
-	file_slipway_v1_runs_proto_msgTypes[73].OneofWrappers = []any{}
-	file_slipway_v1_runs_proto_msgTypes[107].OneofWrappers = []any{
+	file_slipway_v1_runs_proto_msgTypes[75].OneofWrappers = []any{}
+	file_slipway_v1_runs_proto_msgTypes[89].OneofWrappers = []any{}
+	file_slipway_v1_runs_proto_msgTypes[123].OneofWrappers = []any{
 		(*ConnectRequest_Hello)(nil),
 		(*ConnectRequest_Heartbeat)(nil),
 		(*ConnectRequest_Accepted)(nil),
@@ -12076,7 +13951,7 @@ func file_slipway_v1_runs_proto_init() {
 		(*ConnectRequest_Result)(nil),
 		(*ConnectRequest_Rejected)(nil),
 	}
-	file_slipway_v1_runs_proto_msgTypes[114].OneofWrappers = []any{
+	file_slipway_v1_runs_proto_msgTypes[130].OneofWrappers = []any{
 		(*ConnectResponse_Welcome)(nil),
 		(*ConnectResponse_Assignment)(nil),
 		(*ConnectResponse_Cancel)(nil),
@@ -12091,8 +13966,8 @@ func file_slipway_v1_runs_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_slipway_v1_runs_proto_rawDesc), len(file_slipway_v1_runs_proto_rawDesc)),
-			NumEnums:      11,
-			NumMessages:   146,
+			NumEnums:      14,
+			NumMessages:   162,
 			NumExtensions: 0,
 			NumServices:   5,
 		},

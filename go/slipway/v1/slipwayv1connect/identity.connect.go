@@ -168,6 +168,9 @@ const (
 	// IdentityServiceSendFeedbackProcedure is the procedure name of the IdentityService's SendFeedback
 	// RPC.
 	IdentityServiceSendFeedbackProcedure = "/slipway.v1.IdentityService/SendFeedback"
+	// IdentityServiceStartDemoSessionProcedure is the procedure name of the IdentityService's
+	// StartDemoSession RPC.
+	IdentityServiceStartDemoSessionProcedure = "/slipway.v1.IdentityService/StartDemoSession"
 	// ProjectServiceListProjectsProcedure is the procedure name of the ProjectService's ListProjects
 	// RPC.
 	ProjectServiceListProjectsProcedure = "/slipway.v1.ProjectService/ListProjects"
@@ -616,6 +619,13 @@ var (
 			Procedure:  IdentityServiceSendFeedbackProcedure,
 		}
 	})
+	identityServiceStartDemoSessionSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_identity_proto.Services().ByName("IdentityService").Methods().ByName("StartDemoSession"),
+			Procedure:  IdentityServiceStartDemoSessionProcedure,
+		}
+	})
 )
 
 // IdentityServiceClient is a client for the slipway.v1.IdentityService service.
@@ -666,6 +676,7 @@ type IdentityServiceClient interface {
 	ListInvitations(context.Context, *v1.ListInvitationsRequest) (*v1.ListInvitationsResponse, error)
 	RevokeInvitation(context.Context, *v1.RevokeInvitationRequest) (*v1.RevokeInvitationResponse, error)
 	SendFeedback(context.Context, *v1.SendFeedbackRequest) (*v1.SendFeedbackResponse, error)
+	StartDemoSession(context.Context, *v1.StartDemoSessionRequest) (*v1.StartDemoSessionResponse, error)
 }
 
 // NewIdentityServiceClient constructs a client for the slipway.v1.IdentityService service. Multiple
@@ -722,6 +733,7 @@ type IdentityServiceHandler interface {
 	ListInvitations(context.Context, *v1.ListInvitationsRequest) (*v1.ListInvitationsResponse, error)
 	RevokeInvitation(context.Context, *v1.RevokeInvitationRequest) (*v1.RevokeInvitationResponse, error)
 	SendFeedback(context.Context, *v1.SendFeedbackRequest) (*v1.SendFeedbackResponse, error)
+	StartDemoSession(context.Context, *v1.StartDemoSessionRequest) (*v1.StartDemoSessionResponse, error)
 }
 
 // RegisterIdentityServiceHandler registers svc as the slipway.v1.IdentityService implementation on
@@ -775,6 +787,7 @@ func RegisterIdentityServiceHandler(server *connect.Server, svc IdentityServiceH
 		connect.Method{Spec: identityServiceListInvitationsSpec(), Handler: adapter.listInvitations},
 		connect.Method{Spec: identityServiceRevokeInvitationSpec(), Handler: adapter.revokeInvitation},
 		connect.Method{Spec: identityServiceSendFeedbackSpec(), Handler: adapter.sendFeedback},
+		connect.Method{Spec: identityServiceStartDemoSessionSpec(), Handler: adapter.startDemoSession},
 	)
 }
 
@@ -963,6 +976,10 @@ func (UnimplementedIdentityServiceHandler) RevokeInvitation(context.Context, *v1
 
 func (UnimplementedIdentityServiceHandler) SendFeedback(context.Context, *v1.SendFeedbackRequest) (*v1.SendFeedbackResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.IdentityService.SendFeedback is not implemented")
+}
+
+func (UnimplementedIdentityServiceHandler) StartDemoSession(context.Context, *v1.StartDemoSessionRequest) (*v1.StartDemoSessionResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.IdentityService.StartDemoSession is not implemented")
 }
 
 type identityServiceClient struct {
@@ -1332,6 +1349,14 @@ func (c *identityServiceClient) RevokeInvitation(ctx context.Context, req *v1.Re
 func (c *identityServiceClient) SendFeedback(ctx context.Context, req *v1.SendFeedbackRequest) (*v1.SendFeedbackResponse, error) {
 	var res v1.SendFeedbackResponse
 	if err := c.client.CallUnary(ctx, identityServiceSendFeedbackSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *identityServiceClient) StartDemoSession(ctx context.Context, req *v1.StartDemoSessionRequest) (*v1.StartDemoSessionResponse, error) {
+	var res v1.StartDemoSessionResponse
+	if err := c.client.CallUnary(ctx, identityServiceStartDemoSessionSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -1885,6 +1910,18 @@ func (h identityServiceHandler) sendFeedback(ctx context.Context, _ connect.Spec
 		return err
 	}
 	res, err := h.svc.SendFeedback(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h identityServiceHandler) startDemoSession(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.StartDemoSessionRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.StartDemoSession(ctx, &req)
 	if err != nil {
 		return err
 	}

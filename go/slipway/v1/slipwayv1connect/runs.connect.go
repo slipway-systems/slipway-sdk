@@ -63,6 +63,18 @@ const (
 	// RunServiceGetStepTimingStatsProcedure is the procedure name of the RunService's
 	// GetStepTimingStats RPC.
 	RunServiceGetStepTimingStatsProcedure = "/slipway.v1.RunService/GetStepTimingStats"
+	// RunServiceGetInsightsSummaryProcedure is the procedure name of the RunService's
+	// GetInsightsSummary RPC.
+	RunServiceGetInsightsSummaryProcedure = "/slipway.v1.RunService/GetInsightsSummary"
+	// RunServiceListFlakyTestsProcedure is the procedure name of the RunService's ListFlakyTests RPC.
+	RunServiceListFlakyTestsProcedure = "/slipway.v1.RunService/ListFlakyTests"
+	// RunServiceListSlowTestsProcedure is the procedure name of the RunService's ListSlowTests RPC.
+	RunServiceListSlowTestsProcedure = "/slipway.v1.RunService/ListSlowTests"
+	// RunServiceListJobDurationsProcedure is the procedure name of the RunService's ListJobDurations
+	// RPC.
+	RunServiceListJobDurationsProcedure = "/slipway.v1.RunService/ListJobDurations"
+	// RunServiceListCacheStatsProcedure is the procedure name of the RunService's ListCacheStats RPC.
+	RunServiceListCacheStatsProcedure = "/slipway.v1.RunService/ListCacheStats"
 	// RunnerPoolServiceListRunnerPoolsProcedure is the procedure name of the RunnerPoolService's
 	// ListRunnerPools RPC.
 	RunnerPoolServiceListRunnerPoolsProcedure = "/slipway.v1.RunnerPoolService/ListRunnerPools"
@@ -275,6 +287,41 @@ var (
 			Procedure:  RunServiceGetStepTimingStatsProcedure,
 		}
 	})
+	runServiceGetInsightsSummarySpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_runs_proto.Services().ByName("RunService").Methods().ByName("GetInsightsSummary"),
+			Procedure:  RunServiceGetInsightsSummaryProcedure,
+		}
+	})
+	runServiceListFlakyTestsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_runs_proto.Services().ByName("RunService").Methods().ByName("ListFlakyTests"),
+			Procedure:  RunServiceListFlakyTestsProcedure,
+		}
+	})
+	runServiceListSlowTestsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_runs_proto.Services().ByName("RunService").Methods().ByName("ListSlowTests"),
+			Procedure:  RunServiceListSlowTestsProcedure,
+		}
+	})
+	runServiceListJobDurationsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_runs_proto.Services().ByName("RunService").Methods().ByName("ListJobDurations"),
+			Procedure:  RunServiceListJobDurationsProcedure,
+		}
+	})
+	runServiceListCacheStatsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_runs_proto.Services().ByName("RunService").Methods().ByName("ListCacheStats"),
+			Procedure:  RunServiceListCacheStatsProcedure,
+		}
+	})
 )
 
 // RunServiceClient is a client for the slipway.v1.RunService service.
@@ -300,6 +347,19 @@ type RunServiceClient interface {
 	// GetStepTimingStats powers the UI timing view: p50/p95 per job and step over recent successful runs, plus a
 	// regression hint comparing the latest run against the baseline.
 	GetStepTimingStats(context.Context, *v1.GetStepTimingStatsRequest) (*v1.GetStepTimingStatsResponse, error)
+	// Insights (per project, from rollups updated when runs finish; days are UTC). They take request fields only: none
+	// reads page.filter or page.order_by. window_days defaults to 30 and is clamped to 1..90.
+	// GetInsightsSummary: run counts, success rate, approximate p50/p95 run duration, flaky tests and cache hit rate,
+	// for the window and per day.
+	GetInsightsSummary(context.Context, *v1.GetInsightsSummaryRequest) (*v1.GetInsightsSummaryResponse, error)
+	// ListFlakyTests: tests that flaked in the window, by flake rate (desc), then test_id.
+	ListFlakyTests(context.Context, *v1.ListFlakyTestsRequest) (*v1.ListFlakyTestsResponse, error)
+	// ListSlowTests: tests seen in the window, by average duration (desc), then test_id.
+	ListSlowTests(context.Context, *v1.ListSlowTestsRequest) (*v1.ListSlowTestsResponse, error)
+	// ListJobDurations: approximate p50/p95 per job with the change against the previous window.
+	ListJobDurations(context.Context, *v1.ListJobDurationsRequest) (*v1.ListJobDurationsResponse, error)
+	// ListCacheStats: cache lookups per pipeline, job and cache, by lookups (desc).
+	ListCacheStats(context.Context, *v1.ListCacheStatsRequest) (*v1.ListCacheStatsResponse, error)
 }
 
 // NewRunServiceClient constructs a client for the slipway.v1.RunService service. Multiple service
@@ -351,6 +411,19 @@ type RunServiceHandler interface {
 	// GetStepTimingStats powers the UI timing view: p50/p95 per job and step over recent successful runs, plus a
 	// regression hint comparing the latest run against the baseline.
 	GetStepTimingStats(context.Context, *v1.GetStepTimingStatsRequest) (*v1.GetStepTimingStatsResponse, error)
+	// Insights (per project, from rollups updated when runs finish; days are UTC). They take request fields only: none
+	// reads page.filter or page.order_by. window_days defaults to 30 and is clamped to 1..90.
+	// GetInsightsSummary: run counts, success rate, approximate p50/p95 run duration, flaky tests and cache hit rate,
+	// for the window and per day.
+	GetInsightsSummary(context.Context, *v1.GetInsightsSummaryRequest) (*v1.GetInsightsSummaryResponse, error)
+	// ListFlakyTests: tests that flaked in the window, by flake rate (desc), then test_id.
+	ListFlakyTests(context.Context, *v1.ListFlakyTestsRequest) (*v1.ListFlakyTestsResponse, error)
+	// ListSlowTests: tests seen in the window, by average duration (desc), then test_id.
+	ListSlowTests(context.Context, *v1.ListSlowTestsRequest) (*v1.ListSlowTestsResponse, error)
+	// ListJobDurations: approximate p50/p95 per job with the change against the previous window.
+	ListJobDurations(context.Context, *v1.ListJobDurationsRequest) (*v1.ListJobDurationsResponse, error)
+	// ListCacheStats: cache lookups per pipeline, job and cache, by lookups (desc).
+	ListCacheStats(context.Context, *v1.ListCacheStatsRequest) (*v1.ListCacheStatsResponse, error)
 }
 
 // RegisterRunServiceHandler registers svc as the slipway.v1.RunService implementation on server.
@@ -372,6 +445,11 @@ func RegisterRunServiceHandler(server *connect.Server, svc RunServiceHandler) {
 		connect.Method{Spec: runServiceListAnnotationsSpec(), Handler: adapter.listAnnotations},
 		connect.Method{Spec: runServiceGetBadgeSpec(), Handler: adapter.getBadge},
 		connect.Method{Spec: runServiceGetStepTimingStatsSpec(), Handler: adapter.getStepTimingStats},
+		connect.Method{Spec: runServiceGetInsightsSummarySpec(), Handler: adapter.getInsightsSummary},
+		connect.Method{Spec: runServiceListFlakyTestsSpec(), Handler: adapter.listFlakyTests},
+		connect.Method{Spec: runServiceListSlowTestsSpec(), Handler: adapter.listSlowTests},
+		connect.Method{Spec: runServiceListJobDurationsSpec(), Handler: adapter.listJobDurations},
+		connect.Method{Spec: runServiceListCacheStatsSpec(), Handler: adapter.listCacheStats},
 	)
 }
 
@@ -451,6 +529,26 @@ func (UnimplementedRunServiceHandler) GetBadge(context.Context, *v1.GetBadgeRequ
 
 func (UnimplementedRunServiceHandler) GetStepTimingStats(context.Context, *v1.GetStepTimingStatsRequest) (*v1.GetStepTimingStatsResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.RunService.GetStepTimingStats is not implemented")
+}
+
+func (UnimplementedRunServiceHandler) GetInsightsSummary(context.Context, *v1.GetInsightsSummaryRequest) (*v1.GetInsightsSummaryResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.RunService.GetInsightsSummary is not implemented")
+}
+
+func (UnimplementedRunServiceHandler) ListFlakyTests(context.Context, *v1.ListFlakyTestsRequest) (*v1.ListFlakyTestsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.RunService.ListFlakyTests is not implemented")
+}
+
+func (UnimplementedRunServiceHandler) ListSlowTests(context.Context, *v1.ListSlowTestsRequest) (*v1.ListSlowTestsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.RunService.ListSlowTests is not implemented")
+}
+
+func (UnimplementedRunServiceHandler) ListJobDurations(context.Context, *v1.ListJobDurationsRequest) (*v1.ListJobDurationsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.RunService.ListJobDurations is not implemented")
+}
+
+func (UnimplementedRunServiceHandler) ListCacheStats(context.Context, *v1.ListCacheStatsRequest) (*v1.ListCacheStatsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.RunService.ListCacheStats is not implemented")
 }
 
 type runServiceClient struct {
@@ -572,6 +670,46 @@ func (c *runServiceClient) GetBadge(ctx context.Context, req *v1.GetBadgeRequest
 func (c *runServiceClient) GetStepTimingStats(ctx context.Context, req *v1.GetStepTimingStatsRequest) (*v1.GetStepTimingStatsResponse, error) {
 	var res v1.GetStepTimingStatsResponse
 	if err := c.client.CallUnary(ctx, runServiceGetStepTimingStatsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *runServiceClient) GetInsightsSummary(ctx context.Context, req *v1.GetInsightsSummaryRequest) (*v1.GetInsightsSummaryResponse, error) {
+	var res v1.GetInsightsSummaryResponse
+	if err := c.client.CallUnary(ctx, runServiceGetInsightsSummarySpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *runServiceClient) ListFlakyTests(ctx context.Context, req *v1.ListFlakyTestsRequest) (*v1.ListFlakyTestsResponse, error) {
+	var res v1.ListFlakyTestsResponse
+	if err := c.client.CallUnary(ctx, runServiceListFlakyTestsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *runServiceClient) ListSlowTests(ctx context.Context, req *v1.ListSlowTestsRequest) (*v1.ListSlowTestsResponse, error) {
+	var res v1.ListSlowTestsResponse
+	if err := c.client.CallUnary(ctx, runServiceListSlowTestsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *runServiceClient) ListJobDurations(ctx context.Context, req *v1.ListJobDurationsRequest) (*v1.ListJobDurationsResponse, error) {
+	var res v1.ListJobDurationsResponse
+	if err := c.client.CallUnary(ctx, runServiceListJobDurationsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *runServiceClient) ListCacheStats(ctx context.Context, req *v1.ListCacheStatsRequest) (*v1.ListCacheStatsResponse, error) {
+	var res v1.ListCacheStatsResponse
+	if err := c.client.CallUnary(ctx, runServiceListCacheStatsSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -749,6 +887,66 @@ func (h runServiceHandler) getStepTimingStats(ctx context.Context, _ connect.Spe
 		return err
 	}
 	res, err := h.svc.GetStepTimingStats(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h runServiceHandler) getInsightsSummary(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetInsightsSummaryRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetInsightsSummary(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h runServiceHandler) listFlakyTests(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListFlakyTestsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListFlakyTests(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h runServiceHandler) listSlowTests(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListSlowTestsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListSlowTests(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h runServiceHandler) listJobDurations(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListJobDurationsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListJobDurations(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h runServiceHandler) listCacheStats(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListCacheStatsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListCacheStats(ctx, &req)
 	if err != nil {
 		return err
 	}
