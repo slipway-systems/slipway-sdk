@@ -934,6 +934,11 @@ service RunnerService {
   rpc CreateArtifact(CreateArtifactRequest) returns (CreateArtifactResponse);
   rpc FinalizeArtifact(FinalizeArtifactRequest) returns (FinalizeArtifactResponse);
   rpc GetArtifactDownload(GetArtifactDownloadRequest) returns (GetArtifactDownloadResponse);
+  // ListRunArtifacts lists the artifacts of the caller's run that its job can download (slipway/artifact-download
+  // without a name): the newest uploaded artifact of each name, by name, each with a download URL. The job must be
+  // assigned to the calling runner, and only its own run can be listed. Control planes older than this RPC answer
+  // Unimplemented.
+  rpc ListRunArtifacts(ListRunArtifactsRequest) returns (ListRunArtifactsResponse);
   rpc LookupCache(LookupCacheRequest) returns (LookupCacheResponse);
   rpc ReserveCache(ReserveCacheRequest) returns (ReserveCacheResponse);
   rpc CommitCache(CommitCacheRequest) returns (CommitCacheResponse);
@@ -1186,6 +1191,25 @@ message GetArtifactDownloadResponse {
   int64 size = 3;
   string sha256 = 4;
   google.protobuf.Timestamp expires_at = 5;
+}
+message ListRunArtifactsRequest {
+  JobRef job = 1;       // caller job
+  string run_id = 2;    // empty or the caller's run; any other run is refused
+  string from_job = 3;  // optional producer job name filter
+  PageRequest page = 4; // page_token is the next_page_token of the previous page
+}
+message ListRunArtifactsResponse {
+  repeated RunArtifactDownload items = 1;
+  PageResponse page = 2;
+}
+// RunArtifactDownload is one artifact a job can download, with a presigned URL for it.
+message RunArtifactDownload {
+  string artifact_id = 1;
+  string name = 2;
+  int64 size = 3;
+  string sha256 = 4;
+  string download_url = 5;
+  google.protobuf.Timestamp expires_at = 6;
 }
 
 message LookupCacheRequest {

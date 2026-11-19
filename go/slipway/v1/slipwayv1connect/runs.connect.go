@@ -159,6 +159,9 @@ const (
 	// RunnerServiceGetArtifactDownloadProcedure is the procedure name of the RunnerService's
 	// GetArtifactDownload RPC.
 	RunnerServiceGetArtifactDownloadProcedure = "/slipway.v1.RunnerService/GetArtifactDownload"
+	// RunnerServiceListRunArtifactsProcedure is the procedure name of the RunnerService's
+	// ListRunArtifacts RPC.
+	RunnerServiceListRunArtifactsProcedure = "/slipway.v1.RunnerService/ListRunArtifacts"
 	// RunnerServiceLookupCacheProcedure is the procedure name of the RunnerService's LookupCache RPC.
 	RunnerServiceLookupCacheProcedure = "/slipway.v1.RunnerService/LookupCache"
 	// RunnerServiceReserveCacheProcedure is the procedure name of the RunnerService's ReserveCache RPC.
@@ -1989,6 +1992,13 @@ var (
 			Procedure:  RunnerServiceGetArtifactDownloadProcedure,
 		}
 	})
+	runnerServiceListRunArtifactsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_slipway_v1_runs_proto.Services().ByName("RunnerService").Methods().ByName("ListRunArtifacts"),
+			Procedure:  RunnerServiceListRunArtifactsProcedure,
+		}
+	})
 	runnerServiceLookupCacheSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeUnary,
@@ -2056,6 +2066,11 @@ type RunnerServiceClient interface {
 	CreateArtifact(context.Context, *v1.CreateArtifactRequest) (*v1.CreateArtifactResponse, error)
 	FinalizeArtifact(context.Context, *v1.FinalizeArtifactRequest) (*v1.FinalizeArtifactResponse, error)
 	GetArtifactDownload(context.Context, *v1.GetArtifactDownloadRequest) (*v1.GetArtifactDownloadResponse, error)
+	// ListRunArtifacts lists the artifacts of the caller's run that its job can download (slipway/artifact-download
+	// without a name): the newest uploaded artifact of each name, by name, each with a download URL. The job must be
+	// assigned to the calling runner, and only its own run can be listed. Control planes older than this RPC answer
+	// Unimplemented.
+	ListRunArtifacts(context.Context, *v1.ListRunArtifactsRequest) (*v1.ListRunArtifactsResponse, error)
 	LookupCache(context.Context, *v1.LookupCacheRequest) (*v1.LookupCacheResponse, error)
 	ReserveCache(context.Context, *v1.ReserveCacheRequest) (*v1.ReserveCacheResponse, error)
 	CommitCache(context.Context, *v1.CommitCacheRequest) (*v1.CommitCacheResponse, error)
@@ -2122,6 +2137,11 @@ type RunnerServiceHandler interface {
 	CreateArtifact(context.Context, *v1.CreateArtifactRequest) (*v1.CreateArtifactResponse, error)
 	FinalizeArtifact(context.Context, *v1.FinalizeArtifactRequest) (*v1.FinalizeArtifactResponse, error)
 	GetArtifactDownload(context.Context, *v1.GetArtifactDownloadRequest) (*v1.GetArtifactDownloadResponse, error)
+	// ListRunArtifacts lists the artifacts of the caller's run that its job can download (slipway/artifact-download
+	// without a name): the newest uploaded artifact of each name, by name, each with a download URL. The job must be
+	// assigned to the calling runner, and only its own run can be listed. Control planes older than this RPC answer
+	// Unimplemented.
+	ListRunArtifacts(context.Context, *v1.ListRunArtifactsRequest) (*v1.ListRunArtifactsResponse, error)
 	LookupCache(context.Context, *v1.LookupCacheRequest) (*v1.LookupCacheResponse, error)
 	ReserveCache(context.Context, *v1.ReserveCacheRequest) (*v1.ReserveCacheResponse, error)
 	CommitCache(context.Context, *v1.CommitCacheRequest) (*v1.CommitCacheResponse, error)
@@ -2147,6 +2167,7 @@ func RegisterRunnerServiceHandler(server *connect.Server, svc RunnerServiceHandl
 		connect.Method{Spec: runnerServiceCreateArtifactSpec(), Handler: adapter.createArtifact},
 		connect.Method{Spec: runnerServiceFinalizeArtifactSpec(), Handler: adapter.finalizeArtifact},
 		connect.Method{Spec: runnerServiceGetArtifactDownloadSpec(), Handler: adapter.getArtifactDownload},
+		connect.Method{Spec: runnerServiceListRunArtifactsSpec(), Handler: adapter.listRunArtifacts},
 		connect.Method{Spec: runnerServiceLookupCacheSpec(), Handler: adapter.lookupCache},
 		connect.Method{Spec: runnerServiceReserveCacheSpec(), Handler: adapter.reserveCache},
 		connect.Method{Spec: runnerServiceCommitCacheSpec(), Handler: adapter.commitCache},
@@ -2203,6 +2224,10 @@ func (UnimplementedRunnerServiceHandler) FinalizeArtifact(context.Context, *v1.F
 
 func (UnimplementedRunnerServiceHandler) GetArtifactDownload(context.Context, *v1.GetArtifactDownloadRequest) (*v1.GetArtifactDownloadResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.RunnerService.GetArtifactDownload is not implemented")
+}
+
+func (UnimplementedRunnerServiceHandler) ListRunArtifacts(context.Context, *v1.ListRunArtifactsRequest) (*v1.ListRunArtifactsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "slipway.v1.RunnerService.ListRunArtifacts is not implemented")
 }
 
 func (UnimplementedRunnerServiceHandler) LookupCache(context.Context, *v1.LookupCacheRequest) (*v1.LookupCacheResponse, error) {
@@ -2276,6 +2301,14 @@ func (c *runnerServiceClient) FinalizeArtifact(ctx context.Context, req *v1.Fina
 func (c *runnerServiceClient) GetArtifactDownload(ctx context.Context, req *v1.GetArtifactDownloadRequest) (*v1.GetArtifactDownloadResponse, error) {
 	var res v1.GetArtifactDownloadResponse
 	if err := c.client.CallUnary(ctx, runnerServiceGetArtifactDownloadSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *runnerServiceClient) ListRunArtifacts(ctx context.Context, req *v1.ListRunArtifactsRequest) (*v1.ListRunArtifactsResponse, error) {
+	var res v1.ListRunArtifactsResponse
+	if err := c.client.CallUnary(ctx, runnerServiceListRunArtifactsSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -2393,6 +2426,18 @@ func (h runnerServiceHandler) getArtifactDownload(ctx context.Context, _ connect
 		return err
 	}
 	res, err := h.svc.GetArtifactDownload(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h runnerServiceHandler) listRunArtifacts(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListRunArtifactsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListRunArtifacts(ctx, &req)
 	if err != nil {
 		return err
 	}
