@@ -3806,9 +3806,12 @@ func (x *GetJobResponse) GetJob() *RunJob {
 }
 
 type ListTestReportsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RunId         string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
-	JobId         string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	RunId string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	JobId string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	// page reads the reports in upload order a page at a time (page_size default 50, at most 500). Without it the
+	// response holds the first 5,000 reports, and page.next_page_token says when more follow.
+	Page          *PageRequest `protobuf:"bytes,3,opt,name=page,proto3" json:"page,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3857,10 +3860,17 @@ func (x *ListTestReportsRequest) GetJobId() string {
 	return ""
 }
 
-// The first 5,000 reports in upload order.
+func (x *ListTestReportsRequest) GetPage() *PageRequest {
+	if x != nil {
+		return x.Page
+	}
+	return nil
+}
+
 type ListTestReportsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*RunTestReport       `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Page          *PageResponse          `protobuf:"bytes,2,opt,name=page,proto3" json:"page,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3898,6 +3908,13 @@ func (*ListTestReportsResponse) Descriptor() ([]byte, []int) {
 func (x *ListTestReportsResponse) GetItems() []*RunTestReport {
 	if x != nil {
 		return x.Items
+	}
+	return nil
+}
+
+func (x *ListTestReportsResponse) GetPage() *PageResponse {
+	if x != nil {
+		return x.Page
 	}
 	return nil
 }
@@ -4007,9 +4024,12 @@ func (x *ListTestCasesResponse) GetPage() *PageResponse {
 }
 
 type ListCoverageRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RunId         string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
-	JobId         string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	RunId string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	JobId string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	// page reads the coverage reports in upload order a page at a time (page_size default 50, at most 500). Without it
+	// the response holds the first 5,000, and page.next_page_token says when more follow.
+	Page          *PageRequest `protobuf:"bytes,3,opt,name=page,proto3" json:"page,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4058,10 +4078,17 @@ func (x *ListCoverageRequest) GetJobId() string {
 	return ""
 }
 
-// The first 5,000 coverage reports in upload order.
+func (x *ListCoverageRequest) GetPage() *PageRequest {
+	if x != nil {
+		return x.Page
+	}
+	return nil
+}
+
 type ListCoverageResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*RunCoverage         `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Page          *PageResponse          `protobuf:"bytes,2,opt,name=page,proto3" json:"page,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4099,6 +4126,13 @@ func (*ListCoverageResponse) Descriptor() ([]byte, []int) {
 func (x *ListCoverageResponse) GetItems() []*RunCoverage {
 	if x != nil {
 		return x.Items
+	}
+	return nil
+}
+
+func (x *ListCoverageResponse) GetPage() *PageResponse {
+	if x != nil {
+		return x.Page
 	}
 	return nil
 }
@@ -12711,23 +12745,27 @@ const file_slipway_v1_runs_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
 	"\aattempt\x18\x02 \x01(\x05R\aattempt\"6\n" +
 	"\x0eGetJobResponse\x12$\n" +
-	"\x03job\x18\x01 \x01(\v2\x12.slipway.v1.RunJobR\x03job\"F\n" +
+	"\x03job\x18\x01 \x01(\v2\x12.slipway.v1.RunJobR\x03job\"s\n" +
 	"\x16ListTestReportsRequest\x12\x15\n" +
 	"\x06run_id\x18\x01 \x01(\tR\x05runId\x12\x15\n" +
-	"\x06job_id\x18\x02 \x01(\tR\x05jobId\"J\n" +
+	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x12+\n" +
+	"\x04page\x18\x03 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\"x\n" +
 	"\x17ListTestReportsResponse\x12/\n" +
-	"\x05items\x18\x01 \x03(\v2\x19.slipway.v1.RunTestReportR\x05items\"`\n" +
+	"\x05items\x18\x01 \x03(\v2\x19.slipway.v1.RunTestReportR\x05items\x12,\n" +
+	"\x04page\x18\x02 \x01(\v2\x18.slipway.v1.PageResponseR\x04page\"`\n" +
 	"\x14ListTestCasesRequest\x12\x1b\n" +
 	"\treport_id\x18\x01 \x01(\tR\breportId\x12+\n" +
 	"\x04page\x18\x02 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\"t\n" +
 	"\x15ListTestCasesResponse\x12-\n" +
 	"\x05items\x18\x01 \x03(\v2\x17.slipway.v1.RunTestCaseR\x05items\x12,\n" +
-	"\x04page\x18\x02 \x01(\v2\x18.slipway.v1.PageResponseR\x04page\"C\n" +
+	"\x04page\x18\x02 \x01(\v2\x18.slipway.v1.PageResponseR\x04page\"p\n" +
 	"\x13ListCoverageRequest\x12\x15\n" +
 	"\x06run_id\x18\x01 \x01(\tR\x05runId\x12\x15\n" +
-	"\x06job_id\x18\x02 \x01(\tR\x05jobId\"E\n" +
+	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x12+\n" +
+	"\x04page\x18\x03 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\"s\n" +
 	"\x14ListCoverageResponse\x12-\n" +
-	"\x05items\x18\x01 \x03(\v2\x17.slipway.v1.RunCoverageR\x05items\"s\n" +
+	"\x05items\x18\x01 \x03(\v2\x17.slipway.v1.RunCoverageR\x05items\x12,\n" +
+	"\x04page\x18\x02 \x01(\v2\x18.slipway.v1.PageResponseR\x04page\"s\n" +
 	"\x16ListAnnotationsRequest\x12\x15\n" +
 	"\x06run_id\x18\x01 \x01(\tR\x05runId\x12\x15\n" +
 	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x12+\n" +
@@ -13862,305 +13900,309 @@ var file_slipway_v1_runs_proto_depIdxs = []int32{
 	16,  // 63: slipway.v1.ListJobsResponse.items:type_name -> slipway.v1.RunJob
 	185, // 64: slipway.v1.ListJobsResponse.page:type_name -> slipway.v1.PageResponse
 	16,  // 65: slipway.v1.GetJobResponse.job:type_name -> slipway.v1.RunJob
-	20,  // 66: slipway.v1.ListTestReportsResponse.items:type_name -> slipway.v1.RunTestReport
-	184, // 67: slipway.v1.ListTestCasesRequest.page:type_name -> slipway.v1.PageRequest
-	21,  // 68: slipway.v1.ListTestCasesResponse.items:type_name -> slipway.v1.RunTestCase
-	185, // 69: slipway.v1.ListTestCasesResponse.page:type_name -> slipway.v1.PageResponse
-	22,  // 70: slipway.v1.ListCoverageResponse.items:type_name -> slipway.v1.RunCoverage
-	184, // 71: slipway.v1.ListAnnotationsRequest.page:type_name -> slipway.v1.PageRequest
-	23,  // 72: slipway.v1.ListAnnotationsResponse.items:type_name -> slipway.v1.RunAnnotation
-	185, // 73: slipway.v1.ListAnnotationsResponse.page:type_name -> slipway.v1.PageResponse
-	0,   // 74: slipway.v1.GetBadgeResponse.status:type_name -> slipway.v1.RunStatus
-	182, // 75: slipway.v1.GetBadgeResponse.finished_at:type_name -> google.protobuf.Timestamp
-	183, // 76: slipway.v1.GetBadgeResponse.duration:type_name -> google.protobuf.Duration
-	183, // 77: slipway.v1.StepTimingStat.p50:type_name -> google.protobuf.Duration
-	183, // 78: slipway.v1.StepTimingStat.p95:type_name -> google.protobuf.Duration
-	183, // 79: slipway.v1.StepTimingStat.mean:type_name -> google.protobuf.Duration
-	183, // 80: slipway.v1.StepTimingStat.latest:type_name -> google.protobuf.Duration
-	58,  // 81: slipway.v1.GetStepTimingStatsResponse.items:type_name -> slipway.v1.StepTimingStat
-	11,  // 82: slipway.v1.GetInsightsSummaryRequest.branch_scope:type_name -> slipway.v1.InsightsBranchScope
-	182, // 83: slipway.v1.InsightsDay.day:type_name -> google.protobuf.Timestamp
-	183, // 84: slipway.v1.InsightsDay.p50:type_name -> google.protobuf.Duration
-	183, // 85: slipway.v1.InsightsDay.p95:type_name -> google.protobuf.Duration
-	182, // 86: slipway.v1.GetInsightsSummaryResponse.from:type_name -> google.protobuf.Timestamp
-	182, // 87: slipway.v1.GetInsightsSummaryResponse.to:type_name -> google.protobuf.Timestamp
-	183, // 88: slipway.v1.GetInsightsSummaryResponse.p50:type_name -> google.protobuf.Duration
-	183, // 89: slipway.v1.GetInsightsSummaryResponse.p95:type_name -> google.protobuf.Duration
-	183, // 90: slipway.v1.GetInsightsSummaryResponse.p50_previous:type_name -> google.protobuf.Duration
-	61,  // 91: slipway.v1.GetInsightsSummaryResponse.days:type_name -> slipway.v1.InsightsDay
-	184, // 92: slipway.v1.ListFlakyTestsRequest.page:type_name -> slipway.v1.PageRequest
-	12,  // 93: slipway.v1.FlakeOccurrence.kind:type_name -> slipway.v1.FlakeKind
-	182, // 94: slipway.v1.FlakeOccurrence.at:type_name -> google.protobuf.Timestamp
-	182, // 95: slipway.v1.FlakyTest.first_flaky_at:type_name -> google.protobuf.Timestamp
-	182, // 96: slipway.v1.FlakyTest.last_flaky_at:type_name -> google.protobuf.Timestamp
-	182, // 97: slipway.v1.FlakyTest.last_seen_at:type_name -> google.protobuf.Timestamp
-	7,   // 98: slipway.v1.FlakyTest.last_status:type_name -> slipway.v1.TestStatus
-	64,  // 99: slipway.v1.FlakyTest.recent:type_name -> slipway.v1.FlakeOccurrence
-	65,  // 100: slipway.v1.ListFlakyTestsResponse.items:type_name -> slipway.v1.FlakyTest
-	185, // 101: slipway.v1.ListFlakyTestsResponse.page:type_name -> slipway.v1.PageResponse
-	184, // 102: slipway.v1.ListSlowTestsRequest.page:type_name -> slipway.v1.PageRequest
-	183, // 103: slipway.v1.SlowTest.avg_duration:type_name -> google.protobuf.Duration
-	183, // 104: slipway.v1.SlowTest.last_duration:type_name -> google.protobuf.Duration
-	183, // 105: slipway.v1.SlowTest.max_duration:type_name -> google.protobuf.Duration
-	182, // 106: slipway.v1.SlowTest.last_seen_at:type_name -> google.protobuf.Timestamp
-	68,  // 107: slipway.v1.ListSlowTestsResponse.items:type_name -> slipway.v1.SlowTest
-	185, // 108: slipway.v1.ListSlowTestsResponse.page:type_name -> slipway.v1.PageResponse
-	11,  // 109: slipway.v1.ListJobDurationsRequest.branch_scope:type_name -> slipway.v1.InsightsBranchScope
-	13,  // 110: slipway.v1.ListJobDurationsRequest.order:type_name -> slipway.v1.JobDurationOrder
-	184, // 111: slipway.v1.ListJobDurationsRequest.page:type_name -> slipway.v1.PageRequest
-	183, // 112: slipway.v1.JobDuration.p50:type_name -> google.protobuf.Duration
-	183, // 113: slipway.v1.JobDuration.p95:type_name -> google.protobuf.Duration
-	183, // 114: slipway.v1.JobDuration.p50_previous:type_name -> google.protobuf.Duration
-	71,  // 115: slipway.v1.ListJobDurationsResponse.items:type_name -> slipway.v1.JobDuration
-	185, // 116: slipway.v1.ListJobDurationsResponse.page:type_name -> slipway.v1.PageResponse
-	184, // 117: slipway.v1.ListCacheStatsRequest.page:type_name -> slipway.v1.PageRequest
-	182, // 118: slipway.v1.CacheStat.last_day:type_name -> google.protobuf.Timestamp
-	74,  // 119: slipway.v1.ListCacheStatsResponse.items:type_name -> slipway.v1.CacheStat
-	185, // 120: slipway.v1.ListCacheStatsResponse.page:type_name -> slipway.v1.PageResponse
-	182, // 121: slipway.v1.HostedSuspension.suspended_at:type_name -> google.protobuf.Timestamp
-	76,  // 122: slipway.v1.GetHostedSuspensionResponse.suspension:type_name -> slipway.v1.HostedSuspension
-	76,  // 123: slipway.v1.SuspendHostedRunnersResponse.suspension:type_name -> slipway.v1.HostedSuspension
-	184, // 124: slipway.v1.ListRunnerPoolsRequest.page:type_name -> slipway.v1.PageRequest
-	24,  // 125: slipway.v1.ListRunnerPoolsResponse.items:type_name -> slipway.v1.RunnerPool
-	185, // 126: slipway.v1.ListRunnerPoolsResponse.page:type_name -> slipway.v1.PageResponse
-	24,  // 127: slipway.v1.GetRunnerPoolResponse.pool:type_name -> slipway.v1.RunnerPool
-	4,   // 128: slipway.v1.CreateRunnerPoolRequest.kind:type_name -> slipway.v1.RunnerPoolKind
-	5,   // 129: slipway.v1.CreateRunnerPoolRequest.executor:type_name -> slipway.v1.RunnerExecutor
-	183, // 130: slipway.v1.CreateRunnerPoolRequest.no_runner_timeout:type_name -> google.protobuf.Duration
-	24,  // 131: slipway.v1.CreateRunnerPoolResponse.pool:type_name -> slipway.v1.RunnerPool
-	183, // 132: slipway.v1.UpdateRunnerPoolRequest.no_runner_timeout:type_name -> google.protobuf.Duration
-	24,  // 133: slipway.v1.UpdateRunnerPoolResponse.pool:type_name -> slipway.v1.RunnerPool
-	183, // 134: slipway.v1.CreateRegistrationTokenRequest.ttl:type_name -> google.protobuf.Duration
-	26,  // 135: slipway.v1.CreateRegistrationTokenResponse.token:type_name -> slipway.v1.RegistrationToken
-	26,  // 136: slipway.v1.ListRegistrationTokensResponse.items:type_name -> slipway.v1.RegistrationToken
-	184, // 137: slipway.v1.ListRunnersRequest.page:type_name -> slipway.v1.PageRequest
-	25,  // 138: slipway.v1.ListRunnersResponse.items:type_name -> slipway.v1.Runner
-	185, // 139: slipway.v1.ListRunnersResponse.page:type_name -> slipway.v1.PageResponse
-	25,  // 140: slipway.v1.GetRunnerResponse.runner:type_name -> slipway.v1.Runner
-	16,  // 141: slipway.v1.GetRunnerResponse.active_jobs:type_name -> slipway.v1.RunJob
-	25,  // 142: slipway.v1.UpdateRunnerResponse.runner:type_name -> slipway.v1.Runner
-	182, // 143: slipway.v1.LogLine.ts:type_name -> google.protobuf.Timestamp
-	6,   // 144: slipway.v1.LogLine.stream:type_name -> slipway.v1.LogStream
-	107, // 145: slipway.v1.LogChunk.lines:type_name -> slipway.v1.LogLine
-	107, // 146: slipway.v1.TailResponse.lines:type_name -> slipway.v1.LogLine
-	107, // 147: slipway.v1.GetLogsResponse.lines:type_name -> slipway.v1.LogLine
-	107, // 148: slipway.v1.LogMatch.line:type_name -> slipway.v1.LogLine
-	107, // 149: slipway.v1.LogMatch.before:type_name -> slipway.v1.LogLine
-	107, // 150: slipway.v1.LogMatch.after:type_name -> slipway.v1.LogLine
-	114, // 151: slipway.v1.SearchLogsResponse.matches:type_name -> slipway.v1.LogMatch
-	182, // 152: slipway.v1.GetLogDownloadResponse.expires_at:type_name -> google.protobuf.Timestamp
-	184, // 153: slipway.v1.ListArtifactsRequest.page:type_name -> slipway.v1.PageRequest
-	18,  // 154: slipway.v1.ListArtifactsResponse.items:type_name -> slipway.v1.RunArtifact
-	185, // 155: slipway.v1.ListArtifactsResponse.page:type_name -> slipway.v1.PageResponse
-	18,  // 156: slipway.v1.GetArtifactResponse.artifact:type_name -> slipway.v1.RunArtifact
-	182, // 157: slipway.v1.GetArtifactDownloadUrlResponse.expires_at:type_name -> google.protobuf.Timestamp
-	184, // 158: slipway.v1.ListCacheEntriesRequest.page:type_name -> slipway.v1.PageRequest
-	19,  // 159: slipway.v1.ListCacheEntriesResponse.items:type_name -> slipway.v1.CacheEntry
-	185, // 160: slipway.v1.ListCacheEntriesResponse.page:type_name -> slipway.v1.PageResponse
-	5,   // 161: slipway.v1.RegisterRequest.executor:type_name -> slipway.v1.RunnerExecutor
-	183, // 162: slipway.v1.RegisterResponse.heartbeat_interval:type_name -> google.protobuf.Duration
-	183, // 163: slipway.v1.RegisterResponse.lease_ttl:type_name -> google.protobuf.Duration
-	139, // 164: slipway.v1.ConnectRequest.hello:type_name -> slipway.v1.Hello
-	140, // 165: slipway.v1.ConnectRequest.heartbeat:type_name -> slipway.v1.Heartbeat
-	141, // 166: slipway.v1.ConnectRequest.accepted:type_name -> slipway.v1.JobAccepted
-	142, // 167: slipway.v1.ConnectRequest.step_update:type_name -> slipway.v1.StepUpdate
-	108, // 168: slipway.v1.ConnectRequest.log_chunk:type_name -> slipway.v1.LogChunk
-	143, // 169: slipway.v1.ConnectRequest.result:type_name -> slipway.v1.JobResult
-	138, // 170: slipway.v1.ConnectRequest.rejected:type_name -> slipway.v1.JobRejected
-	136, // 171: slipway.v1.JobRejected.job:type_name -> slipway.v1.JobRef
-	136, // 172: slipway.v1.Hello.running:type_name -> slipway.v1.JobRef
-	136, // 173: slipway.v1.Heartbeat.running:type_name -> slipway.v1.JobRef
-	136, // 174: slipway.v1.JobAccepted.job:type_name -> slipway.v1.JobRef
-	136, // 175: slipway.v1.StepUpdate.job:type_name -> slipway.v1.JobRef
-	2,   // 176: slipway.v1.StepUpdate.status:type_name -> slipway.v1.RunStepStatus
-	182, // 177: slipway.v1.StepUpdate.started_at:type_name -> google.protobuf.Timestamp
-	182, // 178: slipway.v1.StepUpdate.finished_at:type_name -> google.protobuf.Timestamp
-	179, // 179: slipway.v1.StepUpdate.outputs:type_name -> google.protobuf.Struct
-	136, // 180: slipway.v1.JobResult.job:type_name -> slipway.v1.JobRef
-	1,   // 181: slipway.v1.JobResult.status:type_name -> slipway.v1.RunJobStatus
-	179, // 182: slipway.v1.JobResult.outputs:type_name -> google.protobuf.Struct
-	145, // 183: slipway.v1.ConnectResponse.welcome:type_name -> slipway.v1.Welcome
-	146, // 184: slipway.v1.ConnectResponse.assignment:type_name -> slipway.v1.JobAssignment
-	147, // 185: slipway.v1.ConnectResponse.cancel:type_name -> slipway.v1.CancelJob
-	148, // 186: slipway.v1.ConnectResponse.log_ack:type_name -> slipway.v1.LogAck
-	149, // 187: slipway.v1.ConnectResponse.error:type_name -> slipway.v1.ServerError
-	150, // 188: slipway.v1.ConnectResponse.drain:type_name -> slipway.v1.Drain
-	151, // 189: slipway.v1.ConnectResponse.job_ack:type_name -> slipway.v1.JobAck
-	152, // 190: slipway.v1.ConnectResponse.pong:type_name -> slipway.v1.Pong
-	183, // 191: slipway.v1.Welcome.heartbeat_interval:type_name -> google.protobuf.Duration
-	183, // 192: slipway.v1.Welcome.lease_ttl:type_name -> google.protobuf.Duration
-	182, // 193: slipway.v1.Welcome.server_time:type_name -> google.protobuf.Timestamp
-	136, // 194: slipway.v1.Welcome.revoked:type_name -> slipway.v1.JobRef
-	136, // 195: slipway.v1.JobAssignment.job:type_name -> slipway.v1.JobRef
-	182, // 196: slipway.v1.JobAssignment.lease_expires_at:type_name -> google.protobuf.Timestamp
-	181, // 197: slipway.v1.JobAssignment.git:type_name -> slipway.v1.GitRef
-	179, // 198: slipway.v1.JobAssignment.event:type_name -> google.protobuf.Struct
-	179, // 199: slipway.v1.JobAssignment.inputs:type_name -> google.protobuf.Struct
-	179, // 200: slipway.v1.JobAssignment.matrix:type_name -> google.protobuf.Struct
-	179, // 201: slipway.v1.JobAssignment.needs:type_name -> google.protobuf.Struct
-	179, // 202: slipway.v1.JobAssignment.spec:type_name -> google.protobuf.Struct
-	175, // 203: slipway.v1.JobAssignment.env:type_name -> slipway.v1.JobAssignment.EnvEntry
-	176, // 204: slipway.v1.JobAssignment.secrets:type_name -> slipway.v1.JobAssignment.SecretsEntry
-	183, // 205: slipway.v1.JobAssignment.timeout:type_name -> google.protobuf.Duration
-	179, // 206: slipway.v1.JobAssignment.eval_context:type_name -> google.protobuf.Struct
-	136, // 207: slipway.v1.CancelJob.job:type_name -> slipway.v1.JobRef
-	183, // 208: slipway.v1.CancelJob.grace:type_name -> google.protobuf.Duration
-	136, // 209: slipway.v1.LogAck.job:type_name -> slipway.v1.JobRef
-	136, // 210: slipway.v1.ServerError.job:type_name -> slipway.v1.JobRef
-	136, // 211: slipway.v1.JobAck.job:type_name -> slipway.v1.JobRef
-	2,   // 212: slipway.v1.JobAck.step_status:type_name -> slipway.v1.RunStepStatus
-	182, // 213: slipway.v1.Pong.at:type_name -> google.protobuf.Timestamp
-	136, // 214: slipway.v1.CreateArtifactRequest.job:type_name -> slipway.v1.JobRef
-	183, // 215: slipway.v1.CreateArtifactRequest.retention:type_name -> google.protobuf.Duration
-	177, // 216: slipway.v1.CreateArtifactResponse.upload_headers:type_name -> slipway.v1.CreateArtifactResponse.UploadHeadersEntry
-	182, // 217: slipway.v1.CreateArtifactResponse.expires_at:type_name -> google.protobuf.Timestamp
-	136, // 218: slipway.v1.FinalizeArtifactRequest.job:type_name -> slipway.v1.JobRef
-	18,  // 219: slipway.v1.FinalizeArtifactResponse.artifact:type_name -> slipway.v1.RunArtifact
-	136, // 220: slipway.v1.GetArtifactDownloadRequest.job:type_name -> slipway.v1.JobRef
-	182, // 221: slipway.v1.GetArtifactDownloadResponse.expires_at:type_name -> google.protobuf.Timestamp
-	136, // 222: slipway.v1.ListRunArtifactsRequest.job:type_name -> slipway.v1.JobRef
-	184, // 223: slipway.v1.ListRunArtifactsRequest.page:type_name -> slipway.v1.PageRequest
-	161, // 224: slipway.v1.ListRunArtifactsResponse.items:type_name -> slipway.v1.RunArtifactDownload
-	185, // 225: slipway.v1.ListRunArtifactsResponse.page:type_name -> slipway.v1.PageResponse
-	182, // 226: slipway.v1.RunArtifactDownload.expires_at:type_name -> google.protobuf.Timestamp
-	136, // 227: slipway.v1.LookupCacheRequest.job:type_name -> slipway.v1.JobRef
-	136, // 228: slipway.v1.ReserveCacheRequest.job:type_name -> slipway.v1.JobRef
-	178, // 229: slipway.v1.ReserveCacheResponse.upload_headers:type_name -> slipway.v1.ReserveCacheResponse.UploadHeadersEntry
-	182, // 230: slipway.v1.ReserveCacheResponse.expires_at:type_name -> google.protobuf.Timestamp
-	136, // 231: slipway.v1.CommitCacheRequest.job:type_name -> slipway.v1.JobRef
-	19,  // 232: slipway.v1.CommitCacheResponse.entry:type_name -> slipway.v1.CacheEntry
-	136, // 233: slipway.v1.UploadTestReportRequest.job:type_name -> slipway.v1.JobRef
-	8,   // 234: slipway.v1.UploadTestReportRequest.format:type_name -> slipway.v1.ReportFormat
-	20,  // 235: slipway.v1.UploadTestReportResponse.report:type_name -> slipway.v1.RunTestReport
-	22,  // 236: slipway.v1.UploadTestReportResponse.coverage:type_name -> slipway.v1.RunCoverage
-	9,   // 237: slipway.v1.AnnotationInput.level:type_name -> slipway.v1.AnnotationLevel
-	136, // 238: slipway.v1.AddAnnotationsRequest.job:type_name -> slipway.v1.JobRef
-	170, // 239: slipway.v1.AddAnnotationsRequest.annotations:type_name -> slipway.v1.AnnotationInput
-	136, // 240: slipway.v1.IssueJobTokenRequest.job:type_name -> slipway.v1.JobRef
-	182, // 241: slipway.v1.IssueJobTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
-	27,  // 242: slipway.v1.RunService.ListRuns:input_type -> slipway.v1.ListRunsRequest
-	29,  // 243: slipway.v1.RunService.GetRun:input_type -> slipway.v1.GetRunRequest
-	31,  // 244: slipway.v1.RunService.WatchRun:input_type -> slipway.v1.WatchRunRequest
-	35,  // 245: slipway.v1.RunService.TriggerRun:input_type -> slipway.v1.TriggerRunRequest
-	37,  // 246: slipway.v1.RunService.CancelRun:input_type -> slipway.v1.CancelRunRequest
-	39,  // 247: slipway.v1.RunService.RerunRun:input_type -> slipway.v1.RerunRunRequest
-	41,  // 248: slipway.v1.RunService.CancelJob:input_type -> slipway.v1.CancelJobRequest
-	43,  // 249: slipway.v1.RunService.ListJobs:input_type -> slipway.v1.ListJobsRequest
-	45,  // 250: slipway.v1.RunService.GetJob:input_type -> slipway.v1.GetJobRequest
-	47,  // 251: slipway.v1.RunService.ListTestReports:input_type -> slipway.v1.ListTestReportsRequest
-	49,  // 252: slipway.v1.RunService.ListTestCases:input_type -> slipway.v1.ListTestCasesRequest
-	51,  // 253: slipway.v1.RunService.ListCoverage:input_type -> slipway.v1.ListCoverageRequest
-	53,  // 254: slipway.v1.RunService.ListAnnotations:input_type -> slipway.v1.ListAnnotationsRequest
-	55,  // 255: slipway.v1.RunService.GetBadge:input_type -> slipway.v1.GetBadgeRequest
-	57,  // 256: slipway.v1.RunService.GetStepTimingStats:input_type -> slipway.v1.GetStepTimingStatsRequest
-	60,  // 257: slipway.v1.RunService.GetInsightsSummary:input_type -> slipway.v1.GetInsightsSummaryRequest
-	63,  // 258: slipway.v1.RunService.ListFlakyTests:input_type -> slipway.v1.ListFlakyTestsRequest
-	67,  // 259: slipway.v1.RunService.ListSlowTests:input_type -> slipway.v1.ListSlowTestsRequest
-	70,  // 260: slipway.v1.RunService.ListJobDurations:input_type -> slipway.v1.ListJobDurationsRequest
-	73,  // 261: slipway.v1.RunService.ListCacheStats:input_type -> slipway.v1.ListCacheStatsRequest
-	83,  // 262: slipway.v1.RunnerPoolService.ListRunnerPools:input_type -> slipway.v1.ListRunnerPoolsRequest
-	85,  // 263: slipway.v1.RunnerPoolService.GetRunnerPool:input_type -> slipway.v1.GetRunnerPoolRequest
-	87,  // 264: slipway.v1.RunnerPoolService.CreateRunnerPool:input_type -> slipway.v1.CreateRunnerPoolRequest
-	89,  // 265: slipway.v1.RunnerPoolService.UpdateRunnerPool:input_type -> slipway.v1.UpdateRunnerPoolRequest
-	91,  // 266: slipway.v1.RunnerPoolService.DeleteRunnerPool:input_type -> slipway.v1.DeleteRunnerPoolRequest
-	93,  // 267: slipway.v1.RunnerPoolService.CreateRegistrationToken:input_type -> slipway.v1.CreateRegistrationTokenRequest
-	95,  // 268: slipway.v1.RunnerPoolService.ListRegistrationTokens:input_type -> slipway.v1.ListRegistrationTokensRequest
-	97,  // 269: slipway.v1.RunnerPoolService.RevokeRegistrationToken:input_type -> slipway.v1.RevokeRegistrationTokenRequest
-	99,  // 270: slipway.v1.RunnerPoolService.ListRunners:input_type -> slipway.v1.ListRunnersRequest
-	101, // 271: slipway.v1.RunnerPoolService.GetRunner:input_type -> slipway.v1.GetRunnerRequest
-	103, // 272: slipway.v1.RunnerPoolService.UpdateRunner:input_type -> slipway.v1.UpdateRunnerRequest
-	105, // 273: slipway.v1.RunnerPoolService.DeleteRunner:input_type -> slipway.v1.DeleteRunnerRequest
-	77,  // 274: slipway.v1.RunnerPoolService.GetHostedSuspension:input_type -> slipway.v1.GetHostedSuspensionRequest
-	79,  // 275: slipway.v1.RunnerPoolService.SuspendHostedRunners:input_type -> slipway.v1.SuspendHostedRunnersRequest
-	81,  // 276: slipway.v1.RunnerPoolService.ResumeHostedRunners:input_type -> slipway.v1.ResumeHostedRunnersRequest
-	109, // 277: slipway.v1.LogService.Tail:input_type -> slipway.v1.TailRequest
-	111, // 278: slipway.v1.LogService.GetLogs:input_type -> slipway.v1.GetLogsRequest
-	113, // 279: slipway.v1.LogService.SearchLogs:input_type -> slipway.v1.SearchLogsRequest
-	116, // 280: slipway.v1.LogService.GetLogDownload:input_type -> slipway.v1.GetLogDownloadRequest
-	118, // 281: slipway.v1.ArtifactService.ListArtifacts:input_type -> slipway.v1.ListArtifactsRequest
-	120, // 282: slipway.v1.ArtifactService.GetArtifact:input_type -> slipway.v1.GetArtifactRequest
-	122, // 283: slipway.v1.ArtifactService.GetArtifactDownloadUrl:input_type -> slipway.v1.GetArtifactDownloadUrlRequest
-	124, // 284: slipway.v1.ArtifactService.DeleteArtifact:input_type -> slipway.v1.DeleteArtifactRequest
-	126, // 285: slipway.v1.ArtifactService.ListCacheEntries:input_type -> slipway.v1.ListCacheEntriesRequest
-	128, // 286: slipway.v1.ArtifactService.DeleteCacheEntry:input_type -> slipway.v1.DeleteCacheEntryRequest
-	134, // 287: slipway.v1.RunnerService.Register:input_type -> slipway.v1.RegisterRequest
-	137, // 288: slipway.v1.RunnerService.Connect:input_type -> slipway.v1.ConnectRequest
-	153, // 289: slipway.v1.RunnerService.CreateArtifact:input_type -> slipway.v1.CreateArtifactRequest
-	155, // 290: slipway.v1.RunnerService.FinalizeArtifact:input_type -> slipway.v1.FinalizeArtifactRequest
-	157, // 291: slipway.v1.RunnerService.GetArtifactDownload:input_type -> slipway.v1.GetArtifactDownloadRequest
-	159, // 292: slipway.v1.RunnerService.ListRunArtifacts:input_type -> slipway.v1.ListRunArtifactsRequest
-	162, // 293: slipway.v1.RunnerService.LookupCache:input_type -> slipway.v1.LookupCacheRequest
-	164, // 294: slipway.v1.RunnerService.ReserveCache:input_type -> slipway.v1.ReserveCacheRequest
-	166, // 295: slipway.v1.RunnerService.CommitCache:input_type -> slipway.v1.CommitCacheRequest
-	168, // 296: slipway.v1.RunnerService.UploadTestReport:input_type -> slipway.v1.UploadTestReportRequest
-	171, // 297: slipway.v1.RunnerService.AddAnnotations:input_type -> slipway.v1.AddAnnotationsRequest
-	173, // 298: slipway.v1.RunnerService.IssueJobToken:input_type -> slipway.v1.IssueJobTokenRequest
-	132, // 299: slipway.v1.RunnerService.GetRunnerDownload:input_type -> slipway.v1.GetRunnerDownloadRequest
-	130, // 300: slipway.v1.RunnerService.Deregister:input_type -> slipway.v1.DeregisterRequest
-	28,  // 301: slipway.v1.RunService.ListRuns:output_type -> slipway.v1.ListRunsResponse
-	30,  // 302: slipway.v1.RunService.GetRun:output_type -> slipway.v1.GetRunResponse
-	32,  // 303: slipway.v1.RunService.WatchRun:output_type -> slipway.v1.WatchRunResponse
-	36,  // 304: slipway.v1.RunService.TriggerRun:output_type -> slipway.v1.TriggerRunResponse
-	38,  // 305: slipway.v1.RunService.CancelRun:output_type -> slipway.v1.CancelRunResponse
-	40,  // 306: slipway.v1.RunService.RerunRun:output_type -> slipway.v1.RerunRunResponse
-	42,  // 307: slipway.v1.RunService.CancelJob:output_type -> slipway.v1.CancelJobResponse
-	44,  // 308: slipway.v1.RunService.ListJobs:output_type -> slipway.v1.ListJobsResponse
-	46,  // 309: slipway.v1.RunService.GetJob:output_type -> slipway.v1.GetJobResponse
-	48,  // 310: slipway.v1.RunService.ListTestReports:output_type -> slipway.v1.ListTestReportsResponse
-	50,  // 311: slipway.v1.RunService.ListTestCases:output_type -> slipway.v1.ListTestCasesResponse
-	52,  // 312: slipway.v1.RunService.ListCoverage:output_type -> slipway.v1.ListCoverageResponse
-	54,  // 313: slipway.v1.RunService.ListAnnotations:output_type -> slipway.v1.ListAnnotationsResponse
-	56,  // 314: slipway.v1.RunService.GetBadge:output_type -> slipway.v1.GetBadgeResponse
-	59,  // 315: slipway.v1.RunService.GetStepTimingStats:output_type -> slipway.v1.GetStepTimingStatsResponse
-	62,  // 316: slipway.v1.RunService.GetInsightsSummary:output_type -> slipway.v1.GetInsightsSummaryResponse
-	66,  // 317: slipway.v1.RunService.ListFlakyTests:output_type -> slipway.v1.ListFlakyTestsResponse
-	69,  // 318: slipway.v1.RunService.ListSlowTests:output_type -> slipway.v1.ListSlowTestsResponse
-	72,  // 319: slipway.v1.RunService.ListJobDurations:output_type -> slipway.v1.ListJobDurationsResponse
-	75,  // 320: slipway.v1.RunService.ListCacheStats:output_type -> slipway.v1.ListCacheStatsResponse
-	84,  // 321: slipway.v1.RunnerPoolService.ListRunnerPools:output_type -> slipway.v1.ListRunnerPoolsResponse
-	86,  // 322: slipway.v1.RunnerPoolService.GetRunnerPool:output_type -> slipway.v1.GetRunnerPoolResponse
-	88,  // 323: slipway.v1.RunnerPoolService.CreateRunnerPool:output_type -> slipway.v1.CreateRunnerPoolResponse
-	90,  // 324: slipway.v1.RunnerPoolService.UpdateRunnerPool:output_type -> slipway.v1.UpdateRunnerPoolResponse
-	92,  // 325: slipway.v1.RunnerPoolService.DeleteRunnerPool:output_type -> slipway.v1.DeleteRunnerPoolResponse
-	94,  // 326: slipway.v1.RunnerPoolService.CreateRegistrationToken:output_type -> slipway.v1.CreateRegistrationTokenResponse
-	96,  // 327: slipway.v1.RunnerPoolService.ListRegistrationTokens:output_type -> slipway.v1.ListRegistrationTokensResponse
-	98,  // 328: slipway.v1.RunnerPoolService.RevokeRegistrationToken:output_type -> slipway.v1.RevokeRegistrationTokenResponse
-	100, // 329: slipway.v1.RunnerPoolService.ListRunners:output_type -> slipway.v1.ListRunnersResponse
-	102, // 330: slipway.v1.RunnerPoolService.GetRunner:output_type -> slipway.v1.GetRunnerResponse
-	104, // 331: slipway.v1.RunnerPoolService.UpdateRunner:output_type -> slipway.v1.UpdateRunnerResponse
-	106, // 332: slipway.v1.RunnerPoolService.DeleteRunner:output_type -> slipway.v1.DeleteRunnerResponse
-	78,  // 333: slipway.v1.RunnerPoolService.GetHostedSuspension:output_type -> slipway.v1.GetHostedSuspensionResponse
-	80,  // 334: slipway.v1.RunnerPoolService.SuspendHostedRunners:output_type -> slipway.v1.SuspendHostedRunnersResponse
-	82,  // 335: slipway.v1.RunnerPoolService.ResumeHostedRunners:output_type -> slipway.v1.ResumeHostedRunnersResponse
-	110, // 336: slipway.v1.LogService.Tail:output_type -> slipway.v1.TailResponse
-	112, // 337: slipway.v1.LogService.GetLogs:output_type -> slipway.v1.GetLogsResponse
-	115, // 338: slipway.v1.LogService.SearchLogs:output_type -> slipway.v1.SearchLogsResponse
-	117, // 339: slipway.v1.LogService.GetLogDownload:output_type -> slipway.v1.GetLogDownloadResponse
-	119, // 340: slipway.v1.ArtifactService.ListArtifacts:output_type -> slipway.v1.ListArtifactsResponse
-	121, // 341: slipway.v1.ArtifactService.GetArtifact:output_type -> slipway.v1.GetArtifactResponse
-	123, // 342: slipway.v1.ArtifactService.GetArtifactDownloadUrl:output_type -> slipway.v1.GetArtifactDownloadUrlResponse
-	125, // 343: slipway.v1.ArtifactService.DeleteArtifact:output_type -> slipway.v1.DeleteArtifactResponse
-	127, // 344: slipway.v1.ArtifactService.ListCacheEntries:output_type -> slipway.v1.ListCacheEntriesResponse
-	129, // 345: slipway.v1.ArtifactService.DeleteCacheEntry:output_type -> slipway.v1.DeleteCacheEntryResponse
-	135, // 346: slipway.v1.RunnerService.Register:output_type -> slipway.v1.RegisterResponse
-	144, // 347: slipway.v1.RunnerService.Connect:output_type -> slipway.v1.ConnectResponse
-	154, // 348: slipway.v1.RunnerService.CreateArtifact:output_type -> slipway.v1.CreateArtifactResponse
-	156, // 349: slipway.v1.RunnerService.FinalizeArtifact:output_type -> slipway.v1.FinalizeArtifactResponse
-	158, // 350: slipway.v1.RunnerService.GetArtifactDownload:output_type -> slipway.v1.GetArtifactDownloadResponse
-	160, // 351: slipway.v1.RunnerService.ListRunArtifacts:output_type -> slipway.v1.ListRunArtifactsResponse
-	163, // 352: slipway.v1.RunnerService.LookupCache:output_type -> slipway.v1.LookupCacheResponse
-	165, // 353: slipway.v1.RunnerService.ReserveCache:output_type -> slipway.v1.ReserveCacheResponse
-	167, // 354: slipway.v1.RunnerService.CommitCache:output_type -> slipway.v1.CommitCacheResponse
-	169, // 355: slipway.v1.RunnerService.UploadTestReport:output_type -> slipway.v1.UploadTestReportResponse
-	172, // 356: slipway.v1.RunnerService.AddAnnotations:output_type -> slipway.v1.AddAnnotationsResponse
-	174, // 357: slipway.v1.RunnerService.IssueJobToken:output_type -> slipway.v1.IssueJobTokenResponse
-	133, // 358: slipway.v1.RunnerService.GetRunnerDownload:output_type -> slipway.v1.GetRunnerDownloadResponse
-	131, // 359: slipway.v1.RunnerService.Deregister:output_type -> slipway.v1.DeregisterResponse
-	301, // [301:360] is the sub-list for method output_type
-	242, // [242:301] is the sub-list for method input_type
-	242, // [242:242] is the sub-list for extension type_name
-	242, // [242:242] is the sub-list for extension extendee
-	0,   // [0:242] is the sub-list for field type_name
+	184, // 66: slipway.v1.ListTestReportsRequest.page:type_name -> slipway.v1.PageRequest
+	20,  // 67: slipway.v1.ListTestReportsResponse.items:type_name -> slipway.v1.RunTestReport
+	185, // 68: slipway.v1.ListTestReportsResponse.page:type_name -> slipway.v1.PageResponse
+	184, // 69: slipway.v1.ListTestCasesRequest.page:type_name -> slipway.v1.PageRequest
+	21,  // 70: slipway.v1.ListTestCasesResponse.items:type_name -> slipway.v1.RunTestCase
+	185, // 71: slipway.v1.ListTestCasesResponse.page:type_name -> slipway.v1.PageResponse
+	184, // 72: slipway.v1.ListCoverageRequest.page:type_name -> slipway.v1.PageRequest
+	22,  // 73: slipway.v1.ListCoverageResponse.items:type_name -> slipway.v1.RunCoverage
+	185, // 74: slipway.v1.ListCoverageResponse.page:type_name -> slipway.v1.PageResponse
+	184, // 75: slipway.v1.ListAnnotationsRequest.page:type_name -> slipway.v1.PageRequest
+	23,  // 76: slipway.v1.ListAnnotationsResponse.items:type_name -> slipway.v1.RunAnnotation
+	185, // 77: slipway.v1.ListAnnotationsResponse.page:type_name -> slipway.v1.PageResponse
+	0,   // 78: slipway.v1.GetBadgeResponse.status:type_name -> slipway.v1.RunStatus
+	182, // 79: slipway.v1.GetBadgeResponse.finished_at:type_name -> google.protobuf.Timestamp
+	183, // 80: slipway.v1.GetBadgeResponse.duration:type_name -> google.protobuf.Duration
+	183, // 81: slipway.v1.StepTimingStat.p50:type_name -> google.protobuf.Duration
+	183, // 82: slipway.v1.StepTimingStat.p95:type_name -> google.protobuf.Duration
+	183, // 83: slipway.v1.StepTimingStat.mean:type_name -> google.protobuf.Duration
+	183, // 84: slipway.v1.StepTimingStat.latest:type_name -> google.protobuf.Duration
+	58,  // 85: slipway.v1.GetStepTimingStatsResponse.items:type_name -> slipway.v1.StepTimingStat
+	11,  // 86: slipway.v1.GetInsightsSummaryRequest.branch_scope:type_name -> slipway.v1.InsightsBranchScope
+	182, // 87: slipway.v1.InsightsDay.day:type_name -> google.protobuf.Timestamp
+	183, // 88: slipway.v1.InsightsDay.p50:type_name -> google.protobuf.Duration
+	183, // 89: slipway.v1.InsightsDay.p95:type_name -> google.protobuf.Duration
+	182, // 90: slipway.v1.GetInsightsSummaryResponse.from:type_name -> google.protobuf.Timestamp
+	182, // 91: slipway.v1.GetInsightsSummaryResponse.to:type_name -> google.protobuf.Timestamp
+	183, // 92: slipway.v1.GetInsightsSummaryResponse.p50:type_name -> google.protobuf.Duration
+	183, // 93: slipway.v1.GetInsightsSummaryResponse.p95:type_name -> google.protobuf.Duration
+	183, // 94: slipway.v1.GetInsightsSummaryResponse.p50_previous:type_name -> google.protobuf.Duration
+	61,  // 95: slipway.v1.GetInsightsSummaryResponse.days:type_name -> slipway.v1.InsightsDay
+	184, // 96: slipway.v1.ListFlakyTestsRequest.page:type_name -> slipway.v1.PageRequest
+	12,  // 97: slipway.v1.FlakeOccurrence.kind:type_name -> slipway.v1.FlakeKind
+	182, // 98: slipway.v1.FlakeOccurrence.at:type_name -> google.protobuf.Timestamp
+	182, // 99: slipway.v1.FlakyTest.first_flaky_at:type_name -> google.protobuf.Timestamp
+	182, // 100: slipway.v1.FlakyTest.last_flaky_at:type_name -> google.protobuf.Timestamp
+	182, // 101: slipway.v1.FlakyTest.last_seen_at:type_name -> google.protobuf.Timestamp
+	7,   // 102: slipway.v1.FlakyTest.last_status:type_name -> slipway.v1.TestStatus
+	64,  // 103: slipway.v1.FlakyTest.recent:type_name -> slipway.v1.FlakeOccurrence
+	65,  // 104: slipway.v1.ListFlakyTestsResponse.items:type_name -> slipway.v1.FlakyTest
+	185, // 105: slipway.v1.ListFlakyTestsResponse.page:type_name -> slipway.v1.PageResponse
+	184, // 106: slipway.v1.ListSlowTestsRequest.page:type_name -> slipway.v1.PageRequest
+	183, // 107: slipway.v1.SlowTest.avg_duration:type_name -> google.protobuf.Duration
+	183, // 108: slipway.v1.SlowTest.last_duration:type_name -> google.protobuf.Duration
+	183, // 109: slipway.v1.SlowTest.max_duration:type_name -> google.protobuf.Duration
+	182, // 110: slipway.v1.SlowTest.last_seen_at:type_name -> google.protobuf.Timestamp
+	68,  // 111: slipway.v1.ListSlowTestsResponse.items:type_name -> slipway.v1.SlowTest
+	185, // 112: slipway.v1.ListSlowTestsResponse.page:type_name -> slipway.v1.PageResponse
+	11,  // 113: slipway.v1.ListJobDurationsRequest.branch_scope:type_name -> slipway.v1.InsightsBranchScope
+	13,  // 114: slipway.v1.ListJobDurationsRequest.order:type_name -> slipway.v1.JobDurationOrder
+	184, // 115: slipway.v1.ListJobDurationsRequest.page:type_name -> slipway.v1.PageRequest
+	183, // 116: slipway.v1.JobDuration.p50:type_name -> google.protobuf.Duration
+	183, // 117: slipway.v1.JobDuration.p95:type_name -> google.protobuf.Duration
+	183, // 118: slipway.v1.JobDuration.p50_previous:type_name -> google.protobuf.Duration
+	71,  // 119: slipway.v1.ListJobDurationsResponse.items:type_name -> slipway.v1.JobDuration
+	185, // 120: slipway.v1.ListJobDurationsResponse.page:type_name -> slipway.v1.PageResponse
+	184, // 121: slipway.v1.ListCacheStatsRequest.page:type_name -> slipway.v1.PageRequest
+	182, // 122: slipway.v1.CacheStat.last_day:type_name -> google.protobuf.Timestamp
+	74,  // 123: slipway.v1.ListCacheStatsResponse.items:type_name -> slipway.v1.CacheStat
+	185, // 124: slipway.v1.ListCacheStatsResponse.page:type_name -> slipway.v1.PageResponse
+	182, // 125: slipway.v1.HostedSuspension.suspended_at:type_name -> google.protobuf.Timestamp
+	76,  // 126: slipway.v1.GetHostedSuspensionResponse.suspension:type_name -> slipway.v1.HostedSuspension
+	76,  // 127: slipway.v1.SuspendHostedRunnersResponse.suspension:type_name -> slipway.v1.HostedSuspension
+	184, // 128: slipway.v1.ListRunnerPoolsRequest.page:type_name -> slipway.v1.PageRequest
+	24,  // 129: slipway.v1.ListRunnerPoolsResponse.items:type_name -> slipway.v1.RunnerPool
+	185, // 130: slipway.v1.ListRunnerPoolsResponse.page:type_name -> slipway.v1.PageResponse
+	24,  // 131: slipway.v1.GetRunnerPoolResponse.pool:type_name -> slipway.v1.RunnerPool
+	4,   // 132: slipway.v1.CreateRunnerPoolRequest.kind:type_name -> slipway.v1.RunnerPoolKind
+	5,   // 133: slipway.v1.CreateRunnerPoolRequest.executor:type_name -> slipway.v1.RunnerExecutor
+	183, // 134: slipway.v1.CreateRunnerPoolRequest.no_runner_timeout:type_name -> google.protobuf.Duration
+	24,  // 135: slipway.v1.CreateRunnerPoolResponse.pool:type_name -> slipway.v1.RunnerPool
+	183, // 136: slipway.v1.UpdateRunnerPoolRequest.no_runner_timeout:type_name -> google.protobuf.Duration
+	24,  // 137: slipway.v1.UpdateRunnerPoolResponse.pool:type_name -> slipway.v1.RunnerPool
+	183, // 138: slipway.v1.CreateRegistrationTokenRequest.ttl:type_name -> google.protobuf.Duration
+	26,  // 139: slipway.v1.CreateRegistrationTokenResponse.token:type_name -> slipway.v1.RegistrationToken
+	26,  // 140: slipway.v1.ListRegistrationTokensResponse.items:type_name -> slipway.v1.RegistrationToken
+	184, // 141: slipway.v1.ListRunnersRequest.page:type_name -> slipway.v1.PageRequest
+	25,  // 142: slipway.v1.ListRunnersResponse.items:type_name -> slipway.v1.Runner
+	185, // 143: slipway.v1.ListRunnersResponse.page:type_name -> slipway.v1.PageResponse
+	25,  // 144: slipway.v1.GetRunnerResponse.runner:type_name -> slipway.v1.Runner
+	16,  // 145: slipway.v1.GetRunnerResponse.active_jobs:type_name -> slipway.v1.RunJob
+	25,  // 146: slipway.v1.UpdateRunnerResponse.runner:type_name -> slipway.v1.Runner
+	182, // 147: slipway.v1.LogLine.ts:type_name -> google.protobuf.Timestamp
+	6,   // 148: slipway.v1.LogLine.stream:type_name -> slipway.v1.LogStream
+	107, // 149: slipway.v1.LogChunk.lines:type_name -> slipway.v1.LogLine
+	107, // 150: slipway.v1.TailResponse.lines:type_name -> slipway.v1.LogLine
+	107, // 151: slipway.v1.GetLogsResponse.lines:type_name -> slipway.v1.LogLine
+	107, // 152: slipway.v1.LogMatch.line:type_name -> slipway.v1.LogLine
+	107, // 153: slipway.v1.LogMatch.before:type_name -> slipway.v1.LogLine
+	107, // 154: slipway.v1.LogMatch.after:type_name -> slipway.v1.LogLine
+	114, // 155: slipway.v1.SearchLogsResponse.matches:type_name -> slipway.v1.LogMatch
+	182, // 156: slipway.v1.GetLogDownloadResponse.expires_at:type_name -> google.protobuf.Timestamp
+	184, // 157: slipway.v1.ListArtifactsRequest.page:type_name -> slipway.v1.PageRequest
+	18,  // 158: slipway.v1.ListArtifactsResponse.items:type_name -> slipway.v1.RunArtifact
+	185, // 159: slipway.v1.ListArtifactsResponse.page:type_name -> slipway.v1.PageResponse
+	18,  // 160: slipway.v1.GetArtifactResponse.artifact:type_name -> slipway.v1.RunArtifact
+	182, // 161: slipway.v1.GetArtifactDownloadUrlResponse.expires_at:type_name -> google.protobuf.Timestamp
+	184, // 162: slipway.v1.ListCacheEntriesRequest.page:type_name -> slipway.v1.PageRequest
+	19,  // 163: slipway.v1.ListCacheEntriesResponse.items:type_name -> slipway.v1.CacheEntry
+	185, // 164: slipway.v1.ListCacheEntriesResponse.page:type_name -> slipway.v1.PageResponse
+	5,   // 165: slipway.v1.RegisterRequest.executor:type_name -> slipway.v1.RunnerExecutor
+	183, // 166: slipway.v1.RegisterResponse.heartbeat_interval:type_name -> google.protobuf.Duration
+	183, // 167: slipway.v1.RegisterResponse.lease_ttl:type_name -> google.protobuf.Duration
+	139, // 168: slipway.v1.ConnectRequest.hello:type_name -> slipway.v1.Hello
+	140, // 169: slipway.v1.ConnectRequest.heartbeat:type_name -> slipway.v1.Heartbeat
+	141, // 170: slipway.v1.ConnectRequest.accepted:type_name -> slipway.v1.JobAccepted
+	142, // 171: slipway.v1.ConnectRequest.step_update:type_name -> slipway.v1.StepUpdate
+	108, // 172: slipway.v1.ConnectRequest.log_chunk:type_name -> slipway.v1.LogChunk
+	143, // 173: slipway.v1.ConnectRequest.result:type_name -> slipway.v1.JobResult
+	138, // 174: slipway.v1.ConnectRequest.rejected:type_name -> slipway.v1.JobRejected
+	136, // 175: slipway.v1.JobRejected.job:type_name -> slipway.v1.JobRef
+	136, // 176: slipway.v1.Hello.running:type_name -> slipway.v1.JobRef
+	136, // 177: slipway.v1.Heartbeat.running:type_name -> slipway.v1.JobRef
+	136, // 178: slipway.v1.JobAccepted.job:type_name -> slipway.v1.JobRef
+	136, // 179: slipway.v1.StepUpdate.job:type_name -> slipway.v1.JobRef
+	2,   // 180: slipway.v1.StepUpdate.status:type_name -> slipway.v1.RunStepStatus
+	182, // 181: slipway.v1.StepUpdate.started_at:type_name -> google.protobuf.Timestamp
+	182, // 182: slipway.v1.StepUpdate.finished_at:type_name -> google.protobuf.Timestamp
+	179, // 183: slipway.v1.StepUpdate.outputs:type_name -> google.protobuf.Struct
+	136, // 184: slipway.v1.JobResult.job:type_name -> slipway.v1.JobRef
+	1,   // 185: slipway.v1.JobResult.status:type_name -> slipway.v1.RunJobStatus
+	179, // 186: slipway.v1.JobResult.outputs:type_name -> google.protobuf.Struct
+	145, // 187: slipway.v1.ConnectResponse.welcome:type_name -> slipway.v1.Welcome
+	146, // 188: slipway.v1.ConnectResponse.assignment:type_name -> slipway.v1.JobAssignment
+	147, // 189: slipway.v1.ConnectResponse.cancel:type_name -> slipway.v1.CancelJob
+	148, // 190: slipway.v1.ConnectResponse.log_ack:type_name -> slipway.v1.LogAck
+	149, // 191: slipway.v1.ConnectResponse.error:type_name -> slipway.v1.ServerError
+	150, // 192: slipway.v1.ConnectResponse.drain:type_name -> slipway.v1.Drain
+	151, // 193: slipway.v1.ConnectResponse.job_ack:type_name -> slipway.v1.JobAck
+	152, // 194: slipway.v1.ConnectResponse.pong:type_name -> slipway.v1.Pong
+	183, // 195: slipway.v1.Welcome.heartbeat_interval:type_name -> google.protobuf.Duration
+	183, // 196: slipway.v1.Welcome.lease_ttl:type_name -> google.protobuf.Duration
+	182, // 197: slipway.v1.Welcome.server_time:type_name -> google.protobuf.Timestamp
+	136, // 198: slipway.v1.Welcome.revoked:type_name -> slipway.v1.JobRef
+	136, // 199: slipway.v1.JobAssignment.job:type_name -> slipway.v1.JobRef
+	182, // 200: slipway.v1.JobAssignment.lease_expires_at:type_name -> google.protobuf.Timestamp
+	181, // 201: slipway.v1.JobAssignment.git:type_name -> slipway.v1.GitRef
+	179, // 202: slipway.v1.JobAssignment.event:type_name -> google.protobuf.Struct
+	179, // 203: slipway.v1.JobAssignment.inputs:type_name -> google.protobuf.Struct
+	179, // 204: slipway.v1.JobAssignment.matrix:type_name -> google.protobuf.Struct
+	179, // 205: slipway.v1.JobAssignment.needs:type_name -> google.protobuf.Struct
+	179, // 206: slipway.v1.JobAssignment.spec:type_name -> google.protobuf.Struct
+	175, // 207: slipway.v1.JobAssignment.env:type_name -> slipway.v1.JobAssignment.EnvEntry
+	176, // 208: slipway.v1.JobAssignment.secrets:type_name -> slipway.v1.JobAssignment.SecretsEntry
+	183, // 209: slipway.v1.JobAssignment.timeout:type_name -> google.protobuf.Duration
+	179, // 210: slipway.v1.JobAssignment.eval_context:type_name -> google.protobuf.Struct
+	136, // 211: slipway.v1.CancelJob.job:type_name -> slipway.v1.JobRef
+	183, // 212: slipway.v1.CancelJob.grace:type_name -> google.protobuf.Duration
+	136, // 213: slipway.v1.LogAck.job:type_name -> slipway.v1.JobRef
+	136, // 214: slipway.v1.ServerError.job:type_name -> slipway.v1.JobRef
+	136, // 215: slipway.v1.JobAck.job:type_name -> slipway.v1.JobRef
+	2,   // 216: slipway.v1.JobAck.step_status:type_name -> slipway.v1.RunStepStatus
+	182, // 217: slipway.v1.Pong.at:type_name -> google.protobuf.Timestamp
+	136, // 218: slipway.v1.CreateArtifactRequest.job:type_name -> slipway.v1.JobRef
+	183, // 219: slipway.v1.CreateArtifactRequest.retention:type_name -> google.protobuf.Duration
+	177, // 220: slipway.v1.CreateArtifactResponse.upload_headers:type_name -> slipway.v1.CreateArtifactResponse.UploadHeadersEntry
+	182, // 221: slipway.v1.CreateArtifactResponse.expires_at:type_name -> google.protobuf.Timestamp
+	136, // 222: slipway.v1.FinalizeArtifactRequest.job:type_name -> slipway.v1.JobRef
+	18,  // 223: slipway.v1.FinalizeArtifactResponse.artifact:type_name -> slipway.v1.RunArtifact
+	136, // 224: slipway.v1.GetArtifactDownloadRequest.job:type_name -> slipway.v1.JobRef
+	182, // 225: slipway.v1.GetArtifactDownloadResponse.expires_at:type_name -> google.protobuf.Timestamp
+	136, // 226: slipway.v1.ListRunArtifactsRequest.job:type_name -> slipway.v1.JobRef
+	184, // 227: slipway.v1.ListRunArtifactsRequest.page:type_name -> slipway.v1.PageRequest
+	161, // 228: slipway.v1.ListRunArtifactsResponse.items:type_name -> slipway.v1.RunArtifactDownload
+	185, // 229: slipway.v1.ListRunArtifactsResponse.page:type_name -> slipway.v1.PageResponse
+	182, // 230: slipway.v1.RunArtifactDownload.expires_at:type_name -> google.protobuf.Timestamp
+	136, // 231: slipway.v1.LookupCacheRequest.job:type_name -> slipway.v1.JobRef
+	136, // 232: slipway.v1.ReserveCacheRequest.job:type_name -> slipway.v1.JobRef
+	178, // 233: slipway.v1.ReserveCacheResponse.upload_headers:type_name -> slipway.v1.ReserveCacheResponse.UploadHeadersEntry
+	182, // 234: slipway.v1.ReserveCacheResponse.expires_at:type_name -> google.protobuf.Timestamp
+	136, // 235: slipway.v1.CommitCacheRequest.job:type_name -> slipway.v1.JobRef
+	19,  // 236: slipway.v1.CommitCacheResponse.entry:type_name -> slipway.v1.CacheEntry
+	136, // 237: slipway.v1.UploadTestReportRequest.job:type_name -> slipway.v1.JobRef
+	8,   // 238: slipway.v1.UploadTestReportRequest.format:type_name -> slipway.v1.ReportFormat
+	20,  // 239: slipway.v1.UploadTestReportResponse.report:type_name -> slipway.v1.RunTestReport
+	22,  // 240: slipway.v1.UploadTestReportResponse.coverage:type_name -> slipway.v1.RunCoverage
+	9,   // 241: slipway.v1.AnnotationInput.level:type_name -> slipway.v1.AnnotationLevel
+	136, // 242: slipway.v1.AddAnnotationsRequest.job:type_name -> slipway.v1.JobRef
+	170, // 243: slipway.v1.AddAnnotationsRequest.annotations:type_name -> slipway.v1.AnnotationInput
+	136, // 244: slipway.v1.IssueJobTokenRequest.job:type_name -> slipway.v1.JobRef
+	182, // 245: slipway.v1.IssueJobTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
+	27,  // 246: slipway.v1.RunService.ListRuns:input_type -> slipway.v1.ListRunsRequest
+	29,  // 247: slipway.v1.RunService.GetRun:input_type -> slipway.v1.GetRunRequest
+	31,  // 248: slipway.v1.RunService.WatchRun:input_type -> slipway.v1.WatchRunRequest
+	35,  // 249: slipway.v1.RunService.TriggerRun:input_type -> slipway.v1.TriggerRunRequest
+	37,  // 250: slipway.v1.RunService.CancelRun:input_type -> slipway.v1.CancelRunRequest
+	39,  // 251: slipway.v1.RunService.RerunRun:input_type -> slipway.v1.RerunRunRequest
+	41,  // 252: slipway.v1.RunService.CancelJob:input_type -> slipway.v1.CancelJobRequest
+	43,  // 253: slipway.v1.RunService.ListJobs:input_type -> slipway.v1.ListJobsRequest
+	45,  // 254: slipway.v1.RunService.GetJob:input_type -> slipway.v1.GetJobRequest
+	47,  // 255: slipway.v1.RunService.ListTestReports:input_type -> slipway.v1.ListTestReportsRequest
+	49,  // 256: slipway.v1.RunService.ListTestCases:input_type -> slipway.v1.ListTestCasesRequest
+	51,  // 257: slipway.v1.RunService.ListCoverage:input_type -> slipway.v1.ListCoverageRequest
+	53,  // 258: slipway.v1.RunService.ListAnnotations:input_type -> slipway.v1.ListAnnotationsRequest
+	55,  // 259: slipway.v1.RunService.GetBadge:input_type -> slipway.v1.GetBadgeRequest
+	57,  // 260: slipway.v1.RunService.GetStepTimingStats:input_type -> slipway.v1.GetStepTimingStatsRequest
+	60,  // 261: slipway.v1.RunService.GetInsightsSummary:input_type -> slipway.v1.GetInsightsSummaryRequest
+	63,  // 262: slipway.v1.RunService.ListFlakyTests:input_type -> slipway.v1.ListFlakyTestsRequest
+	67,  // 263: slipway.v1.RunService.ListSlowTests:input_type -> slipway.v1.ListSlowTestsRequest
+	70,  // 264: slipway.v1.RunService.ListJobDurations:input_type -> slipway.v1.ListJobDurationsRequest
+	73,  // 265: slipway.v1.RunService.ListCacheStats:input_type -> slipway.v1.ListCacheStatsRequest
+	83,  // 266: slipway.v1.RunnerPoolService.ListRunnerPools:input_type -> slipway.v1.ListRunnerPoolsRequest
+	85,  // 267: slipway.v1.RunnerPoolService.GetRunnerPool:input_type -> slipway.v1.GetRunnerPoolRequest
+	87,  // 268: slipway.v1.RunnerPoolService.CreateRunnerPool:input_type -> slipway.v1.CreateRunnerPoolRequest
+	89,  // 269: slipway.v1.RunnerPoolService.UpdateRunnerPool:input_type -> slipway.v1.UpdateRunnerPoolRequest
+	91,  // 270: slipway.v1.RunnerPoolService.DeleteRunnerPool:input_type -> slipway.v1.DeleteRunnerPoolRequest
+	93,  // 271: slipway.v1.RunnerPoolService.CreateRegistrationToken:input_type -> slipway.v1.CreateRegistrationTokenRequest
+	95,  // 272: slipway.v1.RunnerPoolService.ListRegistrationTokens:input_type -> slipway.v1.ListRegistrationTokensRequest
+	97,  // 273: slipway.v1.RunnerPoolService.RevokeRegistrationToken:input_type -> slipway.v1.RevokeRegistrationTokenRequest
+	99,  // 274: slipway.v1.RunnerPoolService.ListRunners:input_type -> slipway.v1.ListRunnersRequest
+	101, // 275: slipway.v1.RunnerPoolService.GetRunner:input_type -> slipway.v1.GetRunnerRequest
+	103, // 276: slipway.v1.RunnerPoolService.UpdateRunner:input_type -> slipway.v1.UpdateRunnerRequest
+	105, // 277: slipway.v1.RunnerPoolService.DeleteRunner:input_type -> slipway.v1.DeleteRunnerRequest
+	77,  // 278: slipway.v1.RunnerPoolService.GetHostedSuspension:input_type -> slipway.v1.GetHostedSuspensionRequest
+	79,  // 279: slipway.v1.RunnerPoolService.SuspendHostedRunners:input_type -> slipway.v1.SuspendHostedRunnersRequest
+	81,  // 280: slipway.v1.RunnerPoolService.ResumeHostedRunners:input_type -> slipway.v1.ResumeHostedRunnersRequest
+	109, // 281: slipway.v1.LogService.Tail:input_type -> slipway.v1.TailRequest
+	111, // 282: slipway.v1.LogService.GetLogs:input_type -> slipway.v1.GetLogsRequest
+	113, // 283: slipway.v1.LogService.SearchLogs:input_type -> slipway.v1.SearchLogsRequest
+	116, // 284: slipway.v1.LogService.GetLogDownload:input_type -> slipway.v1.GetLogDownloadRequest
+	118, // 285: slipway.v1.ArtifactService.ListArtifacts:input_type -> slipway.v1.ListArtifactsRequest
+	120, // 286: slipway.v1.ArtifactService.GetArtifact:input_type -> slipway.v1.GetArtifactRequest
+	122, // 287: slipway.v1.ArtifactService.GetArtifactDownloadUrl:input_type -> slipway.v1.GetArtifactDownloadUrlRequest
+	124, // 288: slipway.v1.ArtifactService.DeleteArtifact:input_type -> slipway.v1.DeleteArtifactRequest
+	126, // 289: slipway.v1.ArtifactService.ListCacheEntries:input_type -> slipway.v1.ListCacheEntriesRequest
+	128, // 290: slipway.v1.ArtifactService.DeleteCacheEntry:input_type -> slipway.v1.DeleteCacheEntryRequest
+	134, // 291: slipway.v1.RunnerService.Register:input_type -> slipway.v1.RegisterRequest
+	137, // 292: slipway.v1.RunnerService.Connect:input_type -> slipway.v1.ConnectRequest
+	153, // 293: slipway.v1.RunnerService.CreateArtifact:input_type -> slipway.v1.CreateArtifactRequest
+	155, // 294: slipway.v1.RunnerService.FinalizeArtifact:input_type -> slipway.v1.FinalizeArtifactRequest
+	157, // 295: slipway.v1.RunnerService.GetArtifactDownload:input_type -> slipway.v1.GetArtifactDownloadRequest
+	159, // 296: slipway.v1.RunnerService.ListRunArtifacts:input_type -> slipway.v1.ListRunArtifactsRequest
+	162, // 297: slipway.v1.RunnerService.LookupCache:input_type -> slipway.v1.LookupCacheRequest
+	164, // 298: slipway.v1.RunnerService.ReserveCache:input_type -> slipway.v1.ReserveCacheRequest
+	166, // 299: slipway.v1.RunnerService.CommitCache:input_type -> slipway.v1.CommitCacheRequest
+	168, // 300: slipway.v1.RunnerService.UploadTestReport:input_type -> slipway.v1.UploadTestReportRequest
+	171, // 301: slipway.v1.RunnerService.AddAnnotations:input_type -> slipway.v1.AddAnnotationsRequest
+	173, // 302: slipway.v1.RunnerService.IssueJobToken:input_type -> slipway.v1.IssueJobTokenRequest
+	132, // 303: slipway.v1.RunnerService.GetRunnerDownload:input_type -> slipway.v1.GetRunnerDownloadRequest
+	130, // 304: slipway.v1.RunnerService.Deregister:input_type -> slipway.v1.DeregisterRequest
+	28,  // 305: slipway.v1.RunService.ListRuns:output_type -> slipway.v1.ListRunsResponse
+	30,  // 306: slipway.v1.RunService.GetRun:output_type -> slipway.v1.GetRunResponse
+	32,  // 307: slipway.v1.RunService.WatchRun:output_type -> slipway.v1.WatchRunResponse
+	36,  // 308: slipway.v1.RunService.TriggerRun:output_type -> slipway.v1.TriggerRunResponse
+	38,  // 309: slipway.v1.RunService.CancelRun:output_type -> slipway.v1.CancelRunResponse
+	40,  // 310: slipway.v1.RunService.RerunRun:output_type -> slipway.v1.RerunRunResponse
+	42,  // 311: slipway.v1.RunService.CancelJob:output_type -> slipway.v1.CancelJobResponse
+	44,  // 312: slipway.v1.RunService.ListJobs:output_type -> slipway.v1.ListJobsResponse
+	46,  // 313: slipway.v1.RunService.GetJob:output_type -> slipway.v1.GetJobResponse
+	48,  // 314: slipway.v1.RunService.ListTestReports:output_type -> slipway.v1.ListTestReportsResponse
+	50,  // 315: slipway.v1.RunService.ListTestCases:output_type -> slipway.v1.ListTestCasesResponse
+	52,  // 316: slipway.v1.RunService.ListCoverage:output_type -> slipway.v1.ListCoverageResponse
+	54,  // 317: slipway.v1.RunService.ListAnnotations:output_type -> slipway.v1.ListAnnotationsResponse
+	56,  // 318: slipway.v1.RunService.GetBadge:output_type -> slipway.v1.GetBadgeResponse
+	59,  // 319: slipway.v1.RunService.GetStepTimingStats:output_type -> slipway.v1.GetStepTimingStatsResponse
+	62,  // 320: slipway.v1.RunService.GetInsightsSummary:output_type -> slipway.v1.GetInsightsSummaryResponse
+	66,  // 321: slipway.v1.RunService.ListFlakyTests:output_type -> slipway.v1.ListFlakyTestsResponse
+	69,  // 322: slipway.v1.RunService.ListSlowTests:output_type -> slipway.v1.ListSlowTestsResponse
+	72,  // 323: slipway.v1.RunService.ListJobDurations:output_type -> slipway.v1.ListJobDurationsResponse
+	75,  // 324: slipway.v1.RunService.ListCacheStats:output_type -> slipway.v1.ListCacheStatsResponse
+	84,  // 325: slipway.v1.RunnerPoolService.ListRunnerPools:output_type -> slipway.v1.ListRunnerPoolsResponse
+	86,  // 326: slipway.v1.RunnerPoolService.GetRunnerPool:output_type -> slipway.v1.GetRunnerPoolResponse
+	88,  // 327: slipway.v1.RunnerPoolService.CreateRunnerPool:output_type -> slipway.v1.CreateRunnerPoolResponse
+	90,  // 328: slipway.v1.RunnerPoolService.UpdateRunnerPool:output_type -> slipway.v1.UpdateRunnerPoolResponse
+	92,  // 329: slipway.v1.RunnerPoolService.DeleteRunnerPool:output_type -> slipway.v1.DeleteRunnerPoolResponse
+	94,  // 330: slipway.v1.RunnerPoolService.CreateRegistrationToken:output_type -> slipway.v1.CreateRegistrationTokenResponse
+	96,  // 331: slipway.v1.RunnerPoolService.ListRegistrationTokens:output_type -> slipway.v1.ListRegistrationTokensResponse
+	98,  // 332: slipway.v1.RunnerPoolService.RevokeRegistrationToken:output_type -> slipway.v1.RevokeRegistrationTokenResponse
+	100, // 333: slipway.v1.RunnerPoolService.ListRunners:output_type -> slipway.v1.ListRunnersResponse
+	102, // 334: slipway.v1.RunnerPoolService.GetRunner:output_type -> slipway.v1.GetRunnerResponse
+	104, // 335: slipway.v1.RunnerPoolService.UpdateRunner:output_type -> slipway.v1.UpdateRunnerResponse
+	106, // 336: slipway.v1.RunnerPoolService.DeleteRunner:output_type -> slipway.v1.DeleteRunnerResponse
+	78,  // 337: slipway.v1.RunnerPoolService.GetHostedSuspension:output_type -> slipway.v1.GetHostedSuspensionResponse
+	80,  // 338: slipway.v1.RunnerPoolService.SuspendHostedRunners:output_type -> slipway.v1.SuspendHostedRunnersResponse
+	82,  // 339: slipway.v1.RunnerPoolService.ResumeHostedRunners:output_type -> slipway.v1.ResumeHostedRunnersResponse
+	110, // 340: slipway.v1.LogService.Tail:output_type -> slipway.v1.TailResponse
+	112, // 341: slipway.v1.LogService.GetLogs:output_type -> slipway.v1.GetLogsResponse
+	115, // 342: slipway.v1.LogService.SearchLogs:output_type -> slipway.v1.SearchLogsResponse
+	117, // 343: slipway.v1.LogService.GetLogDownload:output_type -> slipway.v1.GetLogDownloadResponse
+	119, // 344: slipway.v1.ArtifactService.ListArtifacts:output_type -> slipway.v1.ListArtifactsResponse
+	121, // 345: slipway.v1.ArtifactService.GetArtifact:output_type -> slipway.v1.GetArtifactResponse
+	123, // 346: slipway.v1.ArtifactService.GetArtifactDownloadUrl:output_type -> slipway.v1.GetArtifactDownloadUrlResponse
+	125, // 347: slipway.v1.ArtifactService.DeleteArtifact:output_type -> slipway.v1.DeleteArtifactResponse
+	127, // 348: slipway.v1.ArtifactService.ListCacheEntries:output_type -> slipway.v1.ListCacheEntriesResponse
+	129, // 349: slipway.v1.ArtifactService.DeleteCacheEntry:output_type -> slipway.v1.DeleteCacheEntryResponse
+	135, // 350: slipway.v1.RunnerService.Register:output_type -> slipway.v1.RegisterResponse
+	144, // 351: slipway.v1.RunnerService.Connect:output_type -> slipway.v1.ConnectResponse
+	154, // 352: slipway.v1.RunnerService.CreateArtifact:output_type -> slipway.v1.CreateArtifactResponse
+	156, // 353: slipway.v1.RunnerService.FinalizeArtifact:output_type -> slipway.v1.FinalizeArtifactResponse
+	158, // 354: slipway.v1.RunnerService.GetArtifactDownload:output_type -> slipway.v1.GetArtifactDownloadResponse
+	160, // 355: slipway.v1.RunnerService.ListRunArtifacts:output_type -> slipway.v1.ListRunArtifactsResponse
+	163, // 356: slipway.v1.RunnerService.LookupCache:output_type -> slipway.v1.LookupCacheResponse
+	165, // 357: slipway.v1.RunnerService.ReserveCache:output_type -> slipway.v1.ReserveCacheResponse
+	167, // 358: slipway.v1.RunnerService.CommitCache:output_type -> slipway.v1.CommitCacheResponse
+	169, // 359: slipway.v1.RunnerService.UploadTestReport:output_type -> slipway.v1.UploadTestReportResponse
+	172, // 360: slipway.v1.RunnerService.AddAnnotations:output_type -> slipway.v1.AddAnnotationsResponse
+	174, // 361: slipway.v1.RunnerService.IssueJobToken:output_type -> slipway.v1.IssueJobTokenResponse
+	133, // 362: slipway.v1.RunnerService.GetRunnerDownload:output_type -> slipway.v1.GetRunnerDownloadResponse
+	131, // 363: slipway.v1.RunnerService.Deregister:output_type -> slipway.v1.DeregisterResponse
+	305, // [305:364] is the sub-list for method output_type
+	246, // [246:305] is the sub-list for method input_type
+	246, // [246:246] is the sub-list for extension type_name
+	246, // [246:246] is the sub-list for extension extendee
+	0,   // [0:246] is the sub-list for field type_name
 }
 
 func init() { file_slipway_v1_runs_proto_init() }

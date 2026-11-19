@@ -1956,8 +1956,11 @@ func (*DeleteProjectResponse) Descriptor() ([]byte, []int) {
 }
 
 type ListMembersRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Page          *PageRequest           `protobuf:"bytes,1,opt,name=page,proto3" json:"page,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Page  *PageRequest           `protobuf:"bytes,1,opt,name=page,proto3" json:"page,omitempty"`
+	// query, when set, keeps the members whose name or email contains it, ignoring case (at most 200 characters;
+	// % and _ match themselves).
+	Query         string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1997,6 +2000,13 @@ func (x *ListMembersRequest) GetPage() *PageRequest {
 		return x.Page
 	}
 	return nil
+}
+
+func (x *ListMembersRequest) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
 }
 
 type ListMembersResponse struct {
@@ -6163,8 +6173,11 @@ func (x *TeamMember) GetUser() *User {
 }
 
 type ListTeamsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Page          *PageRequest           `protobuf:"bytes,1,opt,name=page,proto3" json:"page,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Page  *PageRequest           `protobuf:"bytes,1,opt,name=page,proto3" json:"page,omitempty"`
+	// query, when set, keeps the teams whose name or slug contains it, ignoring case (at most 200 characters; % and _
+	// match themselves).
+	Query         string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -6204,6 +6217,13 @@ func (x *ListTeamsRequest) GetPage() *PageRequest {
 		return x.Page
 	}
 	return nil
+}
+
+func (x *ListTeamsRequest) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
 }
 
 type ListTeamsResponse struct {
@@ -8914,7 +8934,9 @@ type VerifyAuditChainRequest struct {
 	// page_token resumes a verification from the previous response's next_page_token; empty starts at the oldest event.
 	// The token is opaque, sealed by the server and valid only for the organisation it was issued to.
 	PageToken string `protobuf:"bytes,1,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	// page_size caps the events this call verifies: 0 means 10,000, and larger values than 50,000 are capped.
+	// page_size caps the events this call verifies: 0 means 10,000, and larger values than 50,000 are capped. A call also
+	// ends after about ten seconds, with fewer events verified and a next_page_token, so no call outlives a request
+	// timeout however slow the database.
 	PageSize      int32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -10937,9 +10959,10 @@ const file_slipway_v1_identity_proto_rawDesc = "" +
 	"\aproject\x18\x01 \x01(\v2\x13.slipway.v1.ProjectR\aproject\"&\n" +
 	"\x14DeleteProjectRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x17\n" +
-	"\x15DeleteProjectResponse\"A\n" +
+	"\x15DeleteProjectResponse\"W\n" +
 	"\x12ListMembersRequest\x12+\n" +
-	"\x04page\x18\x01 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\"q\n" +
+	"\x04page\x18\x01 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\x12\x14\n" +
+	"\x05query\x18\x02 \x01(\tR\x05query\"q\n" +
 	"\x13ListMembersResponse\x12,\n" +
 	"\x05items\x18\x01 \x03(\v2\x16.slipway.v1.MembershipR\x05items\x12,\n" +
 	"\x04page\x18\x02 \x01(\v2\x18.slipway.v1.PageResponseR\x04page\"?\n" +
@@ -11185,9 +11208,10 @@ const file_slipway_v1_identity_proto_rawDesc = "" +
 	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"2\n" +
 	"\n" +
 	"TeamMember\x12$\n" +
-	"\x04user\x18\x01 \x01(\v2\x10.slipway.v1.UserR\x04user\"?\n" +
+	"\x04user\x18\x01 \x01(\v2\x10.slipway.v1.UserR\x04user\"U\n" +
 	"\x10ListTeamsRequest\x12+\n" +
-	"\x04page\x18\x01 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\"i\n" +
+	"\x04page\x18\x01 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\x12\x14\n" +
+	"\x05query\x18\x02 \x01(\tR\x05query\"i\n" +
 	"\x11ListTeamsResponse\x12&\n" +
 	"\x05items\x18\x01 \x03(\v2\x10.slipway.v1.TeamR\x05items\x12,\n" +
 	"\x04page\x18\x02 \x01(\v2\x18.slipway.v1.PageResponseR\x04page\"]\n" +

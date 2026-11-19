@@ -459,9 +459,17 @@ message ListJobsResponse {
 message GetJobRequest { string id = 1; int32 attempt = 2; } // attempt 0 = latest
 message GetJobResponse { RunJob job = 1; }
 
-message ListTestReportsRequest { string run_id = 1; string job_id = 2; }
-// The first 5,000 reports in upload order.
-message ListTestReportsResponse { repeated RunTestReport items = 1; }
+message ListTestReportsRequest {
+  string run_id = 1;
+  string job_id = 2;
+  // page reads the reports in upload order a page at a time (page_size default 50, at most 500). Without it the
+  // response holds the first 5,000 reports, and page.next_page_token says when more follow.
+  PageRequest page = 3;
+}
+message ListTestReportsResponse {
+  repeated RunTestReport items = 1;
+  PageResponse page = 2;
+}
 message ListTestCasesRequest {
   string report_id = 1;
   PageRequest page = 2; // filter: status == "failed", name
@@ -470,9 +478,17 @@ message ListTestCasesResponse {
   repeated RunTestCase items = 1;
   PageResponse page = 2;
 }
-message ListCoverageRequest { string run_id = 1; string job_id = 2; }
-// The first 5,000 coverage reports in upload order.
-message ListCoverageResponse { repeated RunCoverage items = 1; }
+message ListCoverageRequest {
+  string run_id = 1;
+  string job_id = 2;
+  // page reads the coverage reports in upload order a page at a time (page_size default 50, at most 500). Without it
+  // the response holds the first 5,000, and page.next_page_token says when more follow.
+  PageRequest page = 3;
+}
+message ListCoverageResponse {
+  repeated RunCoverage items = 1;
+  PageResponse page = 2;
+}
 message ListAnnotationsRequest { string run_id = 1; string job_id = 2; PageRequest page = 3; }
 message ListAnnotationsResponse {
   repeated RunAnnotation items = 1;
