@@ -74,6 +74,11 @@ message ProtectionRules {
   google.protobuf.Duration approval_timeout = 9;
   bool apply_to_runbooks = 10;
   bool require_verified_provenance = 11;
+  // The integration (int_…) that holds this environment's change tickets when change_ticket_required is set. It must
+  // be an enabled integration of the organisation that is set up for change management. Empty: the organisation's
+  // default, the change-management integration installed first. If the named integration is later removed or
+  // disabled, deployments wait rather than use another one.
+  string change_integration_id = 12;
 }
 
 message VariableScope {

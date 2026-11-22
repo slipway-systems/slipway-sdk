@@ -2923,13 +2923,23 @@ func (x *GetFileContentResponse) GetContent() []byte {
 
 // CommitFile creates or updates one file on an existing branch with a single commit (scm.manage). Providers
 // without a write API (Azure DevOps, Bitbucket Data Center) answer unimplemented.
+//
+// expected_sha and create_only make the commit conditional: when the file is no longer what the caller based the
+// content on, the call answers aborted ("<path> changed on <branch> since it was read") and commits nothing.
+// Providers that cannot make a commit conditional (GitLab, Bitbucket Cloud) answer unimplemented to a conditional
+// request rather than commit over a change.
 type CommitFileRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RepositoryId  string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	Branch        string                 `protobuf:"bytes,2,opt,name=branch,proto3" json:"branch,omitempty"` // default: the repository's default branch
-	Path          string                 `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
-	Content       []byte                 `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
-	Message       string                 `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"` // default: "Add <path>"
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	RepositoryId string                 `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
+	Branch       string                 `protobuf:"bytes,2,opt,name=branch,proto3" json:"branch,omitempty"` // default: the repository's default branch
+	Path         string                 `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
+	Content      []byte                 `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
+	Message      string                 `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"` // default: "Add <path>"
+	// The blob sha (GetFileContentResponse.sha) the content is based on: commit only while the file on the branch is
+	// still that blob. Empty commits over whatever the branch has.
+	ExpectedSha string `protobuf:"bytes,6,opt,name=expected_sha,json=expectedSha,proto3" json:"expected_sha,omitempty"`
+	// Commit only while there is no file at path. Cannot be combined with expected_sha.
+	CreateOnly    bool `protobuf:"varint,7,opt,name=create_only,json=createOnly,proto3" json:"create_only,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2997,6 +3007,20 @@ func (x *CommitFileRequest) GetMessage() string {
 		return x.Message
 	}
 	return ""
+}
+
+func (x *CommitFileRequest) GetExpectedSha() string {
+	if x != nil {
+		return x.ExpectedSha
+	}
+	return ""
+}
+
+func (x *CommitFileRequest) GetCreateOnly() bool {
+	if x != nil {
+		return x.CreateOnly
+	}
+	return false
 }
 
 type CommitFileResponse struct {
@@ -3974,13 +3998,16 @@ const file_slipway_v1_scm_proto_rawDesc = "" +
 	"\x03ref\x18\x02 \x01(\tR\x03ref\x12\x10\n" +
 	"\x03sha\x18\x03 \x01(\tR\x03sha\x12\x12\n" +
 	"\x04size\x18\x04 \x01(\x03R\x04size\x12\x18\n" +
-	"\acontent\x18\x05 \x01(\fR\acontent\"\x98\x01\n" +
+	"\acontent\x18\x05 \x01(\fR\acontent\"\xdc\x01\n" +
 	"\x11CommitFileRequest\x12#\n" +
 	"\rrepository_id\x18\x01 \x01(\tR\frepositoryId\x12\x16\n" +
 	"\x06branch\x18\x02 \x01(\tR\x06branch\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x18\n" +
 	"\acontent\x18\x04 \x01(\fR\acontent\x12\x18\n" +
-	"\amessage\x18\x05 \x01(\tR\amessage\"@\n" +
+	"\amessage\x18\x05 \x01(\tR\amessage\x12!\n" +
+	"\fexpected_sha\x18\x06 \x01(\tR\vexpectedSha\x12\x1f\n" +
+	"\vcreate_only\x18\a \x01(\bR\n" +
+	"createOnly\"@\n" +
 	"\x12CommitFileResponse\x12\x10\n" +
 	"\x03sha\x18\x01 \x01(\tR\x03sha\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"g\n" +

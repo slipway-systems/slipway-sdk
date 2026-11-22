@@ -9,6 +9,7 @@ package slipwayv1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 	structpb "google.golang.org/protobuf/types/known/structpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -290,6 +291,131 @@ func (x *PipelineDiagnostic) GetHint() string {
 	return ""
 }
 
+// PipelineRunSummary is the part of a run that a pipeline listing shows. The whole run is RunService.GetRun.
+type PipelineRunSummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`          // run_…
+	Number        int64                  `protobuf:"varint,2,opt,name=number,proto3" json:"number,omitempty"` // per pipeline, monotonic
+	Status        RunStatus              `protobuf:"varint,3,opt,name=status,proto3,enum=slipway.v1.RunStatus" json:"status,omitempty"`
+	Trigger       string                 `protobuf:"bytes,4,opt,name=trigger,proto3" json:"trigger,omitempty"` // what started it: push | pull_request | tag | schedule | manual | api | pipeline | release | webhook
+	Ref           string                 `protobuf:"bytes,5,opt,name=ref,proto3" json:"ref,omitempty"`         // git ref the run was for ("refs/heads/main", "refs/tags/v1.2.0"); empty when its trigger had none
+	Branch        string                 `protobuf:"bytes,6,opt,name=branch,proto3" json:"branch,omitempty"`   // "main"; empty for a tag
+	Sha           string                 `protobuf:"bytes,7,opt,name=sha,proto3" json:"sha,omitempty"`         // commit
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	StartedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`     // unset until the run starts
+	FinishedAt    *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"` // unset while the run is queued or running
+	Duration      *durationpb.Duration   `protobuf:"bytes,11,opt,name=duration,proto3" json:"duration,omitempty"`                       // set once the run has finished
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PipelineRunSummary) Reset() {
+	*x = PipelineRunSummary{}
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PipelineRunSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PipelineRunSummary) ProtoMessage() {}
+
+func (x *PipelineRunSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PipelineRunSummary.ProtoReflect.Descriptor instead.
+func (*PipelineRunSummary) Descriptor() ([]byte, []int) {
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *PipelineRunSummary) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *PipelineRunSummary) GetNumber() int64 {
+	if x != nil {
+		return x.Number
+	}
+	return 0
+}
+
+func (x *PipelineRunSummary) GetStatus() RunStatus {
+	if x != nil {
+		return x.Status
+	}
+	return RunStatus_RUN_STATUS_UNSPECIFIED
+}
+
+func (x *PipelineRunSummary) GetTrigger() string {
+	if x != nil {
+		return x.Trigger
+	}
+	return ""
+}
+
+func (x *PipelineRunSummary) GetRef() string {
+	if x != nil {
+		return x.Ref
+	}
+	return ""
+}
+
+func (x *PipelineRunSummary) GetBranch() string {
+	if x != nil {
+		return x.Branch
+	}
+	return ""
+}
+
+func (x *PipelineRunSummary) GetSha() string {
+	if x != nil {
+		return x.Sha
+	}
+	return ""
+}
+
+func (x *PipelineRunSummary) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *PipelineRunSummary) GetStartedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.StartedAt
+	}
+	return nil
+}
+
+func (x *PipelineRunSummary) GetFinishedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FinishedAt
+	}
+	return nil
+}
+
+func (x *PipelineRunSummary) GetDuration() *durationpb.Duration {
+	if x != nil {
+		return x.Duration
+	}
+	return nil
+}
+
 // Pipeline is a stored pipeline definition.
 type Pipeline struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -322,14 +448,24 @@ type Pipeline struct {
 	// `name:` changed and the pipeline could not be renamed). Such a pipeline is disabled and runs for no event, including
 	// pushes and pull requests whose revision still has the file; the file reaching the default branch enables it again.
 	// It cannot be enabled by hand.
-	FileRemoved   bool `protobuf:"varint,23,opt,name=file_removed,json=fileRemoved,proto3" json:"file_removed,omitempty"`
+	FileRemoved bool `protobuf:"varint,23,opt,name=file_removed,json=fileRemoved,proto3" json:"file_removed,omitempty"`
+	// last_run is the pipeline's last run: the one created last (by created_at, then id, the order ListRuns lists runs
+	// in), whatever its status, branch or trigger. A run that is still queued or running counts. Re-running a run
+	// (RerunRun) starts a new attempt of that run and creates none, so it does not make an older run the last.
+	// Set by ListPipelines only, and only for a caller who may read runs (runs.read; a credential restricted to one
+	// project gets it for that project's pipelines). Unset for a pipeline that has never run, and by servers that do not
+	// know the field: read "unset" as "unknown or never", not as an error.
+	LastRun *PipelineRunSummary `protobuf:"bytes,24,opt,name=last_run,json=lastRun,proto3" json:"last_run,omitempty"`
+	// recent_runs holds the pipeline's newest runs, newest first (the first is last_run), when
+	// ListPipelinesRequest.recent_runs_limit asks for them. Set under the same conditions as last_run.
+	RecentRuns    []*PipelineRunSummary `protobuf:"bytes,25,rep,name=recent_runs,json=recentRuns,proto3" json:"recent_runs,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Pipeline) Reset() {
 	*x = Pipeline{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[2]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -341,7 +477,7 @@ func (x *Pipeline) String() string {
 func (*Pipeline) ProtoMessage() {}
 
 func (x *Pipeline) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[2]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -354,7 +490,7 @@ func (x *Pipeline) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pipeline.ProtoReflect.Descriptor instead.
 func (*Pipeline) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{2}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Pipeline) GetId() string {
@@ -518,6 +654,20 @@ func (x *Pipeline) GetFileRemoved() bool {
 	return false
 }
 
+func (x *Pipeline) GetLastRun() *PipelineRunSummary {
+	if x != nil {
+		return x.LastRun
+	}
+	return nil
+}
+
+func (x *Pipeline) GetRecentRuns() []*PipelineRunSummary {
+	if x != nil {
+		return x.RecentRuns
+	}
+	return nil
+}
+
 type ValidatePipelineRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Yaml          string                 `protobuf:"bytes,1,opt,name=yaml,proto3" json:"yaml,omitempty"`
@@ -530,7 +680,7 @@ type ValidatePipelineRequest struct {
 
 func (x *ValidatePipelineRequest) Reset() {
 	*x = ValidatePipelineRequest{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[3]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -542,7 +692,7 @@ func (x *ValidatePipelineRequest) String() string {
 func (*ValidatePipelineRequest) ProtoMessage() {}
 
 func (x *ValidatePipelineRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[3]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -555,7 +705,7 @@ func (x *ValidatePipelineRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidatePipelineRequest.ProtoReflect.Descriptor instead.
 func (*ValidatePipelineRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{3}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ValidatePipelineRequest) GetYaml() string {
@@ -602,7 +752,7 @@ type ValidatePipelineResponse struct {
 
 func (x *ValidatePipelineResponse) Reset() {
 	*x = ValidatePipelineResponse{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[4]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -614,7 +764,7 @@ func (x *ValidatePipelineResponse) String() string {
 func (*ValidatePipelineResponse) ProtoMessage() {}
 
 func (x *ValidatePipelineResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[4]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -627,7 +777,7 @@ func (x *ValidatePipelineResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidatePipelineResponse.ProtoReflect.Descriptor instead.
 func (*ValidatePipelineResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{4}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ValidatePipelineResponse) GetValid() bool {
@@ -699,7 +849,7 @@ type ImportPipelineRequest struct {
 
 func (x *ImportPipelineRequest) Reset() {
 	*x = ImportPipelineRequest{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[5]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -711,7 +861,7 @@ func (x *ImportPipelineRequest) String() string {
 func (*ImportPipelineRequest) ProtoMessage() {}
 
 func (x *ImportPipelineRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[5]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -724,7 +874,7 @@ func (x *ImportPipelineRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportPipelineRequest.ProtoReflect.Descriptor instead.
 func (*ImportPipelineRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{5}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ImportPipelineRequest) GetFormat() string {
@@ -762,7 +912,7 @@ type ImportPipelineResponse struct {
 
 func (x *ImportPipelineResponse) Reset() {
 	*x = ImportPipelineResponse{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[6]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -774,7 +924,7 @@ func (x *ImportPipelineResponse) String() string {
 func (*ImportPipelineResponse) ProtoMessage() {}
 
 func (x *ImportPipelineResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[6]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -787,7 +937,7 @@ func (x *ImportPipelineResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportPipelineResponse.ProtoReflect.Descriptor instead.
 func (*ImportPipelineResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{6}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ImportPipelineResponse) GetYaml() string {
@@ -826,7 +976,7 @@ type GetSchemaRequest struct {
 
 func (x *GetSchemaRequest) Reset() {
 	*x = GetSchemaRequest{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[7]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -838,7 +988,7 @@ func (x *GetSchemaRequest) String() string {
 func (*GetSchemaRequest) ProtoMessage() {}
 
 func (x *GetSchemaRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[7]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -851,7 +1001,7 @@ func (x *GetSchemaRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSchemaRequest.ProtoReflect.Descriptor instead.
 func (*GetSchemaRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{7}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{8}
 }
 
 type GetSchemaResponse struct {
@@ -865,7 +1015,7 @@ type GetSchemaResponse struct {
 
 func (x *GetSchemaResponse) Reset() {
 	*x = GetSchemaResponse{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[8]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -877,7 +1027,7 @@ func (x *GetSchemaResponse) String() string {
 func (*GetSchemaResponse) ProtoMessage() {}
 
 func (x *GetSchemaResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[8]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -890,7 +1040,7 @@ func (x *GetSchemaResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSchemaResponse.ProtoReflect.Descriptor instead.
 func (*GetSchemaResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{8}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetSchemaResponse) GetId() string {
@@ -914,17 +1064,24 @@ func (x *GetSchemaResponse) GetJsonSchema() string {
 	return ""
 }
 
+// ListPipelines returns a page of the project's pipelines, each with its last run (Pipeline.last_run), so a listing
+// needs no request per pipeline to say when and how each one last ran.
 type ListPipelinesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
-	Page          *PageRequest           `protobuf:"bytes,2,opt,name=page,proto3" json:"page,omitempty"` // filter (CEL subset): name, source, enabled, e.g. `enabled && source == "repo"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	// Pipelines come by name, then id. page_size defaults to 50 (at most 500); follow page.next_page_token until it is
+	// empty to read them all. filter and order_by are ignored.
+	Page *PageRequest `protobuf:"bytes,2,opt,name=page,proto3" json:"page,omitempty"`
+	// recent_runs_limit also returns each pipeline's newest runs in Pipeline.recent_runs, at most this many of each
+	// (capped at 20). 0, the default, returns none.
+	RecentRunsLimit int32 `protobuf:"varint,3,opt,name=recent_runs_limit,json=recentRunsLimit,proto3" json:"recent_runs_limit,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ListPipelinesRequest) Reset() {
 	*x = ListPipelinesRequest{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[9]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -936,7 +1093,7 @@ func (x *ListPipelinesRequest) String() string {
 func (*ListPipelinesRequest) ProtoMessage() {}
 
 func (x *ListPipelinesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[9]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -949,7 +1106,7 @@ func (x *ListPipelinesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPipelinesRequest.ProtoReflect.Descriptor instead.
 func (*ListPipelinesRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{9}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ListPipelinesRequest) GetProjectId() string {
@@ -966,6 +1123,13 @@ func (x *ListPipelinesRequest) GetPage() *PageRequest {
 	return nil
 }
 
+func (x *ListPipelinesRequest) GetRecentRunsLimit() int32 {
+	if x != nil {
+		return x.RecentRunsLimit
+	}
+	return 0
+}
+
 type ListPipelinesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*Pipeline            `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
@@ -976,7 +1140,7 @@ type ListPipelinesResponse struct {
 
 func (x *ListPipelinesResponse) Reset() {
 	*x = ListPipelinesResponse{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[10]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -988,7 +1152,7 @@ func (x *ListPipelinesResponse) String() string {
 func (*ListPipelinesResponse) ProtoMessage() {}
 
 func (x *ListPipelinesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[10]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1001,7 +1165,7 @@ func (x *ListPipelinesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPipelinesResponse.ProtoReflect.Descriptor instead.
 func (*ListPipelinesResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{10}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ListPipelinesResponse) GetItems() []*Pipeline {
@@ -1027,7 +1191,7 @@ type GetPipelineRequest struct {
 
 func (x *GetPipelineRequest) Reset() {
 	*x = GetPipelineRequest{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[11]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1039,7 +1203,7 @@ func (x *GetPipelineRequest) String() string {
 func (*GetPipelineRequest) ProtoMessage() {}
 
 func (x *GetPipelineRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[11]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1052,7 +1216,7 @@ func (x *GetPipelineRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPipelineRequest.ProtoReflect.Descriptor instead.
 func (*GetPipelineRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{11}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetPipelineRequest) GetId() string {
@@ -1071,7 +1235,7 @@ type GetPipelineResponse struct {
 
 func (x *GetPipelineResponse) Reset() {
 	*x = GetPipelineResponse{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[12]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1083,7 +1247,7 @@ func (x *GetPipelineResponse) String() string {
 func (*GetPipelineResponse) ProtoMessage() {}
 
 func (x *GetPipelineResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[12]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1096,7 +1260,7 @@ func (x *GetPipelineResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPipelineResponse.ProtoReflect.Descriptor instead.
 func (*GetPipelineResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{12}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetPipelineResponse) GetPipeline() *Pipeline {
@@ -1121,7 +1285,7 @@ type CreatePipelineRequest struct {
 
 func (x *CreatePipelineRequest) Reset() {
 	*x = CreatePipelineRequest{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[13]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1133,7 +1297,7 @@ func (x *CreatePipelineRequest) String() string {
 func (*CreatePipelineRequest) ProtoMessage() {}
 
 func (x *CreatePipelineRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[13]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1146,7 +1310,7 @@ func (x *CreatePipelineRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePipelineRequest.ProtoReflect.Descriptor instead.
 func (*CreatePipelineRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{13}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *CreatePipelineRequest) GetProjectId() string {
@@ -1187,7 +1351,7 @@ type CreatePipelineResponse struct {
 
 func (x *CreatePipelineResponse) Reset() {
 	*x = CreatePipelineResponse{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[14]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1199,7 +1363,7 @@ func (x *CreatePipelineResponse) String() string {
 func (*CreatePipelineResponse) ProtoMessage() {}
 
 func (x *CreatePipelineResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[14]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1212,7 +1376,7 @@ func (x *CreatePipelineResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePipelineResponse.ProtoReflect.Descriptor instead.
 func (*CreatePipelineResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{14}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *CreatePipelineResponse) GetPipeline() *Pipeline {
@@ -1240,7 +1404,7 @@ type DeletePipelineRequest struct {
 
 func (x *DeletePipelineRequest) Reset() {
 	*x = DeletePipelineRequest{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[15]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1252,7 +1416,7 @@ func (x *DeletePipelineRequest) String() string {
 func (*DeletePipelineRequest) ProtoMessage() {}
 
 func (x *DeletePipelineRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[15]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1265,7 +1429,7 @@ func (x *DeletePipelineRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePipelineRequest.ProtoReflect.Descriptor instead.
 func (*DeletePipelineRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{15}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *DeletePipelineRequest) GetId() string {
@@ -1283,7 +1447,7 @@ type DeletePipelineResponse struct {
 
 func (x *DeletePipelineResponse) Reset() {
 	*x = DeletePipelineResponse{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[16]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1295,7 +1459,7 @@ func (x *DeletePipelineResponse) String() string {
 func (*DeletePipelineResponse) ProtoMessage() {}
 
 func (x *DeletePipelineResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[16]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1308,7 +1472,7 @@ func (x *DeletePipelineResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePipelineResponse.ProtoReflect.Descriptor instead.
 func (*DeletePipelineResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{16}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{17}
 }
 
 // UpdatePipeline edits an inline pipeline (`yaml`, `enabled`) or toggles a repo pipeline (`enabled` only: repo
@@ -1323,7 +1487,7 @@ type UpdatePipelineRequest struct {
 
 func (x *UpdatePipelineRequest) Reset() {
 	*x = UpdatePipelineRequest{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[17]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1335,7 +1499,7 @@ func (x *UpdatePipelineRequest) String() string {
 func (*UpdatePipelineRequest) ProtoMessage() {}
 
 func (x *UpdatePipelineRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[17]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1348,7 +1512,7 @@ func (x *UpdatePipelineRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdatePipelineRequest.ProtoReflect.Descriptor instead.
 func (*UpdatePipelineRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{17}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *UpdatePipelineRequest) GetPipeline() *Pipeline {
@@ -1375,7 +1539,7 @@ type UpdatePipelineResponse struct {
 
 func (x *UpdatePipelineResponse) Reset() {
 	*x = UpdatePipelineResponse{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[18]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1387,7 +1551,7 @@ func (x *UpdatePipelineResponse) String() string {
 func (*UpdatePipelineResponse) ProtoMessage() {}
 
 func (x *UpdatePipelineResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[18]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1400,7 +1564,7 @@ func (x *UpdatePipelineResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdatePipelineResponse.ProtoReflect.Descriptor instead.
 func (*UpdatePipelineResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{18}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *UpdatePipelineResponse) GetPipeline() *Pipeline {
@@ -1433,7 +1597,7 @@ type CompilePreviewRequest struct {
 
 func (x *CompilePreviewRequest) Reset() {
 	*x = CompilePreviewRequest{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[19]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1445,7 +1609,7 @@ func (x *CompilePreviewRequest) String() string {
 func (*CompilePreviewRequest) ProtoMessage() {}
 
 func (x *CompilePreviewRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[19]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1458,7 +1622,7 @@ func (x *CompilePreviewRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompilePreviewRequest.ProtoReflect.Descriptor instead.
 func (*CompilePreviewRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{19}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *CompilePreviewRequest) GetYaml() string {
@@ -1519,7 +1683,7 @@ type CompilePreviewResponse struct {
 
 func (x *CompilePreviewResponse) Reset() {
 	*x = CompilePreviewResponse{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[20]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1531,7 +1695,7 @@ func (x *CompilePreviewResponse) String() string {
 func (*CompilePreviewResponse) ProtoMessage() {}
 
 func (x *CompilePreviewResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[20]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1544,7 +1708,7 @@ func (x *CompilePreviewResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompilePreviewResponse.ProtoReflect.Descriptor instead.
 func (*CompilePreviewResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{20}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *CompilePreviewResponse) GetValid() bool {
@@ -1617,7 +1781,7 @@ type PipelineTemplateParameter struct {
 
 func (x *PipelineTemplateParameter) Reset() {
 	*x = PipelineTemplateParameter{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[21]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1629,7 +1793,7 @@ func (x *PipelineTemplateParameter) String() string {
 func (*PipelineTemplateParameter) ProtoMessage() {}
 
 func (x *PipelineTemplateParameter) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[21]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1642,7 +1806,7 @@ func (x *PipelineTemplateParameter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PipelineTemplateParameter.ProtoReflect.Descriptor instead.
 func (*PipelineTemplateParameter) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{21}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *PipelineTemplateParameter) GetName() string {
@@ -1706,7 +1870,7 @@ type PipelineTemplate struct {
 
 func (x *PipelineTemplate) Reset() {
 	*x = PipelineTemplate{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[22]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1718,7 +1882,7 @@ func (x *PipelineTemplate) String() string {
 func (*PipelineTemplate) ProtoMessage() {}
 
 func (x *PipelineTemplate) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[22]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1731,7 +1895,7 @@ func (x *PipelineTemplate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PipelineTemplate.ProtoReflect.Descriptor instead.
 func (*PipelineTemplate) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{22}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *PipelineTemplate) GetId() string {
@@ -1814,7 +1978,7 @@ type ListTemplatesRequest struct {
 
 func (x *ListTemplatesRequest) Reset() {
 	*x = ListTemplatesRequest{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[23]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1826,7 +1990,7 @@ func (x *ListTemplatesRequest) String() string {
 func (*ListTemplatesRequest) ProtoMessage() {}
 
 func (x *ListTemplatesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[23]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1839,7 +2003,7 @@ func (x *ListTemplatesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTemplatesRequest.ProtoReflect.Descriptor instead.
 func (*ListTemplatesRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{23}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ListTemplatesRequest) GetPage() *PageRequest {
@@ -1866,7 +2030,7 @@ type ListTemplatesResponse struct {
 
 func (x *ListTemplatesResponse) Reset() {
 	*x = ListTemplatesResponse{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[24]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1878,7 +2042,7 @@ func (x *ListTemplatesResponse) String() string {
 func (*ListTemplatesResponse) ProtoMessage() {}
 
 func (x *ListTemplatesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[24]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1891,7 +2055,7 @@ func (x *ListTemplatesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTemplatesResponse.ProtoReflect.Descriptor instead.
 func (*ListTemplatesResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{24}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ListTemplatesResponse) GetItems() []*PipelineTemplate {
@@ -1921,7 +2085,7 @@ type PublishTemplateRequest struct {
 
 func (x *PublishTemplateRequest) Reset() {
 	*x = PublishTemplateRequest{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[25]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1933,7 +2097,7 @@ func (x *PublishTemplateRequest) String() string {
 func (*PublishTemplateRequest) ProtoMessage() {}
 
 func (x *PublishTemplateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[25]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1946,7 +2110,7 @@ func (x *PublishTemplateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishTemplateRequest.ProtoReflect.Descriptor instead.
 func (*PublishTemplateRequest) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{25}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *PublishTemplateRequest) GetName() string {
@@ -1980,7 +2144,7 @@ type PublishTemplateResponse struct {
 
 func (x *PublishTemplateResponse) Reset() {
 	*x = PublishTemplateResponse{}
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[26]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1992,7 +2156,7 @@ func (x *PublishTemplateResponse) String() string {
 func (*PublishTemplateResponse) ProtoMessage() {}
 
 func (x *PublishTemplateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_slipway_v1_pipeline_proto_msgTypes[26]
+	mi := &file_slipway_v1_pipeline_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2005,7 +2169,7 @@ func (x *PublishTemplateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishTemplateResponse.ProtoReflect.Descriptor instead.
 func (*PublishTemplateResponse) Descriptor() ([]byte, []int) {
-	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{26}
+	return file_slipway_v1_pipeline_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *PublishTemplateResponse) GetTemplate() *PipelineTemplate {
@@ -2027,7 +2191,7 @@ var File_slipway_v1_pipeline_proto protoreflect.FileDescriptor
 const file_slipway_v1_pipeline_proto_rawDesc = "" +
 	"\n" +
 	"\x19slipway/v1/pipeline.proto\x12\n" +
-	"slipway.v1\x1a google/protobuf/field_mask.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17slipway/v1/common.proto\"~\n" +
+	"slipway.v1\x1a\x1egoogle/protobuf/duration.proto\x1a google/protobuf/field_mask.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17slipway/v1/common.proto\x1a\x15slipway/v1/runs.proto\"~\n" +
 	"\x16PipelineSourcePosition\x12\x12\n" +
 	"\x04line\x18\x01 \x01(\x05R\x04line\x12\x16\n" +
 	"\x06column\x18\x02 \x01(\x05R\x06column\x12\x19\n" +
@@ -2041,7 +2205,23 @@ const file_slipway_v1_pipeline_proto_rawDesc = "" +
 	"\x04file\x18\x04 \x01(\tR\x04file\x12\x12\n" +
 	"\x04path\x18\x05 \x01(\tR\x04path\x12>\n" +
 	"\bposition\x18\x06 \x01(\v2\".slipway.v1.PipelineSourcePositionR\bposition\x12\x12\n" +
-	"\x04hint\x18\a \x01(\tR\x04hint\"\x9c\x06\n" +
+	"\x04hint\x18\a \x01(\tR\x04hint\"\xab\x03\n" +
+	"\x12PipelineRunSummary\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
+	"\x06number\x18\x02 \x01(\x03R\x06number\x12-\n" +
+	"\x06status\x18\x03 \x01(\x0e2\x15.slipway.v1.RunStatusR\x06status\x12\x18\n" +
+	"\atrigger\x18\x04 \x01(\tR\atrigger\x12\x10\n" +
+	"\x03ref\x18\x05 \x01(\tR\x03ref\x12\x16\n" +
+	"\x06branch\x18\x06 \x01(\tR\x06branch\x12\x10\n" +
+	"\x03sha\x18\a \x01(\tR\x03sha\x129\n" +
+	"\n" +
+	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"started_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12;\n" +
+	"\vfinished_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"finishedAt\x125\n" +
+	"\bduration\x18\v \x01(\v2\x19.google.protobuf.DurationR\bduration\"\x98\a\n" +
 	"\bPipeline\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -2070,7 +2250,10 @@ const file_slipway_v1_pipeline_proto_rawDesc = "" +
 	"\n" +
 	"updated_at\x18\x15 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x16\n" +
 	"\x06branch\x18\x16 \x01(\tR\x06branch\x12!\n" +
-	"\ffile_removed\x18\x17 \x01(\bR\vfileRemoved\"\x90\x01\n" +
+	"\ffile_removed\x18\x17 \x01(\bR\vfileRemoved\x129\n" +
+	"\blast_run\x18\x18 \x01(\v2\x1e.slipway.v1.PipelineRunSummaryR\alastRun\x12?\n" +
+	"\vrecent_runs\x18\x19 \x03(\v2\x1e.slipway.v1.PipelineRunSummaryR\n" +
+	"recentRuns\"\x90\x01\n" +
 	"\x17ValidatePipelineRequest\x12\x12\n" +
 	"\x04yaml\x18\x01 \x01(\tR\x04yaml\x12\x1b\n" +
 	"\tfile_name\x18\x02 \x01(\tR\bfileName\x12\x1d\n" +
@@ -2103,11 +2286,12 @@ const file_slipway_v1_pipeline_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\x05R\aversion\x12\x1f\n" +
 	"\vjson_schema\x18\x03 \x01(\tR\n" +
-	"jsonSchema\"b\n" +
+	"jsonSchema\"\x8e\x01\n" +
 	"\x14ListPipelinesRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\x12+\n" +
-	"\x04page\x18\x02 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\"q\n" +
+	"\x04page\x18\x02 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\x12*\n" +
+	"\x11recent_runs_limit\x18\x03 \x01(\x05R\x0frecentRunsLimit\"q\n" +
 	"\x15ListPipelinesResponse\x12*\n" +
 	"\x05items\x18\x01 \x03(\v2\x14.slipway.v1.PipelineR\x05items\x12,\n" +
 	"\x04page\x18\x02 \x01(\v2\x18.slipway.v1.PageResponseR\x04page\"$\n" +
@@ -2225,103 +2409,113 @@ func file_slipway_v1_pipeline_proto_rawDescGZIP() []byte {
 }
 
 var file_slipway_v1_pipeline_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_slipway_v1_pipeline_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_slipway_v1_pipeline_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_slipway_v1_pipeline_proto_goTypes = []any{
 	(PipelineSource)(0),               // 0: slipway.v1.PipelineSource
 	(PipelineDiagnosticSeverity)(0),   // 1: slipway.v1.PipelineDiagnosticSeverity
 	(*PipelineSourcePosition)(nil),    // 2: slipway.v1.PipelineSourcePosition
 	(*PipelineDiagnostic)(nil),        // 3: slipway.v1.PipelineDiagnostic
-	(*Pipeline)(nil),                  // 4: slipway.v1.Pipeline
-	(*ValidatePipelineRequest)(nil),   // 5: slipway.v1.ValidatePipelineRequest
-	(*ValidatePipelineResponse)(nil),  // 6: slipway.v1.ValidatePipelineResponse
-	(*ImportPipelineRequest)(nil),     // 7: slipway.v1.ImportPipelineRequest
-	(*ImportPipelineResponse)(nil),    // 8: slipway.v1.ImportPipelineResponse
-	(*GetSchemaRequest)(nil),          // 9: slipway.v1.GetSchemaRequest
-	(*GetSchemaResponse)(nil),         // 10: slipway.v1.GetSchemaResponse
-	(*ListPipelinesRequest)(nil),      // 11: slipway.v1.ListPipelinesRequest
-	(*ListPipelinesResponse)(nil),     // 12: slipway.v1.ListPipelinesResponse
-	(*GetPipelineRequest)(nil),        // 13: slipway.v1.GetPipelineRequest
-	(*GetPipelineResponse)(nil),       // 14: slipway.v1.GetPipelineResponse
-	(*CreatePipelineRequest)(nil),     // 15: slipway.v1.CreatePipelineRequest
-	(*CreatePipelineResponse)(nil),    // 16: slipway.v1.CreatePipelineResponse
-	(*DeletePipelineRequest)(nil),     // 17: slipway.v1.DeletePipelineRequest
-	(*DeletePipelineResponse)(nil),    // 18: slipway.v1.DeletePipelineResponse
-	(*UpdatePipelineRequest)(nil),     // 19: slipway.v1.UpdatePipelineRequest
-	(*UpdatePipelineResponse)(nil),    // 20: slipway.v1.UpdatePipelineResponse
-	(*CompilePreviewRequest)(nil),     // 21: slipway.v1.CompilePreviewRequest
-	(*CompilePreviewResponse)(nil),    // 22: slipway.v1.CompilePreviewResponse
-	(*PipelineTemplateParameter)(nil), // 23: slipway.v1.PipelineTemplateParameter
-	(*PipelineTemplate)(nil),          // 24: slipway.v1.PipelineTemplate
-	(*ListTemplatesRequest)(nil),      // 25: slipway.v1.ListTemplatesRequest
-	(*ListTemplatesResponse)(nil),     // 26: slipway.v1.ListTemplatesResponse
-	(*PublishTemplateRequest)(nil),    // 27: slipway.v1.PublishTemplateRequest
-	(*PublishTemplateResponse)(nil),   // 28: slipway.v1.PublishTemplateResponse
-	(*structpb.Struct)(nil),           // 29: google.protobuf.Struct
-	(*timestamppb.Timestamp)(nil),     // 30: google.protobuf.Timestamp
-	(*PageRequest)(nil),               // 31: slipway.v1.PageRequest
-	(*PageResponse)(nil),              // 32: slipway.v1.PageResponse
-	(*fieldmaskpb.FieldMask)(nil),     // 33: google.protobuf.FieldMask
+	(*PipelineRunSummary)(nil),        // 4: slipway.v1.PipelineRunSummary
+	(*Pipeline)(nil),                  // 5: slipway.v1.Pipeline
+	(*ValidatePipelineRequest)(nil),   // 6: slipway.v1.ValidatePipelineRequest
+	(*ValidatePipelineResponse)(nil),  // 7: slipway.v1.ValidatePipelineResponse
+	(*ImportPipelineRequest)(nil),     // 8: slipway.v1.ImportPipelineRequest
+	(*ImportPipelineResponse)(nil),    // 9: slipway.v1.ImportPipelineResponse
+	(*GetSchemaRequest)(nil),          // 10: slipway.v1.GetSchemaRequest
+	(*GetSchemaResponse)(nil),         // 11: slipway.v1.GetSchemaResponse
+	(*ListPipelinesRequest)(nil),      // 12: slipway.v1.ListPipelinesRequest
+	(*ListPipelinesResponse)(nil),     // 13: slipway.v1.ListPipelinesResponse
+	(*GetPipelineRequest)(nil),        // 14: slipway.v1.GetPipelineRequest
+	(*GetPipelineResponse)(nil),       // 15: slipway.v1.GetPipelineResponse
+	(*CreatePipelineRequest)(nil),     // 16: slipway.v1.CreatePipelineRequest
+	(*CreatePipelineResponse)(nil),    // 17: slipway.v1.CreatePipelineResponse
+	(*DeletePipelineRequest)(nil),     // 18: slipway.v1.DeletePipelineRequest
+	(*DeletePipelineResponse)(nil),    // 19: slipway.v1.DeletePipelineResponse
+	(*UpdatePipelineRequest)(nil),     // 20: slipway.v1.UpdatePipelineRequest
+	(*UpdatePipelineResponse)(nil),    // 21: slipway.v1.UpdatePipelineResponse
+	(*CompilePreviewRequest)(nil),     // 22: slipway.v1.CompilePreviewRequest
+	(*CompilePreviewResponse)(nil),    // 23: slipway.v1.CompilePreviewResponse
+	(*PipelineTemplateParameter)(nil), // 24: slipway.v1.PipelineTemplateParameter
+	(*PipelineTemplate)(nil),          // 25: slipway.v1.PipelineTemplate
+	(*ListTemplatesRequest)(nil),      // 26: slipway.v1.ListTemplatesRequest
+	(*ListTemplatesResponse)(nil),     // 27: slipway.v1.ListTemplatesResponse
+	(*PublishTemplateRequest)(nil),    // 28: slipway.v1.PublishTemplateRequest
+	(*PublishTemplateResponse)(nil),   // 29: slipway.v1.PublishTemplateResponse
+	(RunStatus)(0),                    // 30: slipway.v1.RunStatus
+	(*timestamppb.Timestamp)(nil),     // 31: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),       // 32: google.protobuf.Duration
+	(*structpb.Struct)(nil),           // 33: google.protobuf.Struct
+	(*PageRequest)(nil),               // 34: slipway.v1.PageRequest
+	(*PageResponse)(nil),              // 35: slipway.v1.PageResponse
+	(*fieldmaskpb.FieldMask)(nil),     // 36: google.protobuf.FieldMask
 }
 var file_slipway_v1_pipeline_proto_depIdxs = []int32{
 	1,  // 0: slipway.v1.PipelineDiagnostic.severity:type_name -> slipway.v1.PipelineDiagnosticSeverity
 	2,  // 1: slipway.v1.PipelineDiagnostic.position:type_name -> slipway.v1.PipelineSourcePosition
-	0,  // 2: slipway.v1.Pipeline.source:type_name -> slipway.v1.PipelineSource
-	29, // 3: slipway.v1.Pipeline.spec:type_name -> google.protobuf.Struct
-	3,  // 4: slipway.v1.Pipeline.diagnostics:type_name -> slipway.v1.PipelineDiagnostic
-	30, // 5: slipway.v1.Pipeline.created_at:type_name -> google.protobuf.Timestamp
-	30, // 6: slipway.v1.Pipeline.updated_at:type_name -> google.protobuf.Timestamp
-	3,  // 7: slipway.v1.ValidatePipelineResponse.diagnostics:type_name -> slipway.v1.PipelineDiagnostic
-	29, // 8: slipway.v1.ValidatePipelineResponse.spec:type_name -> google.protobuf.Struct
-	3,  // 9: slipway.v1.ImportPipelineResponse.diagnostics:type_name -> slipway.v1.PipelineDiagnostic
-	31, // 10: slipway.v1.ListPipelinesRequest.page:type_name -> slipway.v1.PageRequest
-	4,  // 11: slipway.v1.ListPipelinesResponse.items:type_name -> slipway.v1.Pipeline
-	32, // 12: slipway.v1.ListPipelinesResponse.page:type_name -> slipway.v1.PageResponse
-	4,  // 13: slipway.v1.GetPipelineResponse.pipeline:type_name -> slipway.v1.Pipeline
-	4,  // 14: slipway.v1.CreatePipelineResponse.pipeline:type_name -> slipway.v1.Pipeline
-	3,  // 15: slipway.v1.CreatePipelineResponse.diagnostics:type_name -> slipway.v1.PipelineDiagnostic
-	4,  // 16: slipway.v1.UpdatePipelineRequest.pipeline:type_name -> slipway.v1.Pipeline
-	33, // 17: slipway.v1.UpdatePipelineRequest.update_mask:type_name -> google.protobuf.FieldMask
-	4,  // 18: slipway.v1.UpdatePipelineResponse.pipeline:type_name -> slipway.v1.Pipeline
-	3,  // 19: slipway.v1.UpdatePipelineResponse.diagnostics:type_name -> slipway.v1.PipelineDiagnostic
-	29, // 20: slipway.v1.CompilePreviewRequest.inputs:type_name -> google.protobuf.Struct
-	29, // 21: slipway.v1.CompilePreviewRequest.git:type_name -> google.protobuf.Struct
-	29, // 22: slipway.v1.CompilePreviewRequest.vars:type_name -> google.protobuf.Struct
-	3,  // 23: slipway.v1.CompilePreviewResponse.diagnostics:type_name -> slipway.v1.PipelineDiagnostic
-	29, // 24: slipway.v1.CompilePreviewResponse.plan:type_name -> google.protobuf.Struct
-	23, // 25: slipway.v1.PipelineTemplate.parameters:type_name -> slipway.v1.PipelineTemplateParameter
-	30, // 26: slipway.v1.PipelineTemplate.published_at:type_name -> google.protobuf.Timestamp
-	31, // 27: slipway.v1.ListTemplatesRequest.page:type_name -> slipway.v1.PageRequest
-	24, // 28: slipway.v1.ListTemplatesResponse.items:type_name -> slipway.v1.PipelineTemplate
-	32, // 29: slipway.v1.ListTemplatesResponse.page:type_name -> slipway.v1.PageResponse
-	24, // 30: slipway.v1.PublishTemplateResponse.template:type_name -> slipway.v1.PipelineTemplate
-	3,  // 31: slipway.v1.PublishTemplateResponse.diagnostics:type_name -> slipway.v1.PipelineDiagnostic
-	5,  // 32: slipway.v1.PipelineService.ValidatePipeline:input_type -> slipway.v1.ValidatePipelineRequest
-	9,  // 33: slipway.v1.PipelineService.GetSchema:input_type -> slipway.v1.GetSchemaRequest
-	7,  // 34: slipway.v1.PipelineService.ImportPipeline:input_type -> slipway.v1.ImportPipelineRequest
-	11, // 35: slipway.v1.PipelineService.ListPipelines:input_type -> slipway.v1.ListPipelinesRequest
-	13, // 36: slipway.v1.PipelineService.GetPipeline:input_type -> slipway.v1.GetPipelineRequest
-	15, // 37: slipway.v1.PipelineService.CreatePipeline:input_type -> slipway.v1.CreatePipelineRequest
-	19, // 38: slipway.v1.PipelineService.UpdatePipeline:input_type -> slipway.v1.UpdatePipelineRequest
-	17, // 39: slipway.v1.PipelineService.DeletePipeline:input_type -> slipway.v1.DeletePipelineRequest
-	21, // 40: slipway.v1.PipelineService.CompilePreview:input_type -> slipway.v1.CompilePreviewRequest
-	25, // 41: slipway.v1.PipelineService.ListTemplates:input_type -> slipway.v1.ListTemplatesRequest
-	27, // 42: slipway.v1.PipelineService.PublishTemplate:input_type -> slipway.v1.PublishTemplateRequest
-	6,  // 43: slipway.v1.PipelineService.ValidatePipeline:output_type -> slipway.v1.ValidatePipelineResponse
-	10, // 44: slipway.v1.PipelineService.GetSchema:output_type -> slipway.v1.GetSchemaResponse
-	8,  // 45: slipway.v1.PipelineService.ImportPipeline:output_type -> slipway.v1.ImportPipelineResponse
-	12, // 46: slipway.v1.PipelineService.ListPipelines:output_type -> slipway.v1.ListPipelinesResponse
-	14, // 47: slipway.v1.PipelineService.GetPipeline:output_type -> slipway.v1.GetPipelineResponse
-	16, // 48: slipway.v1.PipelineService.CreatePipeline:output_type -> slipway.v1.CreatePipelineResponse
-	20, // 49: slipway.v1.PipelineService.UpdatePipeline:output_type -> slipway.v1.UpdatePipelineResponse
-	18, // 50: slipway.v1.PipelineService.DeletePipeline:output_type -> slipway.v1.DeletePipelineResponse
-	22, // 51: slipway.v1.PipelineService.CompilePreview:output_type -> slipway.v1.CompilePreviewResponse
-	26, // 52: slipway.v1.PipelineService.ListTemplates:output_type -> slipway.v1.ListTemplatesResponse
-	28, // 53: slipway.v1.PipelineService.PublishTemplate:output_type -> slipway.v1.PublishTemplateResponse
-	43, // [43:54] is the sub-list for method output_type
-	32, // [32:43] is the sub-list for method input_type
-	32, // [32:32] is the sub-list for extension type_name
-	32, // [32:32] is the sub-list for extension extendee
-	0,  // [0:32] is the sub-list for field type_name
+	30, // 2: slipway.v1.PipelineRunSummary.status:type_name -> slipway.v1.RunStatus
+	31, // 3: slipway.v1.PipelineRunSummary.created_at:type_name -> google.protobuf.Timestamp
+	31, // 4: slipway.v1.PipelineRunSummary.started_at:type_name -> google.protobuf.Timestamp
+	31, // 5: slipway.v1.PipelineRunSummary.finished_at:type_name -> google.protobuf.Timestamp
+	32, // 6: slipway.v1.PipelineRunSummary.duration:type_name -> google.protobuf.Duration
+	0,  // 7: slipway.v1.Pipeline.source:type_name -> slipway.v1.PipelineSource
+	33, // 8: slipway.v1.Pipeline.spec:type_name -> google.protobuf.Struct
+	3,  // 9: slipway.v1.Pipeline.diagnostics:type_name -> slipway.v1.PipelineDiagnostic
+	31, // 10: slipway.v1.Pipeline.created_at:type_name -> google.protobuf.Timestamp
+	31, // 11: slipway.v1.Pipeline.updated_at:type_name -> google.protobuf.Timestamp
+	4,  // 12: slipway.v1.Pipeline.last_run:type_name -> slipway.v1.PipelineRunSummary
+	4,  // 13: slipway.v1.Pipeline.recent_runs:type_name -> slipway.v1.PipelineRunSummary
+	3,  // 14: slipway.v1.ValidatePipelineResponse.diagnostics:type_name -> slipway.v1.PipelineDiagnostic
+	33, // 15: slipway.v1.ValidatePipelineResponse.spec:type_name -> google.protobuf.Struct
+	3,  // 16: slipway.v1.ImportPipelineResponse.diagnostics:type_name -> slipway.v1.PipelineDiagnostic
+	34, // 17: slipway.v1.ListPipelinesRequest.page:type_name -> slipway.v1.PageRequest
+	5,  // 18: slipway.v1.ListPipelinesResponse.items:type_name -> slipway.v1.Pipeline
+	35, // 19: slipway.v1.ListPipelinesResponse.page:type_name -> slipway.v1.PageResponse
+	5,  // 20: slipway.v1.GetPipelineResponse.pipeline:type_name -> slipway.v1.Pipeline
+	5,  // 21: slipway.v1.CreatePipelineResponse.pipeline:type_name -> slipway.v1.Pipeline
+	3,  // 22: slipway.v1.CreatePipelineResponse.diagnostics:type_name -> slipway.v1.PipelineDiagnostic
+	5,  // 23: slipway.v1.UpdatePipelineRequest.pipeline:type_name -> slipway.v1.Pipeline
+	36, // 24: slipway.v1.UpdatePipelineRequest.update_mask:type_name -> google.protobuf.FieldMask
+	5,  // 25: slipway.v1.UpdatePipelineResponse.pipeline:type_name -> slipway.v1.Pipeline
+	3,  // 26: slipway.v1.UpdatePipelineResponse.diagnostics:type_name -> slipway.v1.PipelineDiagnostic
+	33, // 27: slipway.v1.CompilePreviewRequest.inputs:type_name -> google.protobuf.Struct
+	33, // 28: slipway.v1.CompilePreviewRequest.git:type_name -> google.protobuf.Struct
+	33, // 29: slipway.v1.CompilePreviewRequest.vars:type_name -> google.protobuf.Struct
+	3,  // 30: slipway.v1.CompilePreviewResponse.diagnostics:type_name -> slipway.v1.PipelineDiagnostic
+	33, // 31: slipway.v1.CompilePreviewResponse.plan:type_name -> google.protobuf.Struct
+	24, // 32: slipway.v1.PipelineTemplate.parameters:type_name -> slipway.v1.PipelineTemplateParameter
+	31, // 33: slipway.v1.PipelineTemplate.published_at:type_name -> google.protobuf.Timestamp
+	34, // 34: slipway.v1.ListTemplatesRequest.page:type_name -> slipway.v1.PageRequest
+	25, // 35: slipway.v1.ListTemplatesResponse.items:type_name -> slipway.v1.PipelineTemplate
+	35, // 36: slipway.v1.ListTemplatesResponse.page:type_name -> slipway.v1.PageResponse
+	25, // 37: slipway.v1.PublishTemplateResponse.template:type_name -> slipway.v1.PipelineTemplate
+	3,  // 38: slipway.v1.PublishTemplateResponse.diagnostics:type_name -> slipway.v1.PipelineDiagnostic
+	6,  // 39: slipway.v1.PipelineService.ValidatePipeline:input_type -> slipway.v1.ValidatePipelineRequest
+	10, // 40: slipway.v1.PipelineService.GetSchema:input_type -> slipway.v1.GetSchemaRequest
+	8,  // 41: slipway.v1.PipelineService.ImportPipeline:input_type -> slipway.v1.ImportPipelineRequest
+	12, // 42: slipway.v1.PipelineService.ListPipelines:input_type -> slipway.v1.ListPipelinesRequest
+	14, // 43: slipway.v1.PipelineService.GetPipeline:input_type -> slipway.v1.GetPipelineRequest
+	16, // 44: slipway.v1.PipelineService.CreatePipeline:input_type -> slipway.v1.CreatePipelineRequest
+	20, // 45: slipway.v1.PipelineService.UpdatePipeline:input_type -> slipway.v1.UpdatePipelineRequest
+	18, // 46: slipway.v1.PipelineService.DeletePipeline:input_type -> slipway.v1.DeletePipelineRequest
+	22, // 47: slipway.v1.PipelineService.CompilePreview:input_type -> slipway.v1.CompilePreviewRequest
+	26, // 48: slipway.v1.PipelineService.ListTemplates:input_type -> slipway.v1.ListTemplatesRequest
+	28, // 49: slipway.v1.PipelineService.PublishTemplate:input_type -> slipway.v1.PublishTemplateRequest
+	7,  // 50: slipway.v1.PipelineService.ValidatePipeline:output_type -> slipway.v1.ValidatePipelineResponse
+	11, // 51: slipway.v1.PipelineService.GetSchema:output_type -> slipway.v1.GetSchemaResponse
+	9,  // 52: slipway.v1.PipelineService.ImportPipeline:output_type -> slipway.v1.ImportPipelineResponse
+	13, // 53: slipway.v1.PipelineService.ListPipelines:output_type -> slipway.v1.ListPipelinesResponse
+	15, // 54: slipway.v1.PipelineService.GetPipeline:output_type -> slipway.v1.GetPipelineResponse
+	17, // 55: slipway.v1.PipelineService.CreatePipeline:output_type -> slipway.v1.CreatePipelineResponse
+	21, // 56: slipway.v1.PipelineService.UpdatePipeline:output_type -> slipway.v1.UpdatePipelineResponse
+	19, // 57: slipway.v1.PipelineService.DeletePipeline:output_type -> slipway.v1.DeletePipelineResponse
+	23, // 58: slipway.v1.PipelineService.CompilePreview:output_type -> slipway.v1.CompilePreviewResponse
+	27, // 59: slipway.v1.PipelineService.ListTemplates:output_type -> slipway.v1.ListTemplatesResponse
+	29, // 60: slipway.v1.PipelineService.PublishTemplate:output_type -> slipway.v1.PublishTemplateResponse
+	50, // [50:61] is the sub-list for method output_type
+	39, // [39:50] is the sub-list for method input_type
+	39, // [39:39] is the sub-list for extension type_name
+	39, // [39:39] is the sub-list for extension extendee
+	0,  // [0:39] is the sub-list for field type_name
 }
 
 func init() { file_slipway_v1_pipeline_proto_init() }
@@ -2330,13 +2524,14 @@ func file_slipway_v1_pipeline_proto_init() {
 		return
 	}
 	file_slipway_v1_common_proto_init()
+	file_slipway_v1_runs_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_slipway_v1_pipeline_proto_rawDesc), len(file_slipway_v1_pipeline_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   27,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

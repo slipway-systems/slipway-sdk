@@ -357,8 +357,13 @@ type ProtectionRules struct {
 	ApprovalTimeout           *durationpb.Duration   `protobuf:"bytes,9,opt,name=approval_timeout,json=approvalTimeout,proto3" json:"approval_timeout,omitempty"`
 	ApplyToRunbooks           bool                   `protobuf:"varint,10,opt,name=apply_to_runbooks,json=applyToRunbooks,proto3" json:"apply_to_runbooks,omitempty"`
 	RequireVerifiedProvenance bool                   `protobuf:"varint,11,opt,name=require_verified_provenance,json=requireVerifiedProvenance,proto3" json:"require_verified_provenance,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// The integration (int_…) that holds this environment's change tickets when change_ticket_required is set. It must
+	// be an enabled integration of the organisation that is set up for change management. Empty: the organisation's
+	// default, the change-management integration installed first. If the named integration is later removed or
+	// disabled, deployments wait rather than use another one.
+	ChangeIntegrationId string `protobuf:"bytes,12,opt,name=change_integration_id,json=changeIntegrationId,proto3" json:"change_integration_id,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ProtectionRules) Reset() {
@@ -466,6 +471,13 @@ func (x *ProtectionRules) GetRequireVerifiedProvenance() bool {
 		return x.RequireVerifiedProvenance
 	}
 	return false
+}
+
+func (x *ProtectionRules) GetChangeIntegrationId() string {
+	if x != nil {
+		return x.ChangeIntegrationId
+	}
+	return ""
 }
 
 type VariableScope struct {
@@ -13567,7 +13579,7 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\x03opa\x18\x05 \x01(\v2\x15.slipway.v1.OpaPolicyR\x03opa\"A\n" +
 	"\tOpaPolicy\x12 \n" +
 	"\vintegration\x18\x01 \x01(\tR\vintegration\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\"\xf7\x04\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"\xab\x05\n" +
 	"\x0fProtectionRules\x12-\n" +
 	"\x12required_approvals\x18\x01 \x01(\x05R\x11requiredApprovals\x122\n" +
 	"\tapprovers\x18\x02 \x03(\v2\x14.slipway.v1.ApproverR\tapprovers\x12.\n" +
@@ -13580,7 +13592,8 @@ const file_slipway_v1_deploy_proto_rawDesc = "" +
 	"\x10approval_timeout\x18\t \x01(\v2\x19.google.protobuf.DurationR\x0fapprovalTimeout\x12*\n" +
 	"\x11apply_to_runbooks\x18\n" +
 	" \x01(\bR\x0fapplyToRunbooks\x12>\n" +
-	"\x1brequire_verified_provenance\x18\v \x01(\bR\x19requireVerifiedProvenance\"\xb4\x01\n" +
+	"\x1brequire_verified_provenance\x18\v \x01(\bR\x19requireVerifiedProvenance\x122\n" +
+	"\x15change_integration_id\x18\f \x01(\tR\x13changeIntegrationId\"\xb4\x01\n" +
 	"\rVariableScope\x12\x1d\n" +
 	"\n" +
 	"service_id\x18\x01 \x01(\tR\tserviceId\x12%\n" +

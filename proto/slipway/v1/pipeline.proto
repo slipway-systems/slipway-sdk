@@ -2,10 +2,12 @@ syntax = "proto3";
 
 package slipway.v1;
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "slipway/v1/common.proto";
+import "slipway/v1/runs.proto";
 
 // Pipeline definitions: validation, schema, compile preview and org templates.
 // The language is specified in the pipeline reference at https://slipway.systems/docs.
@@ -48,6 +50,21 @@ message PipelineDiagnostic {
   string hint = 7;    // suggested fix
 }
 
+// PipelineRunSummary is the part of a run that a pipeline listing shows. The whole run is RunService.GetRun.
+message PipelineRunSummary {
+  string id = 1;     // run_…
+  int64 number = 2;  // per pipeline, monotonic
+  RunStatus status = 3;
+  string trigger = 4; // what started it: push | pull_request | tag | schedule | manual | api | pipeline | release | webhook
+  string ref = 5;     // git ref the run was for ("refs/heads/main", "refs/tags/v1.2.0"); empty when its trigger had none
+  string branch = 6;  // "main"; empty for a tag
+  string sha = 7;     // commit
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp started_at = 9;  // unset until the run starts
+  google.protobuf.Timestamp finished_at = 10; // unset while the run is queued or running
+  google.protobuf.Duration duration = 11;     // set once the run has finished
+}
+
 // Pipeline is a stored pipeline definition.
 message Pipeline {
   string id = 1;          // pipe_…
@@ -80,6 +97,16 @@ message Pipeline {
   // pushes and pull requests whose revision still has the file; the file reaching the default branch enables it again.
   // It cannot be enabled by hand.
   bool file_removed = 23;
+  // last_run is the pipeline's last run: the one created last (by created_at, then id, the order ListRuns lists runs
+  // in), whatever its status, branch or trigger. A run that is still queued or running counts. Re-running a run
+  // (RerunRun) starts a new attempt of that run and creates none, so it does not make an older run the last.
+  // Set by ListPipelines only, and only for a caller who may read runs (runs.read; a credential restricted to one
+  // project gets it for that project's pipelines). Unset for a pipeline that has never run, and by servers that do not
+  // know the field: read "unset" as "unknown or never", not as an error.
+  PipelineRunSummary last_run = 24;
+  // recent_runs holds the pipeline's newest runs, newest first (the first is last_run), when
+  // ListPipelinesRequest.recent_runs_limit asks for them. Set under the same conditions as last_run.
+  repeated PipelineRunSummary recent_runs = 25;
 }
 
 // ---- Validation and schema ---------------------------------------------------------------------------------------
@@ -128,9 +155,16 @@ message GetSchemaResponse {
 
 // ---- Stored pipelines (storage implemented by orchestration) ---------------------------------------------------
 
+// ListPipelines returns a page of the project's pipelines, each with its last run (Pipeline.last_run), so a listing
+// needs no request per pipeline to say when and how each one last ran.
 message ListPipelinesRequest {
   string project_id = 1;
-  PageRequest page = 2; // filter (CEL subset): name, source, enabled, e.g. `enabled && source == "repo"`
+  // Pipelines come by name, then id. page_size defaults to 50 (at most 500); follow page.next_page_token until it is
+  // empty to read them all. filter and order_by are ignored.
+  PageRequest page = 2;
+  // recent_runs_limit also returns each pipeline's newest runs in Pipeline.recent_runs, at most this many of each
+  // (capped at 20). 0, the default, returns none.
+  int32 recent_runs_limit = 3;
 }
 message ListPipelinesResponse {
   repeated Pipeline items = 1;

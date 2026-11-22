@@ -4,17 +4,19 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { FieldMask, Timestamp } from "@bufbuild/protobuf/wkt";
-import { file_google_protobuf_field_mask, file_google_protobuf_struct, file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
+import type { Duration, FieldMask, Timestamp } from "@bufbuild/protobuf/wkt";
+import { file_google_protobuf_duration, file_google_protobuf_field_mask, file_google_protobuf_struct, file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import type { PageRequest, PageResponse } from "./common_pb.js";
 import { file_slipway_v1_common } from "./common_pb.js";
+import type { RunStatus } from "./runs_pb.js";
+import { file_slipway_v1_runs } from "./runs_pb.js";
 import type { JsonObject, Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file slipway/v1/pipeline.proto.
  */
 export const file_slipway_v1_pipeline: GenFile = /*@__PURE__*/
-  fileDesc("ChlzbGlwd2F5L3YxL3BpcGVsaW5lLnByb3RvEgpzbGlwd2F5LnYxIlwKFlBpcGVsaW5lU291cmNlUG9zaXRpb24SDAoEbGluZRgBIAEoBRIOCgZjb2x1bW4YAiABKAUSEAoIZW5kX2xpbmUYAyABKAUSEgoKZW5kX2NvbHVtbhgEIAEoBSLNAQoSUGlwZWxpbmVEaWFnbm9zdGljEjgKCHNldmVyaXR5GAEgASgOMiYuc2xpcHdheS52MS5QaXBlbGluZURpYWdub3N0aWNTZXZlcml0eRIMCgRjb2RlGAIgASgJEg8KB21lc3NhZ2UYAyABKAkSDAoEZmlsZRgEIAEoCRIMCgRwYXRoGAUgASgJEjQKCHBvc2l0aW9uGAYgASgLMiIuc2xpcHdheS52MS5QaXBlbGluZVNvdXJjZVBvc2l0aW9uEgwKBGhpbnQYByABKAkiugQKCFBpcGVsaW5lEgoKAmlkGAEgASgJEhIKCnByb2plY3RfaWQYAiABKAkSDAoEbmFtZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIMCgRwYXRoGAUgASgJEioKBnNvdXJjZRgGIAEoDjIaLnNsaXB3YXkudjEuUGlwZWxpbmVTb3VyY2USDAoEeWFtbBgHIAEoCRIlCgRzcGVjGAggASgLMhcuZ29vZ2xlLnByb3RvYnVmLlN0cnVjdBIWCg5zY2hlbWFfdmVyc2lvbhgJIAEoBRIPCgdlbmFibGVkGAogASgIEhAKCHRyaWdnZXJzGAsgAygJEhUKDXJlcG9zaXRvcnlfaWQYDCABKAkSCwoDcmVmGA0gASgJEhAKCHJldmlzaW9uGA4gASgJEg0KBXZhbGlkGA8gASgIEhMKC2Vycm9yX2NvdW50GBAgASgFEhUKDXdhcm5pbmdfY291bnQYESABKAUSMwoLZGlhZ25vc3RpY3MYEiADKAsyHi5zbGlwd2F5LnYxLlBpcGVsaW5lRGlhZ25vc3RpYxIVCg10ZW1wbGF0ZV9yZWZzGBMgAygJEi4KCmNyZWF0ZWRfYXQYFCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYFSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg4KBmJyYW5jaBgWIAEoCRIUCgxmaWxlX3JlbW92ZWQYFyABKAgiZgoXVmFsaWRhdGVQaXBlbGluZVJlcXVlc3QSDAoEeWFtbBgBIAEoCRIRCglmaWxlX25hbWUYAiABKAkSEgoKcHJvamVjdF9pZBgDIAEoCRIWCg5za2lwX3RlbXBsYXRlcxgEIAEoCCLyAQoYVmFsaWRhdGVQaXBlbGluZVJlc3BvbnNlEg0KBXZhbGlkGAEgASgIEjMKC2RpYWdub3N0aWNzGAIgAygLMh4uc2xpcHdheS52MS5QaXBlbGluZURpYWdub3N0aWMSJQoEc3BlYxgDIAEoCzIXLmdvb2dsZS5wcm90b2J1Zi5TdHJ1Y3QSEAoIdHJpZ2dlcnMYBCADKAkSFQoNdGVtcGxhdGVfcmVmcxgFIAMoCRITCgtlcnJvcl9jb3VudBgGIAEoBRIVCg13YXJuaW5nX2NvdW50GAcgASgFEhYKDmZvcm1hdHRlZF95YW1sGAggASgJIk8KFUltcG9ydFBpcGVsaW5lUmVxdWVzdBIOCgZmb3JtYXQYASABKAkSEwoLc291cmNlX3lhbWwYAiABKAkSEQoJZmlsZV9uYW1lGAMgASgJIn4KFkltcG9ydFBpcGVsaW5lUmVzcG9uc2USDAoEeWFtbBgBIAEoCRIzCgtkaWFnbm9zdGljcxgCIAMoCzIeLnNsaXB3YXkudjEuUGlwZWxpbmVEaWFnbm9zdGljEg0KBXZhbGlkGAMgASgIEhIKCnRvZG9fY291bnQYBCABKAUiEgoQR2V0U2NoZW1hUmVxdWVzdCJFChFHZXRTY2hlbWFSZXNwb25zZRIKCgJpZBgBIAEoCRIPCgd2ZXJzaW9uGAIgASgFEhMKC2pzb25fc2NoZW1hGAMgASgJIlEKFExpc3RQaXBlbGluZXNSZXF1ZXN0EhIKCnByb2plY3RfaWQYASABKAkSJQoEcGFnZRgCIAEoCzIXLnNsaXB3YXkudjEuUGFnZVJlcXVlc3QiZAoVTGlzdFBpcGVsaW5lc1Jlc3BvbnNlEiMKBWl0ZW1zGAEgAygLMhQuc2xpcHdheS52MS5QaXBlbGluZRImCgRwYWdlGAIgASgLMhguc2xpcHdheS52MS5QYWdlUmVzcG9uc2UiIAoSR2V0UGlwZWxpbmVSZXF1ZXN0EgoKAmlkGAEgASgJIj0KE0dldFBpcGVsaW5lUmVzcG9uc2USJgoIcGlwZWxpbmUYASABKAsyFC5zbGlwd2F5LnYxLlBpcGVsaW5lIlkKFUNyZWF0ZVBpcGVsaW5lUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEeWFtbBgDIAEoCRIQCghkaXNhYmxlZBgEIAEoCCJ1ChZDcmVhdGVQaXBlbGluZVJlc3BvbnNlEiYKCHBpcGVsaW5lGAEgASgLMhQuc2xpcHdheS52MS5QaXBlbGluZRIzCgtkaWFnbm9zdGljcxgCIAMoCzIeLnNsaXB3YXkudjEuUGlwZWxpbmVEaWFnbm9zdGljIiMKFURlbGV0ZVBpcGVsaW5lUmVxdWVzdBIKCgJpZBgBIAEoCSIYChZEZWxldGVQaXBlbGluZVJlc3BvbnNlInAKFVVwZGF0ZVBpcGVsaW5lUmVxdWVzdBImCghwaXBlbGluZRgBIAEoCzIULnNsaXB3YXkudjEuUGlwZWxpbmUSLwoLdXBkYXRlX21hc2sYAiABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrInUKFlVwZGF0ZVBpcGVsaW5lUmVzcG9uc2USJgoIcGlwZWxpbmUYASABKAsyFC5zbGlwd2F5LnYxLlBpcGVsaW5lEjMKC2RpYWdub3N0aWNzGAIgAygLMh4uc2xpcHdheS52MS5QaXBlbGluZURpYWdub3N0aWMivgEKFUNvbXBpbGVQcmV2aWV3UmVxdWVzdBIMCgR5YW1sGAEgASgJEhIKCnByb2plY3RfaWQYAiABKAkSDQoFZXZlbnQYAyABKAkSJwoGaW5wdXRzGAQgASgLMhcuZ29vZ2xlLnByb3RvYnVmLlN0cnVjdBIkCgNnaXQYBSABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0EiUKBHZhcnMYBiABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0IvMBChZDb21waWxlUHJldmlld1Jlc3BvbnNlEg0KBXZhbGlkGAEgASgIEjMKC2RpYWdub3N0aWNzGAIgAygLMh4uc2xpcHdheS52MS5QaXBlbGluZURpYWdub3N0aWMSJQoEcGxhbhgDIAEoCzIXLmdvb2dsZS5wcm90b2J1Zi5TdHJ1Y3QSEQoJam9iX2NvdW50GAQgASgFEhMKC3BsYW5fZGlnZXN0GAUgASgJEhUKDXRlbXBsYXRlX3JlZnMYBiADKAkSFwoPdHJpZ2dlcl9tYXRjaGVzGAcgASgIEhYKDnRyaWdnZXJfcmVhc29uGAggASgJIoUBChlQaXBlbGluZVRlbXBsYXRlUGFyYW1ldGVyEgwKBG5hbWUYASABKAkSDAoEdHlwZRgCIAEoCRIQCghyZXF1aXJlZBgDIAEoCBITCgtkZXNjcmlwdGlvbhgEIAEoCRIUCgxkZWZhdWx0X2pzb24YBSABKAkSDwoHb3B0aW9ucxgGIAMoCSL+AQoQUGlwZWxpbmVUZW1wbGF0ZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg8KB3ZlcnNpb24YAyABKAkSCwoDcmVmGAQgASgJEgwKBGtpbmQYBSABKAkSEwoLZGVzY3JpcHRpb24YBiABKAkSOQoKcGFyYW1ldGVycxgHIAMoCzIlLnNsaXB3YXkudjEuUGlwZWxpbmVUZW1wbGF0ZVBhcmFtZXRlchIMCgR5YW1sGAggASgJEhQKDHB1Ymxpc2hlZF9ieRgJIAEoCRIwCgxwdWJsaXNoZWRfYXQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIlIKFExpc3RUZW1wbGF0ZXNSZXF1ZXN0EiUKBHBhZ2UYASABKAsyFy5zbGlwd2F5LnYxLlBhZ2VSZXF1ZXN0EhMKC2xhdGVzdF9vbmx5GAIgASgIImwKFUxpc3RUZW1wbGF0ZXNSZXNwb25zZRIrCgVpdGVtcxgBIAMoCzIcLnNsaXB3YXkudjEuUGlwZWxpbmVUZW1wbGF0ZRImCgRwYWdlGAIgASgLMhguc2xpcHdheS52MS5QYWdlUmVzcG9uc2UiRQoWUHVibGlzaFRlbXBsYXRlUmVxdWVzdBIMCgRuYW1lGAEgASgJEg8KB3ZlcnNpb24YAiABKAkSDAoEeWFtbBgDIAEoCSJ+ChdQdWJsaXNoVGVtcGxhdGVSZXNwb25zZRIuCgh0ZW1wbGF0ZRgBIAEoCzIcLnNsaXB3YXkudjEuUGlwZWxpbmVUZW1wbGF0ZRIzCgtkaWFnbm9zdGljcxgCIAMoCzIeLnNsaXB3YXkudjEuUGlwZWxpbmVEaWFnbm9zdGljKmcKDlBpcGVsaW5lU291cmNlEh8KG1BJUEVMSU5FX1NPVVJDRV9VTlNQRUNJRklFRBAAEhgKFFBJUEVMSU5FX1NPVVJDRV9SRVBPEAESGgoWUElQRUxJTkVfU09VUkNFX0lOTElORRACKsMBChpQaXBlbGluZURpYWdub3N0aWNTZXZlcml0eRIsCihQSVBFTElORV9ESUFHTk9TVElDX1NFVkVSSVRZX1VOU1BFQ0lGSUVEEAASJgoiUElQRUxJTkVfRElBR05PU1RJQ19TRVZFUklUWV9FUlJPUhABEigKJFBJUEVMSU5FX0RJQUdOT1NUSUNfU0VWRVJJVFlfV0FSTklORxACEiUKIVBJUEVMSU5FX0RJQUdOT1NUSUNfU0VWRVJJVFlfSU5GTxADMs8HCg9QaXBlbGluZVNlcnZpY2USXQoQVmFsaWRhdGVQaXBlbGluZRIjLnNsaXB3YXkudjEuVmFsaWRhdGVQaXBlbGluZVJlcXVlc3QaJC5zbGlwd2F5LnYxLlZhbGlkYXRlUGlwZWxpbmVSZXNwb25zZRJICglHZXRTY2hlbWESHC5zbGlwd2F5LnYxLkdldFNjaGVtYVJlcXVlc3QaHS5zbGlwd2F5LnYxLkdldFNjaGVtYVJlc3BvbnNlElcKDkltcG9ydFBpcGVsaW5lEiEuc2xpcHdheS52MS5JbXBvcnRQaXBlbGluZVJlcXVlc3QaIi5zbGlwd2F5LnYxLkltcG9ydFBpcGVsaW5lUmVzcG9uc2USVAoNTGlzdFBpcGVsaW5lcxIgLnNsaXB3YXkudjEuTGlzdFBpcGVsaW5lc1JlcXVlc3QaIS5zbGlwd2F5LnYxLkxpc3RQaXBlbGluZXNSZXNwb25zZRJOCgtHZXRQaXBlbGluZRIeLnNsaXB3YXkudjEuR2V0UGlwZWxpbmVSZXF1ZXN0Gh8uc2xpcHdheS52MS5HZXRQaXBlbGluZVJlc3BvbnNlElcKDkNyZWF0ZVBpcGVsaW5lEiEuc2xpcHdheS52MS5DcmVhdGVQaXBlbGluZVJlcXVlc3QaIi5zbGlwd2F5LnYxLkNyZWF0ZVBpcGVsaW5lUmVzcG9uc2USVwoOVXBkYXRlUGlwZWxpbmUSIS5zbGlwd2F5LnYxLlVwZGF0ZVBpcGVsaW5lUmVxdWVzdBoiLnNsaXB3YXkudjEuVXBkYXRlUGlwZWxpbmVSZXNwb25zZRJXCg5EZWxldGVQaXBlbGluZRIhLnNsaXB3YXkudjEuRGVsZXRlUGlwZWxpbmVSZXF1ZXN0GiIuc2xpcHdheS52MS5EZWxldGVQaXBlbGluZVJlc3BvbnNlElcKDkNvbXBpbGVQcmV2aWV3EiEuc2xpcHdheS52MS5Db21waWxlUHJldmlld1JlcXVlc3QaIi5zbGlwd2F5LnYxLkNvbXBpbGVQcmV2aWV3UmVzcG9uc2USVAoNTGlzdFRlbXBsYXRlcxIgLnNsaXB3YXkudjEuTGlzdFRlbXBsYXRlc1JlcXVlc3QaIS5zbGlwd2F5LnYxLkxpc3RUZW1wbGF0ZXNSZXNwb25zZRJaCg9QdWJsaXNoVGVtcGxhdGUSIi5zbGlwd2F5LnYxLlB1Ymxpc2hUZW1wbGF0ZVJlcXVlc3QaIy5zbGlwd2F5LnYxLlB1Ymxpc2hUZW1wbGF0ZVJlc3BvbnNlQqgBCg5jb20uc2xpcHdheS52MUINUGlwZWxpbmVQcm90b1ABWj5naXRodWIuY29tL3NsaXB3YXktc3lzdGVtcy9zbGlwd2F5LXNkay9nby9zbGlwd2F5L3YxO3NsaXB3YXl2MaICA1NYWKoCClNsaXB3YXkuVjHKAgpTbGlwd2F5XFYx4gIWU2xpcHdheVxWMVxHUEJNZXRhZGF0YeoCC1NsaXB3YXk6OlYxYgZwcm90bzM", [file_google_protobuf_field_mask, file_google_protobuf_struct, file_google_protobuf_timestamp, file_slipway_v1_common]);
+  fileDesc("ChlzbGlwd2F5L3YxL3BpcGVsaW5lLnByb3RvEgpzbGlwd2F5LnYxIlwKFlBpcGVsaW5lU291cmNlUG9zaXRpb24SDAoEbGluZRgBIAEoBRIOCgZjb2x1bW4YAiABKAUSEAoIZW5kX2xpbmUYAyABKAUSEgoKZW5kX2NvbHVtbhgEIAEoBSLNAQoSUGlwZWxpbmVEaWFnbm9zdGljEjgKCHNldmVyaXR5GAEgASgOMiYuc2xpcHdheS52MS5QaXBlbGluZURpYWdub3N0aWNTZXZlcml0eRIMCgRjb2RlGAIgASgJEg8KB21lc3NhZ2UYAyABKAkSDAoEZmlsZRgEIAEoCRIMCgRwYXRoGAUgASgJEjQKCHBvc2l0aW9uGAYgASgLMiIuc2xpcHdheS52MS5QaXBlbGluZVNvdXJjZVBvc2l0aW9uEgwKBGhpbnQYByABKAki0AIKElBpcGVsaW5lUnVuU3VtbWFyeRIKCgJpZBgBIAEoCRIOCgZudW1iZXIYAiABKAMSJQoGc3RhdHVzGAMgASgOMhUuc2xpcHdheS52MS5SdW5TdGF0dXMSDwoHdHJpZ2dlchgEIAEoCRILCgNyZWYYBSABKAkSDgoGYnJhbmNoGAYgASgJEgsKA3NoYRgHIAEoCRIuCgpjcmVhdGVkX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgpzdGFydGVkX2F0GAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtmaW5pc2hlZF9hdBgKIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKwoIZHVyYXRpb24YCyABKAsyGS5nb29nbGUucHJvdG9idWYuRHVyYXRpb24ioQUKCFBpcGVsaW5lEgoKAmlkGAEgASgJEhIKCnByb2plY3RfaWQYAiABKAkSDAoEbmFtZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIMCgRwYXRoGAUgASgJEioKBnNvdXJjZRgGIAEoDjIaLnNsaXB3YXkudjEuUGlwZWxpbmVTb3VyY2USDAoEeWFtbBgHIAEoCRIlCgRzcGVjGAggASgLMhcuZ29vZ2xlLnByb3RvYnVmLlN0cnVjdBIWCg5zY2hlbWFfdmVyc2lvbhgJIAEoBRIPCgdlbmFibGVkGAogASgIEhAKCHRyaWdnZXJzGAsgAygJEhUKDXJlcG9zaXRvcnlfaWQYDCABKAkSCwoDcmVmGA0gASgJEhAKCHJldmlzaW9uGA4gASgJEg0KBXZhbGlkGA8gASgIEhMKC2Vycm9yX2NvdW50GBAgASgFEhUKDXdhcm5pbmdfY291bnQYESABKAUSMwoLZGlhZ25vc3RpY3MYEiADKAsyHi5zbGlwd2F5LnYxLlBpcGVsaW5lRGlhZ25vc3RpYxIVCg10ZW1wbGF0ZV9yZWZzGBMgAygJEi4KCmNyZWF0ZWRfYXQYFCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYFSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg4KBmJyYW5jaBgWIAEoCRIUCgxmaWxlX3JlbW92ZWQYFyABKAgSMAoIbGFzdF9ydW4YGCABKAsyHi5zbGlwd2F5LnYxLlBpcGVsaW5lUnVuU3VtbWFyeRIzCgtyZWNlbnRfcnVucxgZIAMoCzIeLnNsaXB3YXkudjEuUGlwZWxpbmVSdW5TdW1tYXJ5ImYKF1ZhbGlkYXRlUGlwZWxpbmVSZXF1ZXN0EgwKBHlhbWwYASABKAkSEQoJZmlsZV9uYW1lGAIgASgJEhIKCnByb2plY3RfaWQYAyABKAkSFgoOc2tpcF90ZW1wbGF0ZXMYBCABKAgi8gEKGFZhbGlkYXRlUGlwZWxpbmVSZXNwb25zZRINCgV2YWxpZBgBIAEoCBIzCgtkaWFnbm9zdGljcxgCIAMoCzIeLnNsaXB3YXkudjEuUGlwZWxpbmVEaWFnbm9zdGljEiUKBHNwZWMYAyABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0EhAKCHRyaWdnZXJzGAQgAygJEhUKDXRlbXBsYXRlX3JlZnMYBSADKAkSEwoLZXJyb3JfY291bnQYBiABKAUSFQoNd2FybmluZ19jb3VudBgHIAEoBRIWCg5mb3JtYXR0ZWRfeWFtbBgIIAEoCSJPChVJbXBvcnRQaXBlbGluZVJlcXVlc3QSDgoGZm9ybWF0GAEgASgJEhMKC3NvdXJjZV95YW1sGAIgASgJEhEKCWZpbGVfbmFtZRgDIAEoCSJ+ChZJbXBvcnRQaXBlbGluZVJlc3BvbnNlEgwKBHlhbWwYASABKAkSMwoLZGlhZ25vc3RpY3MYAiADKAsyHi5zbGlwd2F5LnYxLlBpcGVsaW5lRGlhZ25vc3RpYxINCgV2YWxpZBgDIAEoCBISCgp0b2RvX2NvdW50GAQgASgFIhIKEEdldFNjaGVtYVJlcXVlc3QiRQoRR2V0U2NoZW1hUmVzcG9uc2USCgoCaWQYASABKAkSDwoHdmVyc2lvbhgCIAEoBRITCgtqc29uX3NjaGVtYRgDIAEoCSJsChRMaXN0UGlwZWxpbmVzUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEiUKBHBhZ2UYAiABKAsyFy5zbGlwd2F5LnYxLlBhZ2VSZXF1ZXN0EhkKEXJlY2VudF9ydW5zX2xpbWl0GAMgASgFImQKFUxpc3RQaXBlbGluZXNSZXNwb25zZRIjCgVpdGVtcxgBIAMoCzIULnNsaXB3YXkudjEuUGlwZWxpbmUSJgoEcGFnZRgCIAEoCzIYLnNsaXB3YXkudjEuUGFnZVJlc3BvbnNlIiAKEkdldFBpcGVsaW5lUmVxdWVzdBIKCgJpZBgBIAEoCSI9ChNHZXRQaXBlbGluZVJlc3BvbnNlEiYKCHBpcGVsaW5lGAEgASgLMhQuc2xpcHdheS52MS5QaXBlbGluZSJZChVDcmVhdGVQaXBlbGluZVJlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHlhbWwYAyABKAkSEAoIZGlzYWJsZWQYBCABKAgidQoWQ3JlYXRlUGlwZWxpbmVSZXNwb25zZRImCghwaXBlbGluZRgBIAEoCzIULnNsaXB3YXkudjEuUGlwZWxpbmUSMwoLZGlhZ25vc3RpY3MYAiADKAsyHi5zbGlwd2F5LnYxLlBpcGVsaW5lRGlhZ25vc3RpYyIjChVEZWxldGVQaXBlbGluZVJlcXVlc3QSCgoCaWQYASABKAkiGAoWRGVsZXRlUGlwZWxpbmVSZXNwb25zZSJwChVVcGRhdGVQaXBlbGluZVJlcXVlc3QSJgoIcGlwZWxpbmUYASABKAsyFC5zbGlwd2F5LnYxLlBpcGVsaW5lEi8KC3VwZGF0ZV9tYXNrGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLkZpZWxkTWFzayJ1ChZVcGRhdGVQaXBlbGluZVJlc3BvbnNlEiYKCHBpcGVsaW5lGAEgASgLMhQuc2xpcHdheS52MS5QaXBlbGluZRIzCgtkaWFnbm9zdGljcxgCIAMoCzIeLnNsaXB3YXkudjEuUGlwZWxpbmVEaWFnbm9zdGljIr4BChVDb21waWxlUHJldmlld1JlcXVlc3QSDAoEeWFtbBgBIAEoCRISCgpwcm9qZWN0X2lkGAIgASgJEg0KBWV2ZW50GAMgASgJEicKBmlucHV0cxgEIAEoCzIXLmdvb2dsZS5wcm90b2J1Zi5TdHJ1Y3QSJAoDZ2l0GAUgASgLMhcuZ29vZ2xlLnByb3RvYnVmLlN0cnVjdBIlCgR2YXJzGAYgASgLMhcuZ29vZ2xlLnByb3RvYnVmLlN0cnVjdCLzAQoWQ29tcGlsZVByZXZpZXdSZXNwb25zZRINCgV2YWxpZBgBIAEoCBIzCgtkaWFnbm9zdGljcxgCIAMoCzIeLnNsaXB3YXkudjEuUGlwZWxpbmVEaWFnbm9zdGljEiUKBHBsYW4YAyABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0EhEKCWpvYl9jb3VudBgEIAEoBRITCgtwbGFuX2RpZ2VzdBgFIAEoCRIVCg10ZW1wbGF0ZV9yZWZzGAYgAygJEhcKD3RyaWdnZXJfbWF0Y2hlcxgHIAEoCBIWCg50cmlnZ2VyX3JlYXNvbhgIIAEoCSKFAQoZUGlwZWxpbmVUZW1wbGF0ZVBhcmFtZXRlchIMCgRuYW1lGAEgASgJEgwKBHR5cGUYAiABKAkSEAoIcmVxdWlyZWQYAyABKAgSEwoLZGVzY3JpcHRpb24YBCABKAkSFAoMZGVmYXVsdF9qc29uGAUgASgJEg8KB29wdGlvbnMYBiADKAki/gEKEFBpcGVsaW5lVGVtcGxhdGUSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIPCgd2ZXJzaW9uGAMgASgJEgsKA3JlZhgEIAEoCRIMCgRraW5kGAUgASgJEhMKC2Rlc2NyaXB0aW9uGAYgASgJEjkKCnBhcmFtZXRlcnMYByADKAsyJS5zbGlwd2F5LnYxLlBpcGVsaW5lVGVtcGxhdGVQYXJhbWV0ZXISDAoEeWFtbBgIIAEoCRIUCgxwdWJsaXNoZWRfYnkYCSABKAkSMAoMcHVibGlzaGVkX2F0GAogASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJSChRMaXN0VGVtcGxhdGVzUmVxdWVzdBIlCgRwYWdlGAEgASgLMhcuc2xpcHdheS52MS5QYWdlUmVxdWVzdBITCgtsYXRlc3Rfb25seRgCIAEoCCJsChVMaXN0VGVtcGxhdGVzUmVzcG9uc2USKwoFaXRlbXMYASADKAsyHC5zbGlwd2F5LnYxLlBpcGVsaW5lVGVtcGxhdGUSJgoEcGFnZRgCIAEoCzIYLnNsaXB3YXkudjEuUGFnZVJlc3BvbnNlIkUKFlB1Ymxpc2hUZW1wbGF0ZVJlcXVlc3QSDAoEbmFtZRgBIAEoCRIPCgd2ZXJzaW9uGAIgASgJEgwKBHlhbWwYAyABKAkifgoXUHVibGlzaFRlbXBsYXRlUmVzcG9uc2USLgoIdGVtcGxhdGUYASABKAsyHC5zbGlwd2F5LnYxLlBpcGVsaW5lVGVtcGxhdGUSMwoLZGlhZ25vc3RpY3MYAiADKAsyHi5zbGlwd2F5LnYxLlBpcGVsaW5lRGlhZ25vc3RpYypnCg5QaXBlbGluZVNvdXJjZRIfChtQSVBFTElORV9TT1VSQ0VfVU5TUEVDSUZJRUQQABIYChRQSVBFTElORV9TT1VSQ0VfUkVQTxABEhoKFlBJUEVMSU5FX1NPVVJDRV9JTkxJTkUQAirDAQoaUGlwZWxpbmVEaWFnbm9zdGljU2V2ZXJpdHkSLAooUElQRUxJTkVfRElBR05PU1RJQ19TRVZFUklUWV9VTlNQRUNJRklFRBAAEiYKIlBJUEVMSU5FX0RJQUdOT1NUSUNfU0VWRVJJVFlfRVJST1IQARIoCiRQSVBFTElORV9ESUFHTk9TVElDX1NFVkVSSVRZX1dBUk5JTkcQAhIlCiFQSVBFTElORV9ESUFHTk9TVElDX1NFVkVSSVRZX0lORk8QAzLPBwoPUGlwZWxpbmVTZXJ2aWNlEl0KEFZhbGlkYXRlUGlwZWxpbmUSIy5zbGlwd2F5LnYxLlZhbGlkYXRlUGlwZWxpbmVSZXF1ZXN0GiQuc2xpcHdheS52MS5WYWxpZGF0ZVBpcGVsaW5lUmVzcG9uc2USSAoJR2V0U2NoZW1hEhwuc2xpcHdheS52MS5HZXRTY2hlbWFSZXF1ZXN0Gh0uc2xpcHdheS52MS5HZXRTY2hlbWFSZXNwb25zZRJXCg5JbXBvcnRQaXBlbGluZRIhLnNsaXB3YXkudjEuSW1wb3J0UGlwZWxpbmVSZXF1ZXN0GiIuc2xpcHdheS52MS5JbXBvcnRQaXBlbGluZVJlc3BvbnNlElQKDUxpc3RQaXBlbGluZXMSIC5zbGlwd2F5LnYxLkxpc3RQaXBlbGluZXNSZXF1ZXN0GiEuc2xpcHdheS52MS5MaXN0UGlwZWxpbmVzUmVzcG9uc2USTgoLR2V0UGlwZWxpbmUSHi5zbGlwd2F5LnYxLkdldFBpcGVsaW5lUmVxdWVzdBofLnNsaXB3YXkudjEuR2V0UGlwZWxpbmVSZXNwb25zZRJXCg5DcmVhdGVQaXBlbGluZRIhLnNsaXB3YXkudjEuQ3JlYXRlUGlwZWxpbmVSZXF1ZXN0GiIuc2xpcHdheS52MS5DcmVhdGVQaXBlbGluZVJlc3BvbnNlElcKDlVwZGF0ZVBpcGVsaW5lEiEuc2xpcHdheS52MS5VcGRhdGVQaXBlbGluZVJlcXVlc3QaIi5zbGlwd2F5LnYxLlVwZGF0ZVBpcGVsaW5lUmVzcG9uc2USVwoORGVsZXRlUGlwZWxpbmUSIS5zbGlwd2F5LnYxLkRlbGV0ZVBpcGVsaW5lUmVxdWVzdBoiLnNsaXB3YXkudjEuRGVsZXRlUGlwZWxpbmVSZXNwb25zZRJXCg5Db21waWxlUHJldmlldxIhLnNsaXB3YXkudjEuQ29tcGlsZVByZXZpZXdSZXF1ZXN0GiIuc2xpcHdheS52MS5Db21waWxlUHJldmlld1Jlc3BvbnNlElQKDUxpc3RUZW1wbGF0ZXMSIC5zbGlwd2F5LnYxLkxpc3RUZW1wbGF0ZXNSZXF1ZXN0GiEuc2xpcHdheS52MS5MaXN0VGVtcGxhdGVzUmVzcG9uc2USWgoPUHVibGlzaFRlbXBsYXRlEiIuc2xpcHdheS52MS5QdWJsaXNoVGVtcGxhdGVSZXF1ZXN0GiMuc2xpcHdheS52MS5QdWJsaXNoVGVtcGxhdGVSZXNwb25zZUKoAQoOY29tLnNsaXB3YXkudjFCDVBpcGVsaW5lUHJvdG9QAVo+Z2l0aHViLmNvbS9zbGlwd2F5LXN5c3RlbXMvc2xpcHdheS1zZGsvZ28vc2xpcHdheS92MTtzbGlwd2F5djGiAgNTWFiqAgpTbGlwd2F5LlYxygIKU2xpcHdheVxWMeICFlNsaXB3YXlcVjFcR1BCTWV0YWRhdGHqAgtTbGlwd2F5OjpWMWIGcHJvdG8z", [file_google_protobuf_duration, file_google_protobuf_field_mask, file_google_protobuf_struct, file_google_protobuf_timestamp, file_slipway_v1_common, file_slipway_v1_runs]);
 
 /**
  * PipelineSourcePosition is a 1-based range in the YAML source. line == 0 means unknown.
@@ -108,6 +110,93 @@ export type PipelineDiagnostic = Message<"slipway.v1.PipelineDiagnostic"> & {
  */
 export const PipelineDiagnosticSchema: GenMessage<PipelineDiagnostic> = /*@__PURE__*/
   messageDesc(file_slipway_v1_pipeline, 1);
+
+/**
+ * PipelineRunSummary is the part of a run that a pipeline listing shows. The whole run is RunService.GetRun.
+ *
+ * @generated from message slipway.v1.PipelineRunSummary
+ */
+export type PipelineRunSummary = Message<"slipway.v1.PipelineRunSummary"> & {
+  /**
+   * run_…
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * per pipeline, monotonic
+   *
+   * @generated from field: int64 number = 2;
+   */
+  number: bigint;
+
+  /**
+   * @generated from field: slipway.v1.RunStatus status = 3;
+   */
+  status: RunStatus;
+
+  /**
+   * what started it: push | pull_request | tag | schedule | manual | api | pipeline | release | webhook
+   *
+   * @generated from field: string trigger = 4;
+   */
+  trigger: string;
+
+  /**
+   * git ref the run was for ("refs/heads/main", "refs/tags/v1.2.0"); empty when its trigger had none
+   *
+   * @generated from field: string ref = 5;
+   */
+  ref: string;
+
+  /**
+   * "main"; empty for a tag
+   *
+   * @generated from field: string branch = 6;
+   */
+  branch: string;
+
+  /**
+   * commit
+   *
+   * @generated from field: string sha = 7;
+   */
+  sha: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp created_at = 8;
+   */
+  createdAt?: Timestamp | undefined;
+
+  /**
+   * unset until the run starts
+   *
+   * @generated from field: google.protobuf.Timestamp started_at = 9;
+   */
+  startedAt?: Timestamp | undefined;
+
+  /**
+   * unset while the run is queued or running
+   *
+   * @generated from field: google.protobuf.Timestamp finished_at = 10;
+   */
+  finishedAt?: Timestamp | undefined;
+
+  /**
+   * set once the run has finished
+   *
+   * @generated from field: google.protobuf.Duration duration = 11;
+   */
+  duration?: Duration | undefined;
+};
+
+/**
+ * Describes the message slipway.v1.PipelineRunSummary.
+ * Use `create(PipelineRunSummarySchema)` to create a new message.
+ */
+export const PipelineRunSummarySchema: GenMessage<PipelineRunSummary> = /*@__PURE__*/
+  messageDesc(file_slipway_v1_pipeline, 2);
 
 /**
  * Pipeline is a stored pipeline definition.
@@ -256,6 +345,26 @@ export type Pipeline = Message<"slipway.v1.Pipeline"> & {
    * @generated from field: bool file_removed = 23;
    */
   fileRemoved: boolean;
+
+  /**
+   * last_run is the pipeline's last run: the one created last (by created_at, then id, the order ListRuns lists runs
+   * in), whatever its status, branch or trigger. A run that is still queued or running counts. Re-running a run
+   * (RerunRun) starts a new attempt of that run and creates none, so it does not make an older run the last.
+   * Set by ListPipelines only, and only for a caller who may read runs (runs.read; a credential restricted to one
+   * project gets it for that project's pipelines). Unset for a pipeline that has never run, and by servers that do not
+   * know the field: read "unset" as "unknown or never", not as an error.
+   *
+   * @generated from field: slipway.v1.PipelineRunSummary last_run = 24;
+   */
+  lastRun?: PipelineRunSummary | undefined;
+
+  /**
+   * recent_runs holds the pipeline's newest runs, newest first (the first is last_run), when
+   * ListPipelinesRequest.recent_runs_limit asks for them. Set under the same conditions as last_run.
+   *
+   * @generated from field: repeated slipway.v1.PipelineRunSummary recent_runs = 25;
+   */
+  recentRuns: PipelineRunSummary[];
 };
 
 /**
@@ -263,7 +372,7 @@ export type Pipeline = Message<"slipway.v1.Pipeline"> & {
  * Use `create(PipelineSchema)` to create a new message.
  */
 export const PipelineSchema: GenMessage<Pipeline> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 2);
+  messageDesc(file_slipway_v1_pipeline, 3);
 
 /**
  * @generated from message slipway.v1.ValidatePipelineRequest
@@ -301,7 +410,7 @@ export type ValidatePipelineRequest = Message<"slipway.v1.ValidatePipelineReques
  * Use `create(ValidatePipelineRequestSchema)` to create a new message.
  */
 export const ValidatePipelineRequestSchema: GenMessage<ValidatePipelineRequest> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 3);
+  messageDesc(file_slipway_v1_pipeline, 4);
 
 /**
  * @generated from message slipway.v1.ValidatePipelineResponse
@@ -361,7 +470,7 @@ export type ValidatePipelineResponse = Message<"slipway.v1.ValidatePipelineRespo
  * Use `create(ValidatePipelineResponseSchema)` to create a new message.
  */
 export const ValidatePipelineResponseSchema: GenMessage<ValidatePipelineResponse> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 4);
+  messageDesc(file_slipway_v1_pipeline, 5);
 
 /**
  * ImportPipelineRequest converts another CI system's pipeline file into a Slipway pipeline. Nothing is stored: the
@@ -397,7 +506,7 @@ export type ImportPipelineRequest = Message<"slipway.v1.ImportPipelineRequest"> 
  * Use `create(ImportPipelineRequestSchema)` to create a new message.
  */
 export const ImportPipelineRequestSchema: GenMessage<ImportPipelineRequest> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 5);
+  messageDesc(file_slipway_v1_pipeline, 6);
 
 /**
  * @generated from message slipway.v1.ImportPipelineResponse
@@ -438,7 +547,7 @@ export type ImportPipelineResponse = Message<"slipway.v1.ImportPipelineResponse"
  * Use `create(ImportPipelineResponseSchema)` to create a new message.
  */
 export const ImportPipelineResponseSchema: GenMessage<ImportPipelineResponse> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 6);
+  messageDesc(file_slipway_v1_pipeline, 7);
 
 /**
  * @generated from message slipway.v1.GetSchemaRequest
@@ -451,7 +560,7 @@ export type GetSchemaRequest = Message<"slipway.v1.GetSchemaRequest"> & {
  * Use `create(GetSchemaRequestSchema)` to create a new message.
  */
 export const GetSchemaRequestSchema: GenMessage<GetSchemaRequest> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 7);
+  messageDesc(file_slipway_v1_pipeline, 8);
 
 /**
  * @generated from message slipway.v1.GetSchemaResponse
@@ -482,9 +591,12 @@ export type GetSchemaResponse = Message<"slipway.v1.GetSchemaResponse"> & {
  * Use `create(GetSchemaResponseSchema)` to create a new message.
  */
 export const GetSchemaResponseSchema: GenMessage<GetSchemaResponse> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 8);
+  messageDesc(file_slipway_v1_pipeline, 9);
 
 /**
+ * ListPipelines returns a page of the project's pipelines, each with its last run (Pipeline.last_run), so a listing
+ * needs no request per pipeline to say when and how each one last ran.
+ *
  * @generated from message slipway.v1.ListPipelinesRequest
  */
 export type ListPipelinesRequest = Message<"slipway.v1.ListPipelinesRequest"> & {
@@ -494,11 +606,20 @@ export type ListPipelinesRequest = Message<"slipway.v1.ListPipelinesRequest"> & 
   projectId: string;
 
   /**
-   * filter (CEL subset): name, source, enabled, e.g. `enabled && source == "repo"`
+   * Pipelines come by name, then id. page_size defaults to 50 (at most 500); follow page.next_page_token until it is
+   * empty to read them all. filter and order_by are ignored.
    *
    * @generated from field: slipway.v1.PageRequest page = 2;
    */
   page?: PageRequest | undefined;
+
+  /**
+   * recent_runs_limit also returns each pipeline's newest runs in Pipeline.recent_runs, at most this many of each
+   * (capped at 20). 0, the default, returns none.
+   *
+   * @generated from field: int32 recent_runs_limit = 3;
+   */
+  recentRunsLimit: number;
 };
 
 /**
@@ -506,7 +627,7 @@ export type ListPipelinesRequest = Message<"slipway.v1.ListPipelinesRequest"> & 
  * Use `create(ListPipelinesRequestSchema)` to create a new message.
  */
 export const ListPipelinesRequestSchema: GenMessage<ListPipelinesRequest> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 9);
+  messageDesc(file_slipway_v1_pipeline, 10);
 
 /**
  * @generated from message slipway.v1.ListPipelinesResponse
@@ -528,7 +649,7 @@ export type ListPipelinesResponse = Message<"slipway.v1.ListPipelinesResponse"> 
  * Use `create(ListPipelinesResponseSchema)` to create a new message.
  */
 export const ListPipelinesResponseSchema: GenMessage<ListPipelinesResponse> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 10);
+  messageDesc(file_slipway_v1_pipeline, 11);
 
 /**
  * @generated from message slipway.v1.GetPipelineRequest
@@ -545,7 +666,7 @@ export type GetPipelineRequest = Message<"slipway.v1.GetPipelineRequest"> & {
  * Use `create(GetPipelineRequestSchema)` to create a new message.
  */
 export const GetPipelineRequestSchema: GenMessage<GetPipelineRequest> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 11);
+  messageDesc(file_slipway_v1_pipeline, 12);
 
 /**
  * @generated from message slipway.v1.GetPipelineResponse
@@ -562,7 +683,7 @@ export type GetPipelineResponse = Message<"slipway.v1.GetPipelineResponse"> & {
  * Use `create(GetPipelineResponseSchema)` to create a new message.
  */
 export const GetPipelineResponseSchema: GenMessage<GetPipelineResponse> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 12);
+  messageDesc(file_slipway_v1_pipeline, 13);
 
 /**
  * CreatePipeline stores a new inline pipeline (source `inline`: the definition lives in Slipway, not in a repository).
@@ -602,7 +723,7 @@ export type CreatePipelineRequest = Message<"slipway.v1.CreatePipelineRequest"> 
  * Use `create(CreatePipelineRequestSchema)` to create a new message.
  */
 export const CreatePipelineRequestSchema: GenMessage<CreatePipelineRequest> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 13);
+  messageDesc(file_slipway_v1_pipeline, 14);
 
 /**
  * @generated from message slipway.v1.CreatePipelineResponse
@@ -626,7 +747,7 @@ export type CreatePipelineResponse = Message<"slipway.v1.CreatePipelineResponse"
  * Use `create(CreatePipelineResponseSchema)` to create a new message.
  */
 export const CreatePipelineResponseSchema: GenMessage<CreatePipelineResponse> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 14);
+  messageDesc(file_slipway_v1_pipeline, 15);
 
 /**
  * DeletePipeline removes an inline pipeline together with its runs. Repository pipelines cannot be deleted (their
@@ -646,7 +767,7 @@ export type DeletePipelineRequest = Message<"slipway.v1.DeletePipelineRequest"> 
  * Use `create(DeletePipelineRequestSchema)` to create a new message.
  */
 export const DeletePipelineRequestSchema: GenMessage<DeletePipelineRequest> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 15);
+  messageDesc(file_slipway_v1_pipeline, 16);
 
 /**
  * @generated from message slipway.v1.DeletePipelineResponse
@@ -659,7 +780,7 @@ export type DeletePipelineResponse = Message<"slipway.v1.DeletePipelineResponse"
  * Use `create(DeletePipelineResponseSchema)` to create a new message.
  */
 export const DeletePipelineResponseSchema: GenMessage<DeletePipelineResponse> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 16);
+  messageDesc(file_slipway_v1_pipeline, 17);
 
 /**
  * UpdatePipeline edits an inline pipeline (`yaml`, `enabled`) or toggles a repo pipeline (`enabled` only: repo
@@ -688,7 +809,7 @@ export type UpdatePipelineRequest = Message<"slipway.v1.UpdatePipelineRequest"> 
  * Use `create(UpdatePipelineRequestSchema)` to create a new message.
  */
 export const UpdatePipelineRequestSchema: GenMessage<UpdatePipelineRequest> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 17);
+  messageDesc(file_slipway_v1_pipeline, 18);
 
 /**
  * @generated from message slipway.v1.UpdatePipelineResponse
@@ -712,7 +833,7 @@ export type UpdatePipelineResponse = Message<"slipway.v1.UpdatePipelineResponse"
  * Use `create(UpdatePipelineResponseSchema)` to create a new message.
  */
 export const UpdatePipelineResponseSchema: GenMessage<UpdatePipelineResponse> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 18);
+  messageDesc(file_slipway_v1_pipeline, 19);
 
 /**
  * CompilePreview expands templates and matrices for a YAML document against a fake trigger context and returns
@@ -765,7 +886,7 @@ export type CompilePreviewRequest = Message<"slipway.v1.CompilePreviewRequest"> 
  * Use `create(CompilePreviewRequestSchema)` to create a new message.
  */
 export const CompilePreviewRequestSchema: GenMessage<CompilePreviewRequest> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 19);
+  messageDesc(file_slipway_v1_pipeline, 20);
 
 /**
  * @generated from message slipway.v1.CompilePreviewResponse
@@ -825,7 +946,7 @@ export type CompilePreviewResponse = Message<"slipway.v1.CompilePreviewResponse"
  * Use `create(CompilePreviewResponseSchema)` to create a new message.
  */
 export const CompilePreviewResponseSchema: GenMessage<CompilePreviewResponse> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 20);
+  messageDesc(file_slipway_v1_pipeline, 21);
 
 /**
  * @generated from message slipway.v1.PipelineTemplateParameter
@@ -871,7 +992,7 @@ export type PipelineTemplateParameter = Message<"slipway.v1.PipelineTemplatePara
  * Use `create(PipelineTemplateParameterSchema)` to create a new message.
  */
 export const PipelineTemplateParameterSchema: GenMessage<PipelineTemplateParameter> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 21);
+  messageDesc(file_slipway_v1_pipeline, 22);
 
 /**
  * PipelineTemplate is one published, immutable version of an org-level template.
@@ -945,7 +1066,7 @@ export type PipelineTemplate = Message<"slipway.v1.PipelineTemplate"> & {
  * Use `create(PipelineTemplateSchema)` to create a new message.
  */
 export const PipelineTemplateSchema: GenMessage<PipelineTemplate> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 22);
+  messageDesc(file_slipway_v1_pipeline, 23);
 
 /**
  * @generated from message slipway.v1.ListTemplatesRequest
@@ -971,7 +1092,7 @@ export type ListTemplatesRequest = Message<"slipway.v1.ListTemplatesRequest"> & 
  * Use `create(ListTemplatesRequestSchema)` to create a new message.
  */
 export const ListTemplatesRequestSchema: GenMessage<ListTemplatesRequest> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 23);
+  messageDesc(file_slipway_v1_pipeline, 24);
 
 /**
  * @generated from message slipway.v1.ListTemplatesResponse
@@ -993,7 +1114,7 @@ export type ListTemplatesResponse = Message<"slipway.v1.ListTemplatesResponse"> 
  * Use `create(ListTemplatesResponseSchema)` to create a new message.
  */
 export const ListTemplatesResponseSchema: GenMessage<ListTemplatesResponse> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 24);
+  messageDesc(file_slipway_v1_pipeline, 25);
 
 /**
  * PublishTemplate validates and stores a new immutable version. Publishing an existing name+version fails with
@@ -1023,7 +1144,7 @@ export type PublishTemplateRequest = Message<"slipway.v1.PublishTemplateRequest"
  * Use `create(PublishTemplateRequestSchema)` to create a new message.
  */
 export const PublishTemplateRequestSchema: GenMessage<PublishTemplateRequest> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 25);
+  messageDesc(file_slipway_v1_pipeline, 26);
 
 /**
  * @generated from message slipway.v1.PublishTemplateResponse
@@ -1047,7 +1168,7 @@ export type PublishTemplateResponse = Message<"slipway.v1.PublishTemplateRespons
  * Use `create(PublishTemplateResponseSchema)` to create a new message.
  */
 export const PublishTemplateResponseSchema: GenMessage<PublishTemplateResponse> = /*@__PURE__*/
-  messageDesc(file_slipway_v1_pipeline, 26);
+  messageDesc(file_slipway_v1_pipeline, 27);
 
 /**
  * PipelineSource says where a definition lives.

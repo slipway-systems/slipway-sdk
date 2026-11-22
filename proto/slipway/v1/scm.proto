@@ -283,12 +283,22 @@ message GetFileContentResponse {
 
 // CommitFile creates or updates one file on an existing branch with a single commit (scm.manage). Providers
 // without a write API (Azure DevOps, Bitbucket Data Center) answer unimplemented.
+//
+// expected_sha and create_only make the commit conditional: when the file is no longer what the caller based the
+// content on, the call answers aborted ("<path> changed on <branch> since it was read") and commits nothing.
+// Providers that cannot make a commit conditional (GitLab, Bitbucket Cloud) answer unimplemented to a conditional
+// request rather than commit over a change.
 message CommitFileRequest {
   string repository_id = 1;
   string branch = 2;   // default: the repository's default branch
   string path = 3;
   bytes content = 4;
   string message = 5;  // default: "Add <path>"
+  // The blob sha (GetFileContentResponse.sha) the content is based on: commit only while the file on the branch is
+  // still that blob. Empty commits over whatever the branch has.
+  string expected_sha = 6;
+  // Commit only while there is no file at path. Cannot be combined with expected_sha.
+  bool create_only = 7;
 }
 message CommitFileResponse {
   string sha = 1;      // the new commit, when the provider reports it

@@ -582,7 +582,8 @@ message GetInsightsSummaryResponse {
   double success_rate = 6;          // succeeded / (succeeded + failed)
   google.protobuf.Duration p50 = 7; // succeeded runs only
   google.protobuf.Duration p95 = 8;
-  google.protobuf.Duration p50_previous = 9; // the window immediately before
+  // The window immediately before; 0 when it reaches past the 90-day retention (window_days above 45).
+  google.protobuf.Duration p50_previous = 9;
   int32 flaky_tests = 10;
   int64 cache_lookups = 11;
   double cache_hit_rate = 12; // exact hits / lookups
@@ -674,6 +675,7 @@ message JobDuration {
   int32 failed = 7;
   google.protobuf.Duration p50 = 8; // succeeded attempts only
   google.protobuf.Duration p95 = 9;
+  // p50 of the window immediately before; 0 when it reaches past the 90-day retention (window_days above 45).
   google.protobuf.Duration p50_previous = 10;
   double change_ratio = 11; // p50 / p50_previous, 0 without a previous p50
 }
@@ -699,6 +701,7 @@ message CacheStat {
   double hit_rate = 8; // exact / lookups
   double restore_rate = 9; // (exact + partial) / lookups
   google.protobuf.Timestamp last_day = 10;
+  string job_display_name = 11; // the job's display name, empty when unknown
 }
 message ListCacheStatsResponse {
   repeated CacheStat items = 1;

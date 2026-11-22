@@ -4798,20 +4798,21 @@ func (x *InsightsDay) GetCacheHitRate() float64 {
 }
 
 type GetInsightsSummaryResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	From          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
-	To            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
-	Runs          int32                  `protobuf:"varint,3,opt,name=runs,proto3" json:"runs,omitempty"` // finished runs (succeeded, failed and cancelled), once per run attempt
-	Succeeded     int32                  `protobuf:"varint,4,opt,name=succeeded,proto3" json:"succeeded,omitempty"`
-	Failed        int32                  `protobuf:"varint,5,opt,name=failed,proto3" json:"failed,omitempty"`
-	SuccessRate   float64                `protobuf:"fixed64,6,opt,name=success_rate,json=successRate,proto3" json:"success_rate,omitempty"` // succeeded / (succeeded + failed)
-	P50           *durationpb.Duration   `protobuf:"bytes,7,opt,name=p50,proto3" json:"p50,omitempty"`                                      // succeeded runs only
-	P95           *durationpb.Duration   `protobuf:"bytes,8,opt,name=p95,proto3" json:"p95,omitempty"`
-	P50Previous   *durationpb.Duration   `protobuf:"bytes,9,opt,name=p50_previous,json=p50Previous,proto3" json:"p50_previous,omitempty"` // the window immediately before
-	FlakyTests    int32                  `protobuf:"varint,10,opt,name=flaky_tests,json=flakyTests,proto3" json:"flaky_tests,omitempty"`
-	CacheLookups  int64                  `protobuf:"varint,11,opt,name=cache_lookups,json=cacheLookups,proto3" json:"cache_lookups,omitempty"`
-	CacheHitRate  float64                `protobuf:"fixed64,12,opt,name=cache_hit_rate,json=cacheHitRate,proto3" json:"cache_hit_rate,omitempty"` // exact hits / lookups
-	Days          []*InsightsDay         `protobuf:"bytes,13,rep,name=days,proto3" json:"days,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	From        *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	To          *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	Runs        int32                  `protobuf:"varint,3,opt,name=runs,proto3" json:"runs,omitempty"` // finished runs (succeeded, failed and cancelled), once per run attempt
+	Succeeded   int32                  `protobuf:"varint,4,opt,name=succeeded,proto3" json:"succeeded,omitempty"`
+	Failed      int32                  `protobuf:"varint,5,opt,name=failed,proto3" json:"failed,omitempty"`
+	SuccessRate float64                `protobuf:"fixed64,6,opt,name=success_rate,json=successRate,proto3" json:"success_rate,omitempty"` // succeeded / (succeeded + failed)
+	P50         *durationpb.Duration   `protobuf:"bytes,7,opt,name=p50,proto3" json:"p50,omitempty"`                                      // succeeded runs only
+	P95         *durationpb.Duration   `protobuf:"bytes,8,opt,name=p95,proto3" json:"p95,omitempty"`
+	// The window immediately before; 0 when it reaches past the 90-day retention (window_days above 45).
+	P50Previous   *durationpb.Duration `protobuf:"bytes,9,opt,name=p50_previous,json=p50Previous,proto3" json:"p50_previous,omitempty"`
+	FlakyTests    int32                `protobuf:"varint,10,opt,name=flaky_tests,json=flakyTests,proto3" json:"flaky_tests,omitempty"`
+	CacheLookups  int64                `protobuf:"varint,11,opt,name=cache_lookups,json=cacheLookups,proto3" json:"cache_lookups,omitempty"`
+	CacheHitRate  float64              `protobuf:"fixed64,12,opt,name=cache_hit_rate,json=cacheHitRate,proto3" json:"cache_hit_rate,omitempty"` // exact hits / lookups
+	Days          []*InsightsDay       `protobuf:"bytes,13,rep,name=days,proto3" json:"days,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -5692,10 +5693,11 @@ type JobDuration struct {
 	Failed         int32                  `protobuf:"varint,7,opt,name=failed,proto3" json:"failed,omitempty"`
 	P50            *durationpb.Duration   `protobuf:"bytes,8,opt,name=p50,proto3" json:"p50,omitempty"` // succeeded attempts only
 	P95            *durationpb.Duration   `protobuf:"bytes,9,opt,name=p95,proto3" json:"p95,omitempty"`
-	P50Previous    *durationpb.Duration   `protobuf:"bytes,10,opt,name=p50_previous,json=p50Previous,proto3" json:"p50_previous,omitempty"`
-	ChangeRatio    float64                `protobuf:"fixed64,11,opt,name=change_ratio,json=changeRatio,proto3" json:"change_ratio,omitempty"` // p50 / p50_previous, 0 without a previous p50
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// p50 of the window immediately before; 0 when it reaches past the 90-day retention (window_days above 45).
+	P50Previous   *durationpb.Duration `protobuf:"bytes,10,opt,name=p50_previous,json=p50Previous,proto3" json:"p50_previous,omitempty"`
+	ChangeRatio   float64              `protobuf:"fixed64,11,opt,name=change_ratio,json=changeRatio,proto3" json:"change_ratio,omitempty"` // p50 / p50_previous, 0 without a previous p50
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *JobDuration) Reset() {
@@ -5926,19 +5928,20 @@ func (x *ListCacheStatsRequest) GetPage() *PageRequest {
 }
 
 type CacheStat struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PipelineId    string                 `protobuf:"bytes,1,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`
-	PipelineName  string                 `protobuf:"bytes,2,opt,name=pipeline_name,json=pipelineName,proto3" json:"pipeline_name,omitempty"`
-	JobName       string                 `protobuf:"bytes,3,opt,name=job_name,json=jobName,proto3" json:"job_name,omitempty"`
-	CacheName     string                 `protobuf:"bytes,4,opt,name=cache_name,json=cacheName,proto3" json:"cache_name,omitempty"` // derived from the key: the last restore key, or the key without its hash
-	ExactHits     int64                  `protobuf:"varint,5,opt,name=exact_hits,json=exactHits,proto3" json:"exact_hits,omitempty"`
-	PartialHits   int64                  `protobuf:"varint,6,opt,name=partial_hits,json=partialHits,proto3" json:"partial_hits,omitempty"` // restored from a restore key
-	Misses        int64                  `protobuf:"varint,7,opt,name=misses,proto3" json:"misses,omitempty"`
-	HitRate       float64                `protobuf:"fixed64,8,opt,name=hit_rate,json=hitRate,proto3" json:"hit_rate,omitempty"`             // exact / lookups
-	RestoreRate   float64                `protobuf:"fixed64,9,opt,name=restore_rate,json=restoreRate,proto3" json:"restore_rate,omitempty"` // (exact + partial) / lookups
-	LastDay       *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=last_day,json=lastDay,proto3" json:"last_day,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	PipelineId     string                 `protobuf:"bytes,1,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`
+	PipelineName   string                 `protobuf:"bytes,2,opt,name=pipeline_name,json=pipelineName,proto3" json:"pipeline_name,omitempty"`
+	JobName        string                 `protobuf:"bytes,3,opt,name=job_name,json=jobName,proto3" json:"job_name,omitempty"`
+	CacheName      string                 `protobuf:"bytes,4,opt,name=cache_name,json=cacheName,proto3" json:"cache_name,omitempty"` // derived from the key: the last restore key, or the key without its hash
+	ExactHits      int64                  `protobuf:"varint,5,opt,name=exact_hits,json=exactHits,proto3" json:"exact_hits,omitempty"`
+	PartialHits    int64                  `protobuf:"varint,6,opt,name=partial_hits,json=partialHits,proto3" json:"partial_hits,omitempty"` // restored from a restore key
+	Misses         int64                  `protobuf:"varint,7,opt,name=misses,proto3" json:"misses,omitempty"`
+	HitRate        float64                `protobuf:"fixed64,8,opt,name=hit_rate,json=hitRate,proto3" json:"hit_rate,omitempty"`             // exact / lookups
+	RestoreRate    float64                `protobuf:"fixed64,9,opt,name=restore_rate,json=restoreRate,proto3" json:"restore_rate,omitempty"` // (exact + partial) / lookups
+	LastDay        *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=last_day,json=lastDay,proto3" json:"last_day,omitempty"`
+	JobDisplayName string                 `protobuf:"bytes,11,opt,name=job_display_name,json=jobDisplayName,proto3" json:"job_display_name,omitempty"` // the job's display name, empty when unknown
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CacheStat) Reset() {
@@ -6039,6 +6042,13 @@ func (x *CacheStat) GetLastDay() *timestamppb.Timestamp {
 		return x.LastDay
 	}
 	return nil
+}
+
+func (x *CacheStat) GetJobDisplayName() string {
+	if x != nil {
+		return x.JobDisplayName
+	}
+	return ""
 }
 
 type ListCacheStatsResponse struct {
@@ -12957,7 +12967,7 @@ const file_slipway_v1_runs_proto_rawDesc = "" +
 	"pipelineId\x12\x1f\n" +
 	"\vwindow_days\x18\x03 \x01(\x05R\n" +
 	"windowDays\x12+\n" +
-	"\x04page\x18\x04 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\"\xda\x02\n" +
+	"\x04page\x18\x04 \x01(\v2\x17.slipway.v1.PageRequestR\x04page\"\x84\x03\n" +
 	"\tCacheStat\x12\x1f\n" +
 	"\vpipeline_id\x18\x01 \x01(\tR\n" +
 	"pipelineId\x12#\n" +
@@ -12972,7 +12982,8 @@ const file_slipway_v1_runs_proto_rawDesc = "" +
 	"\bhit_rate\x18\b \x01(\x01R\ahitRate\x12!\n" +
 	"\frestore_rate\x18\t \x01(\x01R\vrestoreRate\x125\n" +
 	"\blast_day\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\alastDay\"s\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\alastDay\x12(\n" +
+	"\x10job_display_name\x18\v \x01(\tR\x0ejobDisplayName\"s\n" +
 	"\x16ListCacheStatsResponse\x12+\n" +
 	"\x05items\x18\x01 \x03(\v2\x15.slipway.v1.CacheStatR\x05items\x12,\n" +
 	"\x04page\x18\x02 \x01(\v2\x18.slipway.v1.PageResponseR\x04page\"\xa3\x01\n" +
